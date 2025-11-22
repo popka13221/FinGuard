@@ -1,30 +1,31 @@
 # FinGuard — Personal Finance & Alerts Platform
 
-Платформа для учёта личных финансов, целей и умных алертов по тратам, курсам валют и активам. Проект задуман как демонстрация продуманной доменной модели, работы с деньгами/датами/валютами, фоновых задач и интеграций с внешними API.
+Платформа для учёта личных финансов, целей и умных алертов по тратам, курсам валют и активам. Цель — показать продуманную доменную модель, работу с деньгами/датами/валютами, фоновые задачи и интеграции.
 
-## Что уже продумано
-- Чёткое MVP: пользователи и JWT, счета, категории, транзакции с пересчётом баланса, отчёты по периодам, курсы валют, простые правила с уведомлениями.
-- Расширения: цели накоплений, интеграции с курсами валют/криптой и кешированием, продвинутые правила, Email/Telegram нотификации, вынос rule-engine в отдельный сервис и очередь сообщений.
-- Доменная модель и бизнес-формулы (балансы, конвертация валют, цели, проверки правил) описаны и готовы к реализации.
+## Highlights
+- MVP: пользователи + JWT, счета, категории, транзакции с пересчётом баланса, отчёты по периодам, курсы валют, простые правила с уведомлениями.
+- Рост: цели накоплений, интеграции с FX/криптой и кешированием, продвинутые правила, Email/Telegram, вынос rule-engine и очередь сообщений.
+- Архитектура: слоёный монолит (Controller → Service → Repository → Domain/Model + Config/Security/Scheduler).
 
-## Технологический стек
-- Java 17+, Spring Boot (Web, Security, Data JPA, Validation, Scheduling)
+## Стек
+- Java 17+, Spring Boot (Web, Security, Data JPA, Validation, Scheduling, Actuator)
 - PostgreSQL + Flyway
-- Maven/Gradle, Docker Compose для Postgres + приложения
-- Опционально далее: OpenFeign/WebClient, Kafka/RabbitMQ
-
-## Архитектура (слоёный монолит)
-Controller → Service → Repository → Domain/Model + Config/Security/Scheduler. Предложенная структура пакетов лежит в каркасе `src/main/java/com/yourname/finguard/...` (создана пустая иерархия).
+- Maven, Docker Compose (Postgres)
+- Далее: OpenFeign/WebClient, Kafka/RabbitMQ при нужде
 
 ## Быстрый старт
-1. Запусти Postgres: `docker compose up -d`.
-2. Убедись в доступности БД (по умолчанию `jdbc:postgresql://localhost:5432/finguard`, пользователь/пароль `finguard` — настраивается через env).
-3. Запусти приложение: `mvn spring-boot:run`.
-4. Health-check: `GET /health` или `GET /actuator/health`.
+1) База
+   - Docker: `docker compose up -d`
+   - или локально (brew): установить Postgres, создать БД/пользователя `finguard`/`finguard`.
+2) Переменные (пример):
+   ```
+   export DB_HOST=localhost DB_PORT=5432 DB_NAME=finguard DB_USER=finguard DB_PASSWORD=finguard
+   ```
+3) Запуск: `mvn spring-boot:run`
+4) Health: `GET http://localhost:8080/health` или `/actuator/health`
 
-## Документация и план
-- Полный план разработки и модели: `docs/PROJECT_PLAN.md`.
-- README будет дополняться по мере появления кода, Swagger-скриншотов и примеров запросов/ответов.
+## Документация
+- Полный план и доменные модели: `docs/PROJECT_PLAN.md`
 
-## Оценка текущего состояния
-Создан каркас Spring Boot (3.2.5) с зависимостями Web/Security/Data JPA/Validation/Scheduling/Actuator, Flyway и PostgreSQL. Добавлен Docker Compose для Postgres, базовая конфигурация `application.yaml` и health-check контроллер. Следующий шаг — реализовать функциональные модули по плану (Auth, Accounts, Transactions и т.д.).
+## Статус
+Каркас Spring Boot 3.2.5: зависимости Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check контроллер. Следующий шаг — миграции и своя security/JWT, затем модули Auth/Accounts/Transactions по плану.
