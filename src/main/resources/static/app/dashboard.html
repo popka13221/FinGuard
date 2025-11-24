@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinGuard | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>FinGuard</h1>
+        <div class="muted" id="subtitle">Ваш финансовый дашборд</div>
+      </div>
+      <div class="toolbar">
+        <div class="pill" id="pill">Dashboard</div>
+        <button class="ghost" id="btn-theme" aria-label="Сменить тему">Тема</button>
+      </div>
+    </header>
+
+    <div class="card card-row" style="margin-top:16px;">
+      <div>
+        <div class="muted">Вы вошли как</div>
+        <h3 id="appEmail">user@example.com</h3>
+      </div>
+      <div class="nav-app">
+        <button class="ghost" id="btn-health">/health</button>
+        <button class="ghost" id="btn-actuator">/actuator/health</button>
+        <a class="ghost" style="text-decoration:none; padding:12px 14px; display:inline-block;" href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
+        <button class="secondary" id="btn-logout">Выйти</button>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+      <div class="stack">
+        <div class="card">
+          <h3>Счета</h3>
+          <div class="panel-list">
+            <div class="list-item">
+              <div>
+                <div class="muted">Заглушка для списка счетов</div>
+                <strong>Endpoint /api/accounts</strong>
+              </div>
+              <button class="ghost" disabled>В разработке</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Транзакции</h3>
+          <div class="panel-list">
+            <div class="list-item">
+              <div>
+                <div class="muted">Здесь будет список транзакций и фильтры после подключения API</div>
+                <strong>Endpoint /api/transactions</strong>
+              </div>
+              <button class="ghost" disabled>В разработке</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3>Статус и токен</h3>
+          <div class="row" style="align-items:center; margin-bottom:8px;">
+            <div id="healthStatusApp" class="status-pill status-bad" role="status" aria-live="polite">Health не проверен</div>
+            <button class="ghost" id="btn-health-inline">/health</button>
+            <button class="ghost" id="btn-actuator-inline">/actuator/health</button>
+          </div>
+          <div class="section-title">JWT</div>
+          <div class="token-box" id="tokenBoxApp">Токен в httpOnly cookie</div>
+          <div class="buttons" style="margin-top:10px;">
+            <button class="ghost" id="btn-clear-token">Сбросить токен</button>
+            <a class="ghost" style="text-decoration:none; padding:12px 14px; display:inline-block;" href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Логи API</h3>
+          <pre id="outputApp">Готово к запросам...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app/theme.js"></script>
+  <script src="/app/api.js"></script>
+  <script src="/app/dashboard.js"></script>
+</body>
+</html>

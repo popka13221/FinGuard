@@ -3,10 +3,17 @@ package com.yourname.finguard.auth.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 public record RegisterRequest(
         @Email @NotBlank String email,
-        @NotBlank @Size(min = 6, max = 100) String password,
+        @NotBlank
+        @Size(min = 10, max = 100, message = "Password must be at least 10 characters long")
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$",
+                message = "Password must include upper and lower case letters, a digit, and a special character"
+        )
+        String password,
         @NotBlank String fullName,
         @NotBlank String baseCurrency
 ) {

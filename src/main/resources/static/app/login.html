@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinGuard | Вход</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/styles.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <header>
+      <div>
+        <h1>FinGuard</h1>
+        <div class="muted">Войдите, чтобы продолжить</div>
+      </div>
+      <div class="toolbar">
+        <div class="pill">Secure Login</div>
+        <button class="ghost" id="btn-theme" aria-label="Сменить тему">Тема</button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h2>Ваш фин. помощник</h2>
+      <p>Войдите или зарегистрируйтесь, чтобы перейти в дашборд.</p>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-login">Вход</button>
+        <button class="tab-btn" id="tab-register">Регистрация</button>
+      </div>
+
+      <div class="form" id="form-login">
+        <div class="field">
+          <label>Email</label>
+          <input id="loginEmail" value="" placeholder="you@example.com" autocomplete="email" aria-label="Email">
+          <div id="emailError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <div class="row-inline">
+            <input id="loginPassword" type="password" value="" placeholder="Password" autocomplete="current-password" style="flex:1;" aria-label="Пароль">
+            <button type="button" class="ghost" id="show-login-password" aria-label="Показать пароль">Показать</button>
+          </div>
+          <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
+          <div id="passwordError" class="error-text" style="display:none;"></div>
+        </div>
+        <div id="errorBox" class="alert" role="alert" aria-live="polite" style="display:none;">Ошибка</div>
+        <div class="actions">
+          <button type="button" class="secondary" id="btn-login">Войти</button>
+        </div>
+      </div>
+
+      <div class="form" id="form-register" style="display:none;">
+        <div class="field">
+          <label>Email</label>
+          <input id="regEmail" value="" placeholder="you@example.com" autocomplete="email" aria-label="Email">
+          <div id="regEmailError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <div class="row-inline">
+            <input id="regPassword" type="password" value="" placeholder="Password" autocomplete="new-password" style="flex:1;" aria-label="Пароль">
+            <button type="button" class="ghost" id="show-register-password" aria-label="Показать пароль">Показать</button>
+          </div>
+          <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
+          <div id="regPasswordError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="field">
+          <label>Имя</label>
+          <input id="regFullName" value="" placeholder="Ваше имя" autocomplete="name" aria-label="Имя">
+          <div id="fullNameError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="field">
+          <label>Базовая валюта</label>
+          <input id="regCurrency" value="" placeholder="USD" aria-label="Базовая валюта">
+          <div id="currencyError" class="error-text" style="display:none;"></div>
+        </div>
+        <div id="errorBoxRegister" class="alert" role="alert" aria-live="polite" style="display:none;">Ошибка</div>
+        <div class="actions">
+          <button type="button" id="btn-register">Создать аккаунт</button>
+        </div>
+      </div>
+
+      <div class="muted">После входа или регистрации откроется дашборд.</div>
+    </div>
+  </div>
+
+  <script src="/app/theme.js"></script>
+  <script src="/app/api.js"></script>
+  <script src="/app/auth.js"></script>
+</body>
+</html>

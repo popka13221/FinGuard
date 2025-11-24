@@ -25,6 +25,10 @@ public class JwtTokenProvider {
         this.validitySeconds = validitySeconds;
     }
 
+    public long getValiditySeconds() {
+        return validitySeconds;
+    }
+
     public String generateToken(Long userId, String email) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(validitySeconds);
