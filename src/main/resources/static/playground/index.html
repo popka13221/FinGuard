@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinGuard Playground</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 24px; }
+    h1 { margin-top: 0; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    label { display: block; margin-bottom: 6px; font-size: 14px; color: #cbd5e1; }
+    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e2e8f0; }
+    button { padding: 10px 14px; border: none; border-radius: 8px; background: #22c55e; color: #0b1220; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #38bdf8; color: #0b1220; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    pre { background: #0b1220; color: #d1d5db; padding: 12px; border-radius: 10px; overflow-x: auto; border: 1px solid #1f2937; }
+    .small { font-size: 12px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h1>FinGuard Playground</h1>
+  <div class="card">
+    <label>Base URL</label>
+    <input id="baseUrl" value="http://localhost:8080" />
+    <div class="small">Запусти backend локально: <code>mvn spring-boot:run</code> (или через Docker для Postgres).</div>
+  </div>
+
+  <div class="card">
+    <h3>Register</h3>
+    <div class="row">
+      <div style="flex:1; min-width:220px">
+        <label>Email</label>
+        <input id="regEmail" value="demo@example.com">
+      </div>
+      <div style="flex:1; min-width:160px">
+        <label>Password</label>
+        <input id="regPassword" type="password" value="password123">
+      </div>
+    </div>
+    <div class="row">
+      <div style="flex:1; min-width:200px">
+        <label>Full name</label>
+        <input id="regFullName" value="Demo User">
+      </div>
+      <div style="flex:1; min-width:120px">
+        <label>Base currency</label>
+        <input id="regCurrency" value="USD">
+      </div>
+    </div>
+    <button onclick="register()">Register</button>
+  </div>
+
+  <div class="card">
+    <h3>Login</h3>
+    <div class="row">
+      <div style="flex:1; min-width:220px">
+        <label>Email</label>
+        <input id="loginEmail" value="demo@example.com">
+      </div>
+      <div style="flex:1; min-width:160px">
+        <label>Password</label>
+        <input id="loginPassword" type="password" value="password123">
+      </div>
+    </div>
+    <button class="secondary" onclick="login()">Login</button>
+    <div class="small">JWT сохранится в памяти страницы и будет использоваться для авторизованных запросов.</div>
+  </div>
+
+  <div class="card">
+    <h3>Quick calls</h3>
+    <div class="row">
+      <button onclick="health()">GET /health</button>
+      <button onclick="actuatorHealth()">GET /actuator/health</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Last response</h3>
+    <pre id="output">...</pre>
+  </div>
+
+  <script>
+    let token = null;
+
+    async function register() {
+      const payload = {
+        email: value('regEmail'),
+        password: value('regPassword'),
+        fullName: value('regFullName'),
+        baseCurrency: value('regCurrency')
+      };
+      await call('/api/auth/register', 'POST', payload, false);
+    }
+
+    async function login() {
+      const payload = {
+        email: value('loginEmail'),
+        password: value('loginPassword')
+      };
+      const res = await call('/api/auth/login', 'POST', payload, false);
+      if (res && res.token) {
+        token = res.token;
+      }
+    }
+
+    async function health() {
+      await call('/health', 'GET', null, false);
+    }
+
+    async function actuatorHealth() {
+      await call('/actuator/health', 'GET', null, false);
+    }
+
+    async function call(path, method, body, auth = true) {
+      const base = value('baseUrl').replace(/\/$/, '');
+      const headers = { 'Content-Type': 'application/json' };
+      if (auth && token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      try {
+        const resp = await fetch(base + path, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined
+        });
+        const text = await resp.text();
+        let json;
+        try { json = JSON.parse(text); } catch (e) { json = text; }
+        if (resp.ok && json && json.token) {
+          token = json.token;
+        }
+        render({ status: resp.status, data: json });
+        return json;
+      } catch (e) {
+        render({ error: e.message });
+      }
+    }
+
+    function value(id) {
+      return document.getElementById(id).value;
+    }
+
+    function render(obj) {
+      document.getElementById('output').textContent = typeof obj === 'string'
+        ? obj
+        : JSON.stringify(obj, null, 2);
+    }
+  </script>
+</body>
+</html>

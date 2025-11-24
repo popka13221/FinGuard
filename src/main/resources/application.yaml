@@ -30,3 +30,9 @@ management:
     health:
       probes:
         enabled: true
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:Q29kZXhEZW1vMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
+      expiration-seconds: ${JWT_EXPIRATION:86400}
