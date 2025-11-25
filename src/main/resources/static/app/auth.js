@@ -70,7 +70,15 @@
     };
     (map[field] || []).forEach(key => {
       const el = document.querySelector('#' + key);
-      if (el) { el.style.display = 'block'; el.textContent = message; }
+      if (el) {
+        if (message) {
+          el.style.display = 'block';
+          el.textContent = message;
+        } else {
+          el.style.display = 'none';
+          el.textContent = '';
+        }
+      }
     });
     (inputMap[field] || []).forEach(key => {
       const el = document.querySelector('#' + key);
@@ -112,12 +120,39 @@
     }
   }
 
+  async function loadCurrencies() {
+    try {
+      const resp = await fetch('/api/currencies');
+      const data = await resp.json();
+      const select = document.querySelector(selectors.regCurrency);
+      if (!select) return;
+      select.innerHTML = '';
+      (data || []).forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        opt.textContent = `${c.code} — ${c.name}`;
+        select.appendChild(opt);
+      });
+      if (data && data.length > 0) {
+        select.value = data[0].code;
+      }
+    } catch (e) {
+      // fallback
+      const select = document.querySelector(selectors.regCurrency);
+      if (select) {
+        select.innerHTML = '<option value="USD">USD — US Dollar</option>';
+        select.value = 'USD';
+      }
+    }
+  }
   function handleErrorCode(code, message) {
     showError('');
     showError('', selectors.errorBoxRegister);
     switch (code) {
       case '100001':
-        showFieldError('password', 'Неверный email или пароль');
+        showFieldError('email', '');
+        showFieldError('password', '');
+        showError('Неверный email или пароль');
         break;
       case '100002':
         showFieldError('email', 'Такой email уже зарегистрирован');
@@ -245,6 +280,7 @@
     if (showLoginPw) showLoginPw.addEventListener('click', (e) => togglePassword('#loginPassword', e.target));
     const showRegPw = document.querySelector(selectors.showPasswordRegister);
     if (showRegPw) showRegPw.addEventListener('click', (e) => togglePassword('#regPassword', e.target));
+    loadCurrencies();
   }
 
   document.addEventListener('DOMContentLoaded', () => {

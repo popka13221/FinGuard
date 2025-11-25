@@ -70,6 +70,16 @@ input {
 input:focus { outline: 1px solid var(--accent-2); border-color: var(--accent-2); }
 input.error { border-color: #f97316 !important; outline: 1px solid #f97316 !important; }
 .error-text { color: #f97316; font-size: 12px; margin-top: 4px; }
+select {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+}
+select:focus { outline: 1px solid var(--accent-2); border-color: var(--accent-2); }
+select.error { border-color: #f97316 !important; outline: 1px solid #f97316 !important; }
 .buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 button {
   padding: 12px 15px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; color: #031022;

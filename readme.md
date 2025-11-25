@@ -24,19 +24,20 @@
 3) Запуск: `./scripts/run-local.sh` (сам поднимет Postgres через docker compose, если он установлен) или напрямую `mvn spring-boot:run`
 4) UI:
    - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-   - Клиент (Вход/Регистрация → Дэшборд): `http://localhost:8080/app/login.html`
-   - Токен хранится в sessionStorage (временная мера; переход на httpOnly cookies запланирован)
+   - Статический клиент (Вход/Регистрация → Дэшборд): `http://localhost:8080/app/login.html`
+   - SPA (React+TS, Vite): `frontend/` — `cd frontend && npm install && npm run dev` (прокси на бэк для `/api/**`, `/health`, `/actuator`, `/swagger-ui`)
+   - Токен только в httpOnly cookie (`FG_AUTH`), фронт его не читает; хранится лишь email (для отображения) в sessionStorage
 5) Health: `GET http://localhost:8080/health` или `/actuator/health`
 
 ## Документация
 - Полный план и доменные модели: `docs/PROJECT_PLAN.md`
- - TODO/Frontend: `TODO.md`
+- Auth/flow детали: `docs/AUTH_FLOW.md`
+- TODO/Frontend: `TODO.md`, `docs/TODO_SPA.md`
 
-## Frontend (статический клиент)
-- Русский UI, вкладки «Вход/Регистрация» и дашборд; минимальная клиентская валидация (обязательность + формат email), остальное — по кодам бэка.
-- JS модули: `theme.js` (тема), `api.js` (токен/email в sessionStorage, вызовы API), `auth.js` (логин/регистрация), `dashboard.js` (health/logout/отображение токена).
+## Frontend
+- Статика: русский UI, вкладки «Вход/Регистрация» и дашборд; минимальная клиентская валидация (обязательность + формат email), остальное — по кодам бэка. Модули: `theme.js`, `api.js`, `auth.js`, `dashboard.js`.
+- SPA (React+TS, Vite): повторяет флоу статики, использует httpOnly cookie, прокси на бэк настроен в `frontend/vite.config.ts`.
 - Тема (светлая/тёмная) переключается кнопкой «Тема».
-- План: переход на httpOnly cookies для токенов после доработки бэка.
 
 ## Статус
 Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграция V1 (users/accounts/categories/transactions), JWT security и Auth API (register/login), статический клиент (русский UI) для входа/регистрации и дэшборда, Swagger UI. Следующий шаг — CRUD для Accounts/Categories/Transactions и отчёты; позже — перенос токена в httpOnly cookies.

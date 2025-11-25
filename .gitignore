@@ -4,3 +4,9 @@ target/
 *.log
 .DS_Store
 .env
+# local docs/notes
+TODO.md
+docs/TODO_SPA.md
+docs/AUTH_FLOW.md
+frontend/dist/
+frontend/node_modules/

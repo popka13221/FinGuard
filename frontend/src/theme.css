@@ -1,0 +1,130 @@
+:root {
+  --bg: #0f1115;
+  --panel: #16191f;
+  --panel-strong: #12151b;
+  --border: #242a33;
+  --text: #e6e8ec;
+  --muted: #9aa0aa;
+  --accent: #4f8bff;
+  --accent-2: #3cc7c4;
+  --warn: #f97316;
+  --shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+}
+
+:root.light {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --panel-strong: #f0f2f6;
+  --border: #d9dfe7;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent-2: #10b981;
+  --warn: #f97316;
+  --shadow: 0 14px 24px rgba(59, 130, 246, 0.08);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Inter', 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.stack { display: grid; gap: 12px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+}
+input:focus-visible { outline: 2px solid var(--accent-2); border-color: var(--accent-2); }
+input.error { border-color: var(--warn); outline: 2px solid rgba(249,115,22,0.5); }
+.error-text { color: var(--warn); font-size: 12px; margin-top: 4px; }
+select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+}
+select:focus-visible { outline: 2px solid var(--accent-2); border-color: var(--accent-2); }
+select.error { border-color: var(--warn); outline: 2px solid rgba(249,115,22,0.5); }
+
+.tabs { display: flex; gap: 10px; margin-bottom: 12px; }
+.tab-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: #031022;
+  border-color: var(--accent);
+}
+.tab-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+button {
+  padding: 12px 15px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #031022;
+  background: var(--accent);
+  box-shadow: 0 10px 22px rgba(79,139,255,0.2);
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+button:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(79,139,255,0.26); }
+button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+button.secondary { background: var(--accent-2); color: #031022; box-shadow: 0 10px 22px rgba(16,185,129,0.18); }
+button.ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+button:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.hero { text-align: center; padding: 28px 10px 12px; }
+.muted { color: var(--muted); font-size: 13px; }
+.pill { padding: 8px 11px; border-radius: 999px; background: rgba(79,139,255,0.12); color: var(--accent); font-weight: 700; border: 1px solid rgba(79,139,255,0.25); }
+
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-weight: 700; }
+.status-ok { background: rgba(45,212,191,0.12); color: var(--accent); border: 1px solid rgba(45,212,191,0.25); }
+.status-bad { background: rgba(249,115,22,0.12); color: var(--warn); border: 1px solid rgba(249,115,22,0.25); }
+
+.token-box { background: var(--panel-strong); border: 1px dashed var(--border); padding: 12px; border-radius: 12px; font-size: 13px; word-break: break-all; }
+
+@media (max-width: 640px) {
+  .actions { flex-direction: column; align-items: stretch; }
+  button { width: 100%; justify-content: center; }
+  .tabs { flex-direction: column; }
+}
