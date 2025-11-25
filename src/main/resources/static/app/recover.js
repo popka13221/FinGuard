@@ -1,0 +1,224 @@
+(() => {
+  const selectors = {
+    themeToggle: '#btn-theme',
+    forgotForm: '#form-forgot',
+    forgotEmail: '#fpEmail',
+    forgotEmailError: '#fpEmailError',
+    forgotStatus: '#forgotStatus',
+    forgotButton: '#btn-forgot',
+    resetForm: '#form-reset',
+    resetToken: '#resetToken',
+    resetTokenError: '#resetTokenError',
+    resetPassword: '#resetPassword',
+    resetPasswordError: '#resetPasswordError',
+    resetPasswordConfirm: '#resetPasswordConfirm',
+    resetConfirmError: '#resetConfirmError',
+    resetStatus: '#resetStatus',
+    resetButton: '#btn-reset',
+    showResetPassword: '#show-reset-password',
+    showResetConfirm: '#show-reset-confirm'
+  };
+
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
+
+  let submittingForgot = false;
+  let submittingReset = false;
+
+  const qs = (sel) => document.querySelector(sel);
+  const val = (sel) => {
+    const el = qs(sel);
+    return el ? el.value : '';
+  };
+
+  function setAlert(sel, msg, type) {
+    const box = qs(sel);
+    if (!box) return;
+    if (!msg) {
+      box.style.display = 'none';
+      box.textContent = '';
+      box.classList.remove('success');
+      return;
+    }
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.classList.toggle('success', type === 'success');
+  }
+
+  function clearFieldErrors() {
+    [selectors.forgotEmail, selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
+      const el = qs(sel);
+      if (el) el.classList.remove('error');
+    });
+    ['fpEmailError', 'resetTokenError', 'resetPasswordError', 'resetConfirmError'].forEach((id) => {
+      const el = qs('#' + id);
+      if (el) {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
+    });
+  }
+
+  function showFieldError(id, msg) {
+    const input = qs('#' + id);
+    const error = qs('#' + id + 'Error');
+    if (input) input.classList.add('error');
+    if (error) {
+      error.textContent = msg;
+      error.style.display = msg ? 'block' : 'none';
+    }
+  }
+
+  function togglePassword(inputId, btn) {
+    const input = qs(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (btn) btn.textContent = 'Скрыть';
+    } else {
+      input.type = 'password';
+      if (btn) btn.textContent = 'Показать';
+    }
+  }
+
+  function setSubmitting(buttonSelectors, state) {
+    buttonSelectors.forEach((sel) => {
+      const btn = qs(sel);
+      if (btn) btn.disabled = state;
+    });
+  }
+
+  function validateForgot() {
+    clearFieldErrors();
+    setAlert(selectors.forgotStatus, '');
+    const email = (val(selectors.forgotEmail) || '').trim().toLowerCase();
+    if (!email) {
+      showFieldError('fpEmail', 'Введите email');
+      return { valid: false, email };
+    }
+    if (!emailRegex.test(email)) {
+      showFieldError('fpEmail', 'Введите корректный email');
+      return { valid: false, email };
+    }
+    return { valid: true, email };
+  }
+
+  function validateReset() {
+    clearFieldErrors();
+    setAlert(selectors.resetStatus, '');
+    let valid = true;
+    const token = (val(selectors.resetToken) || '').trim();
+    const password = (val(selectors.resetPassword) || '').trim();
+    const confirm = (val(selectors.resetPasswordConfirm) || '').trim();
+
+    if (!token) {
+      showFieldError('resetToken', 'Введите код из письма');
+      valid = false;
+    }
+
+    if (!password) {
+      showFieldError('resetPassword', 'Введите новый пароль');
+      valid = false;
+    } else if (!strongRegex.test(password)) {
+      showFieldError('resetPassword', 'Пароль должен быть не короче 10 символов, содержать верхний/нижний регистр, цифру и спецсимвол');
+      valid = false;
+    }
+
+    if (!confirm) {
+      showFieldError('resetPasswordConfirm', 'Повторите пароль');
+      valid = false;
+    } else if (confirm !== password) {
+      showFieldError('resetPasswordConfirm', 'Пароли не совпадают');
+      valid = false;
+    }
+
+    return { valid, payload: { token, password } };
+  }
+
+  async function submitForgot() {
+    if (submittingForgot) return;
+    const validation = validateForgot();
+    if (!validation.valid) return;
+    submittingForgot = true;
+    setSubmitting([selectors.forgotButton], true);
+    const result = await Api.call('/api/auth/forgot', 'POST', { email: validation.email }, false);
+    submittingForgot = false;
+    setSubmitting([selectors.forgotButton], false);
+    if (result.ok) {
+      setAlert(selectors.forgotStatus, 'Если email найден, мы отправили код для сброса. Проверьте почту и спам.', 'success');
+    } else {
+      const code = result.data && result.data.code ? result.data.code : '';
+      if (code === '400002') {
+        showFieldError('fpEmail', 'Введите корректный email');
+      } else {
+        setAlert(selectors.forgotStatus, 'Не получилось отправить письмо. Попробуйте ещё раз позже.');
+      }
+    }
+  }
+
+  function handleResetError(code) {
+    switch (code) {
+      case '100003':
+      case '400003':
+        showFieldError('resetPassword', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.');
+        break;
+      case '100005':
+        setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
+        break;
+      default:
+        setAlert(selectors.resetStatus, 'Не удалось обновить пароль. Проверьте данные или повторите позже.');
+    }
+  }
+
+  async function submitReset() {
+    if (submittingReset) return;
+    const validation = validateReset();
+    if (!validation.valid) return;
+    submittingReset = true;
+    setSubmitting([selectors.resetButton], true);
+    const result = await Api.call('/api/auth/reset', 'POST', validation.payload, false);
+    submittingReset = false;
+    setSubmitting([selectors.resetButton], false);
+    if (result.ok) {
+      setAlert(selectors.resetStatus, 'Пароль обновлен. Теперь можно войти с новыми данными.', 'success');
+      [selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
+        const input = qs(sel);
+        if (input) input.value = '';
+      });
+    } else {
+      const code = result.data && result.data.code ? result.data.code : '';
+      handleResetError(code);
+    }
+  }
+
+  function prefillFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
+    if (token) {
+      const tokenInput = qs(selectors.resetToken);
+      if (tokenInput) tokenInput.value = token;
+    }
+    if (email) {
+      const emailInput = qs(selectors.forgotEmail);
+      if (emailInput) emailInput.value = email;
+    }
+  }
+
+  function bindActions() {
+    const forgotBtn = qs(selectors.forgotButton);
+    if (forgotBtn) forgotBtn.addEventListener('click', submitForgot);
+    const resetBtn = qs(selectors.resetButton);
+    if (resetBtn) resetBtn.addEventListener('click', submitReset);
+    const showResetPw = qs(selectors.showResetPassword);
+    if (showResetPw) showResetPw.addEventListener('click', (e) => togglePassword(selectors.resetPassword, e.target));
+    const showResetConfirm = qs(selectors.showResetConfirm);
+    if (showResetConfirm) showResetConfirm.addEventListener('click', (e) => togglePassword(selectors.resetPasswordConfirm, e.target));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    Theme.init(selectors.themeToggle);
+    prefillFromQuery();
+    bindActions();
+  });
+})();

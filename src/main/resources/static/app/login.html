@@ -17,7 +17,6 @@
         <div class="muted">Войдите, чтобы продолжить</div>
       </div>
       <div class="toolbar">
-        <div class="pill">Secure Login</div>
         <button class="ghost" id="btn-theme" aria-label="Сменить тему">Тема</button>
       </div>
     </header>
@@ -33,7 +32,7 @@
         <button class="tab-btn" id="tab-register">Регистрация</button>
       </div>
 
-      <div class="form" id="form-login">
+      <div class="form" id="form-login" autocomplete="off">
         <div class="field">
           <label>Email</label>
           <input id="loginEmail" value="" placeholder="you@example.com" autocomplete="email" aria-label="Email">
@@ -42,11 +41,14 @@
         <div class="field">
           <label>Пароль</label>
           <div class="row-inline">
-            <input id="loginPassword" type="password" value="" placeholder="Password" autocomplete="current-password" style="flex:1;" aria-label="Пароль">
+            <input id="loginPassword" type="password" value="" placeholder="Password" autocomplete="off" style="flex:1;" aria-label="Пароль">
             <button type="button" class="ghost" id="show-login-password" aria-label="Показать пароль">Показать</button>
           </div>
           <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
           <div id="passwordError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="helper-row">
+          <a class="text-link" href="/app/forgot.html">Забыли пароль?</a>
         </div>
         <div id="errorBox" class="alert" role="alert" aria-live="polite" style="display:none;">Ошибка</div>
         <div class="actions">
@@ -54,7 +56,7 @@
         </div>
       </div>
 
-      <div class="form" id="form-register" style="display:none;">
+      <div class="form" id="form-register" style="display:none;" autocomplete="off">
         <div class="field">
           <label>Email</label>
           <input id="regEmail" value="" placeholder="you@example.com" autocomplete="email" aria-label="Email">
@@ -63,7 +65,7 @@
         <div class="field">
           <label>Пароль</label>
           <div class="row-inline">
-            <input id="regPassword" type="password" value="" placeholder="Password" autocomplete="new-password" style="flex:1;" aria-label="Пароль">
+            <input id="regPassword" type="password" value="" placeholder="Password" autocomplete="off" style="flex:1;" aria-label="Пароль">
             <button type="button" class="ghost" id="show-register-password" aria-label="Показать пароль">Показать</button>
           </div>
           <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
