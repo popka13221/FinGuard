@@ -120,32 +120,52 @@
     }
   }
 
+  function clearPasswords() {
+    const loginPw = document.querySelector(selectors.loginPassword);
+    const regPw = document.querySelector(selectors.regPassword);
+    if (loginPw) loginPw.value = '';
+    if (regPw) regPw.value = '';
+  }
+
   async function loadCurrencies() {
+    const select = document.querySelector(selectors.regCurrency);
+    const registerBtn = document.querySelector(selectors.registerButton);
+    if (registerBtn) registerBtn.disabled = true;
+    if (select) {
+      select.disabled = true;
+      select.innerHTML = '<option value="">Загрузка...</option>';
+    }
+    showError('', selectors.errorBoxRegister);
     try {
       const resp = await fetch('/api/currencies');
       const data = await resp.json();
-      const select = document.querySelector(selectors.regCurrency);
       if (!select) return;
       select.innerHTML = '';
-      (data || []).forEach((c) => {
-        const opt = document.createElement('option');
-        opt.value = c.code;
-        opt.textContent = `${c.code} — ${c.name}`;
-        select.appendChild(opt);
-      });
-      if (data && data.length > 0) {
+      if (Array.isArray(data) && data.length > 0) {
+        data.forEach((c) => {
+          const opt = document.createElement('option');
+          opt.value = c.code;
+          opt.textContent = `${c.code} — ${c.name}`;
+          select.appendChild(opt);
+        });
         select.value = data[0].code;
+        select.disabled = false;
+        if (registerBtn) registerBtn.disabled = false;
+      } else {
+        select.innerHTML = '<option value="">Не удалось загрузить валюты</option>';
+        select.disabled = true;
+        showError('Не удалось загрузить валюты. Попробуйте позже.', selectors.errorBoxRegister);
       }
     } catch (e) {
-      // fallback
-      const select = document.querySelector(selectors.regCurrency);
       if (select) {
-        select.innerHTML = '<option value="USD">USD — US Dollar</option>';
-        select.value = 'USD';
+        select.innerHTML = '<option value="">Не удалось загрузить валюты</option>';
+        select.disabled = true;
       }
+      showError('Не удалось загрузить валюты. Попробуйте позже.', selectors.errorBoxRegister);
     }
   }
-  function handleErrorCode(code, message) {
+  function handleErrorCode(code) {
+    const defaultMessage = 'Ошибка запроса. Попробуйте позже.';
     showError('');
     showError('', selectors.errorBoxRegister);
     switch (code) {
@@ -164,13 +184,13 @@
         showFieldError('password', 'Аккаунт временно заблокирован. Попробуйте позже.');
         break;
       case '400002':
-        showFieldError('email', message || 'Некорректный email');
+        showFieldError('email', 'Некорректный email');
         break;
       case '400003':
-        showFieldError('password', message || 'Пароль не соответствует требованиям');
+        showFieldError('password', 'Пароль не соответствует требованиям');
         break;
       default:
-        showError(message || 'Ошибка запроса');
+        showError(defaultMessage);
     }
   }
 
@@ -217,6 +237,12 @@
     if (!password) {
       showFieldError('password', 'Введите пароль');
       valid = false;
+    } else {
+      const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
+      if (!strongRegex.test(password)) {
+        showFieldError('password', 'Пароль должен быть не короче 10 символов, содержать верхний/нижний регистр, цифру и спецсимвол');
+        valid = false;
+      }
     }
 
     if (!fullName) {
@@ -239,32 +265,54 @@
     };
   }
 
+  let submitting = false;
+
   async function login() {
+    if (submitting) return;
     const validation = validateLogin();
     if (!validation.valid) return;
+    submitting = true;
+    setSubmitting(true);
     const result = await Api.call('/api/auth/login', 'POST', validation.payload, false);
+    submitting = false;
+    setSubmitting(false);
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(validation.payload.email);
       window.location.href = '/app/dashboard.html';
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
-      const message = result.data && result.data.message ? result.data.message : 'Ошибка запроса';
-      handleErrorCode(code, message);
+      handleErrorCode(code);
     }
   }
 
   async function register() {
+    if (submitting) return;
+    const currencySelect = document.querySelector(selectors.regCurrency);
+    if (currencySelect && currencySelect.disabled) {
+      showError('Не удалось загрузить валюты. Обновите страницу и попробуйте снова.', selectors.errorBoxRegister);
+      return;
+    }
     const validation = validateRegister();
     if (!validation.valid) return;
+    submitting = true;
+    setSubmitting(true);
     const result = await Api.call('/api/auth/register', 'POST', validation.payload, false);
+    submitting = false;
+    setSubmitting(false);
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(validation.payload.email);
       window.location.href = '/app/dashboard.html';
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
-      const message = result.data && result.data.message ? result.data.message : 'Ошибка запроса';
-      handleErrorCode(code, message);
+      handleErrorCode(code);
     }
+  }
+
+  function setSubmitting(state) {
+    const buttons = [selectors.loginButton, selectors.registerButton].map((sel) => document.querySelector(sel));
+    buttons.forEach((btn) => {
+      if (btn) btn.disabled = state;
+    });
   }
 
   function bindAuthActions() {
@@ -285,6 +333,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     Theme.init(selectors.themeToggle);
+    clearPasswords();
     bindAuthActions();
     switchForm('login');
   });

@@ -8,9 +8,11 @@ export function useAuthForm(isRegister: boolean) {
   const validate = (values: Record<string, string>) => {
     const next: Errors = {};
     const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
     if (!values.email) next.email = 'Введите email';
     else if (!emailRegex.test(values.email)) next.email = 'Введите корректный email';
     if (!values.password) next.password = 'Введите пароль';
+    else if (!strongRegex.test(values.password)) next.password = 'Пароль должен быть не короче 10 символов, содержать верхний/нижний регистр, цифру и спецсимвол';
     if (isRegister) {
       if (!values.fullName) next.fullName = 'Введите имя';
       if (!values.baseCurrency) next.baseCurrency = 'Укажите базовую валюту';
@@ -19,8 +21,9 @@ export function useAuthForm(isRegister: boolean) {
     return Object.keys(next).length === 0;
   };
 
-  const applyErrorCode = (code: string, message: string) => {
+  const applyErrorCode = (code: string, _message: string) => {
     const next: Errors = {};
+    const defaultMessage = 'Ошибка запроса. Попробуйте позже.';
     switch (code) {
       case '100001':
         next.email = ' ';
@@ -37,16 +40,20 @@ export function useAuthForm(isRegister: boolean) {
         next.password = 'Аккаунт временно заблокирован. Попробуйте позже.';
         break;
       case '400002':
-        next.email = message || 'Некорректный email';
+        next.email = 'Некорректный email';
         break;
       case '400003':
-        next.password = message || 'Пароль не соответствует требованиям';
+        next.password = 'Пароль не соответствует требованиям';
         break;
       default:
-        next.form = message || 'Ошибка запроса';
+        next.form = defaultMessage;
     }
     setErrors(next);
   };
 
-  return { errors, validate, applyErrorCode };
+  const setFormError = (message: string) => {
+    setErrors(message ? { form: message } : {});
+  };
+
+  return { errors, validate, applyErrorCode, setFormError };
 }

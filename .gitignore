@@ -10,3 +10,38 @@ docs/TODO_SPA.md
 docs/AUTH_FLOW.md
 frontend/dist/
 frontend/node_modules/
+local-notes/
+
+# IDE/editor cruft
+.vscode/
+.classpath
+.project
+.settings/
+*.swp
+*.swo
+
+# Build/cache/artifacts
+*.tsbuildinfo
+.eslintcache
+coverage/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+frontend/.vite/
+frontend/.turbo/
+
+# Secrets/keys (не коммитим приватные ключи)
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.crt
+*.der
+secrets.*
+*.local.*
+
+# Dumps/temp
+*.sql
+dump/
+*.pid

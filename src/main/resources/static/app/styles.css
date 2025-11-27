@@ -234,6 +234,16 @@ pre {
   font-size: 13px;
 }
 
+@keyframes slideFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-panel {
+  display: none;
+  animation: slideFadeIn 0.25s ease forwards;
+}
+
 @media (max-width: 640px) {
   .helper-row { justify-content: flex-start; }
 }

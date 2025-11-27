@@ -6,6 +6,10 @@
     forgotEmailError: '#fpEmailError',
     forgotStatus: '#forgotStatus',
     forgotButton: '#btn-forgot',
+    forgotTokenRow: '#inline-token',
+    forgotToken: '#fpToken',
+    forgotTokenError: '#fpTokenError',
+    forgotNext: '#btn-continue-reset',
     resetForm: '#form-reset',
     resetToken: '#resetToken',
     resetTokenError: '#resetTokenError',
@@ -46,11 +50,11 @@
   }
 
   function clearFieldErrors() {
-    [selectors.forgotEmail, selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
+    [selectors.forgotEmail, selectors.forgotToken, selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
       const el = qs(sel);
       if (el) el.classList.remove('error');
     });
-    ['fpEmailError', 'resetTokenError', 'resetPasswordError', 'resetConfirmError'].forEach((id) => {
+    ['fpEmailError', 'fpTokenError', 'resetTokenError', 'resetPasswordError', 'resetConfirmError'].forEach((id) => {
       const el = qs('#' + id);
       if (el) {
         el.textContent = '';
@@ -90,7 +94,6 @@
 
   function validateForgot() {
     clearFieldErrors();
-    setAlert(selectors.forgotStatus, '');
     const email = (val(selectors.forgotEmail) || '').trim().toLowerCase();
     if (!email) {
       showFieldError('fpEmail', 'Введите email');
@@ -101,6 +104,26 @@
       return { valid: false, email };
     }
     return { valid: true, email };
+  }
+
+  function showTokenInput() {
+    const row = qs(selectors.forgotTokenRow);
+    if (row) {
+      row.style.display = 'grid';
+      row.classList.add('active');
+    }
+  }
+
+  function continueToReset() {
+    clearFieldErrors();
+    const tokenVal = (val(selectors.forgotToken) || '').trim();
+    const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
+    if (!tokenVal) {
+      showFieldError('fpToken', 'Введите код из письма');
+      return;
+    }
+    const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
+    window.location.href = url;
   }
 
   function validateReset() {
@@ -145,7 +168,7 @@
     submittingForgot = false;
     setSubmitting([selectors.forgotButton], false);
     if (result.ok) {
-      setAlert(selectors.forgotStatus, 'Если email найден, мы отправили код для сброса. Проверьте почту и спам.', 'success');
+      showTokenInput();
     } else {
       const code = result.data && result.data.code ? result.data.code : '';
       if (code === '400002') {
@@ -208,6 +231,8 @@
   function bindActions() {
     const forgotBtn = qs(selectors.forgotButton);
     if (forgotBtn) forgotBtn.addEventListener('click', submitForgot);
+    const continueBtn = qs(selectors.forgotNext);
+    if (continueBtn) continueBtn.addEventListener('click', continueToReset);
     const resetBtn = qs(selectors.resetButton);
     if (resetBtn) resetBtn.addEventListener('click', submitReset);
     const showResetPw = qs(selectors.showResetPassword);

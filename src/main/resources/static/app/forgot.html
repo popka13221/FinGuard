@@ -14,17 +14,16 @@
     <header>
       <div>
         <h1>FinGuard</h1>
-        <div class="muted">Восстановление доступа</div>
+        <div class="muted">Восстановление доступа · Шаг 1</div>
       </div>
       <div class="toolbar">
-        <a class="ghost" href="/app/login.html">К входу</a>
         <button class="ghost" id="btn-theme" aria-label="Сменить тему">Тема</button>
       </div>
     </header>
 
     <div class="hero">
       <h2>Забыли пароль?</h2>
-      <p>Получите одноразовый код на почту и задайте новый пароль без лишних шагов.</p>
+      <p>Введите email, мы отправим одноразовый код. После отправки введите код из письма и продолжите.</p>
     </div>
 
     <div class="recover-grid">
@@ -34,57 +33,24 @@
             <div class="badge">Шаг 1 · Письмо</div>
             <h3 style="margin:8px 0 0;">Отправить код</h3>
           </div>
-          <div class="pill">Безопасный сброс</div>
         </div>
-        <div class="callout">Мы не раскрываем, существует ли email, но если он есть — письмо уйдет сразу.</div>
         <div class="form" id="form-forgot" autocomplete="off">
           <div class="field">
             <label>Email</label>
             <input id="fpEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="Email для сброса">
             <div id="fpEmailError" class="error-text" style="display:none;"></div>
           </div>
-          <div id="forgotStatus" class="alert success" role="status" aria-live="polite" style="display:none;"></div>
+          <div class="field slide-panel" id="inline-token" aria-live="polite">
+            <label>Код из письма</label>
+            <div class="row-inline">
+              <input id="fpToken" placeholder="Вставьте код" autocomplete="one-time-code" aria-label="Код из письма">
+              <button type="button" class="ghost" id="btn-continue-reset" aria-label="Перейти к смене пароля">Продолжить</button>
+            </div>
+            <div id="fpTokenError" class="error-text" style="display:none;"></div>
+          </div>
           <div class="actions">
             <button type="button" class="secondary" id="btn-forgot">Отправить код</button>
             <a class="ghost" href="/app/login.html">Назад ко входу</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title-row">
-          <div>
-            <div class="badge alt">Шаг 2 · Новый пароль</div>
-            <h3 style="margin:8px 0 0;">Сменить пароль по коду</h3>
-          </div>
-        </div>
-        <div class="form" id="form-reset" autocomplete="off">
-          <div class="field">
-            <label>Одноразовый код</label>
-            <input id="resetToken" placeholder="Вставьте код из письма" autocomplete="one-time-code" aria-label="Код восстановления">
-            <div id="resetTokenError" class="error-text" style="display:none;"></div>
-          </div>
-          <div class="field">
-            <label>Новый пароль</label>
-            <div class="row-inline">
-              <input id="resetPassword" type="password" placeholder="Новый пароль" autocomplete="new-password" aria-label="Новый пароль">
-              <button type="button" class="ghost" id="show-reset-password" aria-label="Показать пароль">Показать</button>
-            </div>
-            <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
-            <div id="resetPasswordError" class="error-text" style="display:none;"></div>
-          </div>
-          <div class="field">
-            <label>Повторите пароль</label>
-            <div class="row-inline">
-              <input id="resetPasswordConfirm" type="password" placeholder="Ещё раз" autocomplete="new-password" aria-label="Подтверждение пароля">
-              <button type="button" class="ghost" id="show-reset-confirm" aria-label="Показать пароль">Показать</button>
-            </div>
-            <div id="resetConfirmError" class="error-text" style="display:none;"></div>
-          </div>
-          <div id="resetStatus" class="alert success" role="status" aria-live="polite" style="display:none;"></div>
-          <div class="actions">
-            <button type="button" id="btn-reset">Сменить пароль</button>
-            <a class="ghost" href="/app/login.html">Перейти ко входу</a>
           </div>
         </div>
       </div>

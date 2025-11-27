@@ -21,3 +21,20 @@ app:
     jwt:
       secret: Q29kZXhEZW1vVGVzdFNlY3JldEFuZEtleTEyMzQ1Njc4OTA=
       expiration-seconds: 3600
+      refresh-expiration-seconds: 604800
+      issuer: finguard-test
+      audience: finguard-app
+      require-env-secret: false
+    pwned-check:
+      enabled: false
+    rate-limit:
+      auth:
+        limit: 1000
+        window-ms: 60000
+    lockout:
+      max-attempts: 5
+      lock-minutes: 15
+    sessions:
+      max-per-user: 10
+    cors:
+      allowed-origins:

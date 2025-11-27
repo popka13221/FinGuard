@@ -32,8 +32,22 @@ management:
         enabled: true
 
 app:
+  frontend:
+    base-url: ${APP_FRONTEND_BASE_URL:http://localhost:8080}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:no-reply@finguard.local}
+    reset-subject: ${MAIL_RESET_SUBJECT:Сброс пароля FinGuard}
   security:
     jwt:
       secret: ${JWT_SECRET:Q29kZXhEZW1vMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
-      expiration-seconds: ${JWT_EXPIRATION:86400}
+      expiration-seconds: ${JWT_EXPIRATION:3600}
+      refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION:604800}
+      issuer: ${JWT_ISSUER:finguard}
+      audience: ${JWT_AUDIENCE:finguard-app}
+      require-env-secret: ${JWT_REQUIRE_ENV_SECRET:false}
       cookie-secure: ${JWT_COOKIE_SECURE:false}
+    cors:
+      allowed-origins: ${ALLOWED_ORIGINS:}
+    tokens:
+      reset-dev-code: ${RESET_DEV_CODE:123456}

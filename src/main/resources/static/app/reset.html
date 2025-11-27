@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinGuard | Смена пароля</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/styles.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <header>
+      <div>
+        <h1>FinGuard</h1>
+        <div class="muted">Восстановление доступа · Шаг 2</div>
+      </div>
+      <div class="toolbar">
+        <a class="ghost" href="/app/forgot.html">Запросить код</a>
+        <button class="ghost" id="btn-theme" aria-label="Сменить тему">Тема</button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h2>Смена пароля</h2>
+      <p>Введите код из письма и задайте новый пароль. Код одноразовый и действует ограниченное время.</p>
+    </div>
+
+    <div class="recover-grid">
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <div class="badge alt">Шаг 2 · Новый пароль</div>
+            <h3 style="margin:8px 0 0;">Сменить пароль по коду</h3>
+          </div>
+        </div>
+        <div class="form" id="form-reset" autocomplete="off">
+          <div class="field">
+            <label>Одноразовый код</label>
+            <input id="resetToken" placeholder="Вставьте код из письма" autocomplete="one-time-code" aria-label="Код восстановления">
+            <div id="resetTokenError" class="error-text" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label>Новый пароль</label>
+            <div class="row-inline">
+              <input id="resetPassword" type="password" placeholder="Новый пароль" autocomplete="new-password" aria-label="Новый пароль">
+              <button type="button" class="ghost" id="show-reset-password" aria-label="Показать пароль">Показать</button>
+            </div>
+            <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
+            <div id="resetPasswordError" class="error-text" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label>Повторите пароль</label>
+            <div class="row-inline">
+              <input id="resetPasswordConfirm" type="password" placeholder="Ещё раз" autocomplete="new-password" aria-label="Подтверждение пароля">
+              <button type="button" class="ghost" id="show-reset-confirm" aria-label="Показать пароль">Показать</button>
+            </div>
+            <div id="resetConfirmError" class="error-text" style="display:none;"></div>
+          </div>
+          <div id="resetStatus" class="alert success" role="status" aria-live="polite" style="display:none;"></div>
+          <div class="actions">
+            <button type="button" id="btn-reset">Сменить пароль</button>
+            <a class="ghost" href="/app/login.html">Перейти ко входу</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app/theme.js"></script>
+  <script src="/app/api.js"></script>
+  <script src="/app/recover.js"></script>
+</body>
+</html>

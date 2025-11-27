@@ -37,6 +37,9 @@ public class User {
     @Column(nullable = false, name = "created_at")
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false, name = "email_verified")
+    private boolean emailVerified = false;
+
     public Long getId() {
         return id;
     }
@@ -91,5 +94,13 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

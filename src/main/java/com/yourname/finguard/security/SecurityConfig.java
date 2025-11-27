@@ -18,15 +18,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, AuthRateLimitFilter authRateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authRateLimitFilter = authRateLimitFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -34,6 +37,11 @@ public class SecurityConfig {
                         "/actuator/health",
                         "/api/auth/register",
                         "/api/auth/login",
+                        "/api/auth/forgot",
+                        "/api/auth/reset",
+                        "/api/auth/verify",
+                        "/api/auth/verify/request",
+                        "/api/auth/refresh",
                         "/api/auth/logout",
                         "/api/currencies",
                         "/swagger-ui.html",
@@ -43,11 +51,12 @@ public class SecurityConfig {
                                 "/playground/**",
                                 "/app/**",
                                 "/index.html",
-                                "/"
+                        "/"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

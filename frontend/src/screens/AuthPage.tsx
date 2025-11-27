@@ -15,8 +15,11 @@ type Mode = 'login' | 'register';
 const AuthPage: React.FC = () => {
   const { toggle } = useTheme();
   const [mode, setMode] = useState<Mode>('login');
-  const { errors, validate, applyErrorCode } = useAuthForm(mode === 'register');
+  const { errors, validate, applyErrorCode, setFormError } = useAuthForm(mode === 'register');
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
+  const [currencyError, setCurrencyError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [values, setValues] = useState({
     email: '',
@@ -26,26 +29,33 @@ const AuthPage: React.FC = () => {
   });
 
   useEffect(() => {
-    LookupApi.currencies().then((res) => {
-      if (res.ok && Array.isArray(res.data)) {
-        setCurrencies(res.data);
-        if (!values.baseCurrency && res.data.length > 0) {
-          setValues((prev) => ({ ...prev, baseCurrency: res.data[0].code }));
+    let mounted = true;
+    setIsLoadingCurrencies(true);
+    setCurrencyError('');
+    LookupApi.currencies()
+      .then((res) => {
+        if (!mounted) return;
+        if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+          setCurrencies(res.data);
+          setValues((prev) => ({
+            ...prev,
+            baseCurrency: prev.baseCurrency || res.data[0].code,
+          }));
+        } else {
+          setCurrencies([]);
+          setCurrencyError('Не удалось загрузить валюты. Попробуйте позже.');
         }
-      } else {
-        const fallback: Currency[] = [
-          { code: 'USD', name: 'US Dollar' },
-          { code: 'EUR', name: 'Euro' },
-          { code: 'RUB', name: 'Russian Ruble' },
-          { code: 'BTC', name: 'Bitcoin' },
-          { code: 'ETH', name: 'Ethereum' },
-        ];
-        setCurrencies(fallback);
-        if (!values.baseCurrency) {
-          setValues((prev) => ({ ...prev, baseCurrency: fallback[0].code }));
-        }
-      }
-    });
+        setIsLoadingCurrencies(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCurrencies([]);
+        setCurrencyError('Не удалось загрузить валюты. Попробуйте позже.');
+        setIsLoadingCurrencies(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const onChange = (field: string, val: string) => {
@@ -53,6 +63,12 @@ const AuthPage: React.FC = () => {
   };
 
   const submit = async () => {
+    if (isSubmitting) return;
+    setFormError('');
+    if (mode === 'register' && (isLoadingCurrencies || currencyError || currencies.length === 0)) {
+      setFormError(currencyError || 'Валюты загружаются. Подождите и попробуйте снова.');
+      return;
+    }
     const payload = {
       email: values.email.trim().toLowerCase(),
       password: values.password,
@@ -61,18 +77,19 @@ const AuthPage: React.FC = () => {
     };
     const isValid = validate(payload);
     if (!isValid) return;
+    setIsSubmitting(true);
     const apiCall =
       mode === 'login'
         ? AuthApi.login({ email: payload.email, password: payload.password })
         : AuthApi.register(payload);
     const res = await apiCall;
+    setIsSubmitting(false);
     if (res.ok && res.data && (res.data as any).token) {
       ApiClient.setEmail(payload.email);
       window.location.href = '/dashboard';
     } else {
       const code = res.data && res.data.code ? res.data.code : '----';
-      const message = res.data && res.data.message ? res.data.message : 'Ошибка запроса';
-      applyErrorCode(code, message);
+      applyErrorCode(code, '');
     }
   };
 
@@ -123,13 +140,13 @@ const AuthPage: React.FC = () => {
                   onChange={(e) => onChange('password', e.target.value)}
                   type="password"
                   placeholder="Password"
-                  autoComplete="current-password"
+                  autoComplete="off"
                   aria-label="Пароль"
                   error={errors.password}
                 />
                 {errors.form && <div className="alert" role="alert" aria-live="polite">{errors.form}</div>}
                 <div className="actions">
-                  <Button variant="secondary" onClick={submit}>Войти</Button>
+                  <Button variant="secondary" onClick={submit} disabled={isSubmitting}>Войти</Button>
                 </div>
               </>
             ) : (
@@ -149,34 +166,31 @@ const AuthPage: React.FC = () => {
                   onChange={(e) => onChange('password', e.target.value)}
                   type="password"
                   placeholder="Password"
-                  autoComplete="new-password"
+                  autoComplete="off"
                   aria-label="Пароль"
                   error={errors.password}
                 />
-              <Input
-                label="Имя"
-                value={values.fullName}
-                onChange={(e) => onChange('fullName', e.target.value)}
-                placeholder="Ваше имя"
-                autoComplete="name"
-                aria-label="Имя"
-                error={errors.fullName}
-              />
+                <Input
+                  label="Имя"
+                  value={values.fullName}
+                  onChange={(e) => onChange('fullName', e.target.value)}
+                  placeholder="Ваше имя"
+                  autoComplete="name"
+                  aria-label="Имя"
+                  error={errors.fullName}
+                />
                 <Select
                   label="Базовая валюта"
                   value={values.baseCurrency}
                   onChange={(e) => onChange('baseCurrency', e.target.value)}
                   aria-label="Базовая валюта"
-                  error={errors.baseCurrency}
-                  options={
-                    currencies.length > 0
-                      ? currencies.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))
-                      : [{ value: '', label: 'Загрузка...' }]
-                  }
+                  error={errors.baseCurrency || currencyError}
+                  disabled={isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}
+                  options={currencies.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))}
                 />
                 {errors.form && <div className="alert" role="alert" aria-live="polite">{errors.form}</div>}
                 <div className="actions">
-                  <Button onClick={submit}>Создать аккаунт</Button>
+                  <Button onClick={submit} disabled={isSubmitting || isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}>Создать аккаунт</Button>
                 </div>
               </>
             )}

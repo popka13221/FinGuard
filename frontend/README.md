@@ -1,73 +1,26 @@
-# React + TypeScript + Vite
+# FinGuard SPA (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Минимальный клиент для авторизации и дашборда. Работает с бэкендом на `http://localhost:8080` (прокси настроен в `vite.config.ts`), все запросы идут с `credentials: 'include'`.
 
-Currently, two official plugins are available:
+## Запуск
+- `npm install`
+- `npm run dev` — локальная разработка
+- `npm run build` / `npm run preview`
+- `npm run lint`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Архитектура
+- `src/theme.css` — дизайн-токены (цвета, типографика, тени, радиусы) и базовые layout-классы.
+- Компоненты: `Button`, `Input`, `Select`, `Tabs`.
+- Хуки: `useTheme` (сохранение темы), `useAuthForm` (базовая валидация + маппинг кодов ошибок).
+- API: `api/client.ts` (fetch с cookie), `api/auth.ts`, `api/lookup.ts`.
+- Страницы: `AuthPage` (вкладки Вход/Регистрация), `DashboardPage` (health, профиль, logout).
 
-## React Compiler
+## Валидация и безопасность
+- На фронте только обязательность полей и формат email; требования к паролю проверяет бэкенд.
+- Логин/регистрация отправляются на `/api/auth/login|register`; токен хранится в httpOnly cookie `FG_AUTH`, фронт его не читает. В `sessionStorage` сохраняется только email для отображения.
+- Коды ошибок 100001/100002/100003/100004/400002/400003 мапятся на русские сообщения; для остальных показывается общее «Ошибка запроса. Попробуйте позже.» без внутренних деталей.
+- Список валют грузится с `/api/currencies` без демо-данных; при недоступности источника регистрация блокируется с подсказкой пользователю.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Темы и UX
+- Светлая/тёмная темы, переключатель «Тема» сохраняет выбор в `localStorage`.
+- Единая сетка/отступы, контрастные фокусы, аккуратные кнопки/поля без градиентов.

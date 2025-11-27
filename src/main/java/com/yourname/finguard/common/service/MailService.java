@@ -1,0 +1,112 @@
+package com.yourname.finguard.common.service;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+@Service
+public class MailService {
+
+    private static final Logger log = LoggerFactory.getLogger(MailService.class);
+
+    private final boolean enabled;
+    private final String from;
+    private final String resetSubject;
+    private final String frontendBaseUrl;
+    private final String devResetCode;
+    private final JavaMailSender mailSender;
+    private final CopyOnWriteArrayList<MailMessage> outbox = new CopyOnWriteArrayList<>();
+
+    public record MailMessage(String to, String subject, String body, Instant createdAt) {
+    }
+
+    public MailService(@Value("${app.mail.enabled:false}") boolean enabled,
+                       @Value("${app.mail.from:no-reply@finguard.local}") String from,
+                       @Value("${app.mail.reset-subject:Сброс пароля FinGuard}") String resetSubject,
+                       @Value("${app.frontend.base-url:http://localhost:8080}") String frontendBaseUrl,
+                       @Value("${app.security.tokens.reset-dev-code:123456}") String devResetCode,
+                       @Autowired(required = false) JavaMailSender mailSender) {
+        this.enabled = enabled;
+        this.from = from;
+        this.resetSubject = resetSubject;
+        this.frontendBaseUrl = trimTrailingSlash(frontendBaseUrl);
+        this.devResetCode = devResetCode == null ? "" : devResetCode.trim();
+        this.mailSender = mailSender;
+    }
+
+    public void sendResetEmail(String to, String token, Duration ttl) {
+        if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
+            return;
+        }
+        String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
+        String code = devResetCode.isEmpty() ? token : devResetCode;
+        String body = """
+                Привет!
+
+                Вы запросили смену пароля в FinGuard.
+                Код для ввода: %s
+                Ссылка: %s
+                Код действует примерно %s минут. Он одноразовый.
+
+                Если запрос сделали не вы — просто игнорируйте письмо.
+                """.formatted(code, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+
+        MailMessage message = new MailMessage(to, resetSubject, body, Instant.now());
+        outbox.add(message);
+
+        if (!enabled || mailSender == null) {
+            log.info("Mail disabled, would send reset email to {} with code {}", maskEmail(to), code);
+            return;
+        }
+
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(from);
+            mail.setTo(to);
+            mail.setSubject(resetSubject);
+            mail.setText(body);
+            mailSender.send(mail);
+        } catch (Exception e) {
+            log.warn("Failed to send reset email to {}", maskEmail(to), e);
+        }
+    }
+
+    public List<MailMessage> getOutbox() {
+        return List.copyOf(outbox);
+    }
+
+    public void clearOutbox() {
+        outbox.clear();
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String trimTrailingSlash(String url) {
+        if (!StringUtils.hasText(url)) {
+            return "";
+        }
+        return url.replaceAll("/+$", "");
+    }
+
+    private String maskEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return "";
+        }
+        int at = email.indexOf('@');
+        if (at <= 1) return "***";
+        return email.charAt(0) + "***" + email.substring(at);
+    }
+}

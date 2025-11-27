@@ -31,7 +31,7 @@ class AuthIntegrationTest {
     @Transactional
     void registerAndLogin() throws Exception {
         String email = "demo@example.com";
-        String password = "password123";
+        String password = "StrongPass1!";
 
         String registerPayload = """
                 {
@@ -45,7 +45,7 @@ class AuthIntegrationTest {
         String registerResponse = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerPayload))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

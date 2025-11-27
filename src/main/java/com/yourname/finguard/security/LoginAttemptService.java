@@ -1,16 +1,15 @@
 package com.yourname.finguard.security;
 
 import java.time.Instant;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LoginAttemptService {
-
-    private static final int MAX_ATTEMPTS = 5;
-    private static final long LOCK_MINUTES = 15;
 
     private static final class AttemptInfo {
         int attempts;
@@ -18,25 +17,46 @@ public class LoginAttemptService {
     }
 
     private final Map<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
+    private final int maxAttempts;
+    private final Duration lockDuration;
+
+    public LoginAttemptService(
+            @Value("${app.security.lockout.max-attempts:5}") int maxAttempts,
+            @Value("${app.security.lockout.lock-minutes:15}") long lockMinutes
+    ) {
+        this.maxAttempts = maxAttempts;
+        this.lockDuration = Duration.ofMinutes(lockMinutes);
+    }
 
     public boolean isLocked(String email) {
-        AttemptInfo info = attempts.get(normalize(email));
+        String key = normalize(email);
+        AttemptInfo info = attempts.get(key);
         if (info == null || info.lockUntil == null) {
             return false;
         }
         if (Instant.now().isBefore(info.lockUntil)) {
             return true;
         }
-        attempts.remove(normalize(email));
+        attempts.remove(key);
         return false;
+    }
+
+    public long lockRemainingSeconds(String email) {
+        String key = normalize(email);
+        AttemptInfo info = attempts.get(key);
+        if (info == null || info.lockUntil == null) {
+            return 0;
+        }
+        long remaining = Duration.between(Instant.now(), info.lockUntil).getSeconds();
+        return Math.max(remaining, 0);
     }
 
     public void recordFailure(String email) {
         String key = normalize(email);
         AttemptInfo info = attempts.computeIfAbsent(key, k -> new AttemptInfo());
         info.attempts++;
-        if (info.attempts >= MAX_ATTEMPTS) {
-            info.lockUntil = Instant.now().plusMillis(TimeUnit.MINUTES.toMillis(LOCK_MINUTES));
+        if (info.attempts >= maxAttempts) {
+            info.lockUntil = Instant.now().plus(lockDuration);
             info.attempts = 0;
         }
     }
@@ -47,5 +67,9 @@ public class LoginAttemptService {
 
     private String normalize(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    public void reset() {
+        attempts.clear();
     }
 }
