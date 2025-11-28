@@ -19,15 +19,18 @@ public class UserTokenService {
     private final Duration verifyTtl;
     private final Duration resetTtl;
     private final String resetDevCode;
+    private final Duration resetCooldown;
 
     public UserTokenService(UserTokenRepository userTokenRepository,
                             @Value("${app.security.tokens.verify-ttl-minutes:1440}") long verifyTtlMinutes,
                             @Value("${app.security.tokens.reset-ttl-minutes:60}") long resetTtlMinutes,
-                            @Value("${app.security.tokens.reset-dev-code:123456}") String resetDevCode) {
+                            @Value("${app.security.tokens.reset-dev-code:123456}") String resetDevCode,
+                            @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
         this.userTokenRepository = userTokenRepository;
         this.verifyTtl = Duration.ofMinutes(verifyTtlMinutes);
         this.resetTtl = Duration.ofMinutes(resetTtlMinutes);
         this.resetDevCode = resetDevCode == null ? "" : resetDevCode.trim();
+        this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
     }
 
     @Transactional
@@ -35,7 +38,9 @@ public class UserTokenService {
         Duration ttl = type == UserTokenType.VERIFY ? verifyTtl : resetTtl;
         String tokenValue = generateToken(type);
         if (type == UserTokenType.RESET && !resetDevCode.isEmpty()) {
-            userTokenRepository.deleteByType(UserTokenType.RESET);
+            // гарантируем уникальность фиксированного кода
+            userTokenRepository.deleteByToken(tokenValue);
+            userTokenRepository.flush();
         }
         UserToken token = new UserToken();
         token.setUser(user);
@@ -61,6 +66,16 @@ public class UserTokenService {
 
     public Duration getResetTtl() {
         return resetTtl;
+    }
+
+    public Duration getResetCooldown() {
+        return resetCooldown;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserToken> findLatestActiveReset(User user) {
+        return userTokenRepository.findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+                user, UserTokenType.RESET, Instant.now());
     }
 
     private String generateToken(UserTokenType type) {

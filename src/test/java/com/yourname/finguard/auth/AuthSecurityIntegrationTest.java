@@ -333,6 +333,27 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void forgotWithDevCodeCanBeRequestedMultipleTimes() throws Exception {
+        String email = "multi@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        mailService.clearOutbox();
+
+        for (int i = 0; i < 3; i++) {
+            postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                    .andExpect(status().isOk());
+        }
+
+        var resetTokens = userTokenRepository.findByType(UserTokenType.RESET);
+        assertThat(resetTokens).hasSize(1);
+        UserToken token = resetTokens.get(0);
+        assertThat(token.getToken()).isEqualTo("123456");
+
+        assertThat(mailService.getOutbox()).hasSize(3);
+        MailService.MailMessage last = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
+        assertThat(last.body()).contains("123456");
+    }
+
+    @Test
     void resetRejectsWeakPassword() throws Exception {
         String email = "reset-weak@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
@@ -350,6 +371,19 @@ class AuthSecurityIntegrationTest {
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("400003");
+    }
+
+    @Test
+    void resetRejectsInvalidToken() throws Exception {
+        String email = "invalid-token@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        MvcResult res = postJson("/api/auth/reset", """
+                {"token":"invalid-token-123","password":"NewStrong1!"}
+                """)
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100005");
     }
 
     @Test

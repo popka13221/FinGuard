@@ -51,3 +51,4 @@ app:
       allowed-origins: ${ALLOWED_ORIGINS:}
     tokens:
       reset-dev-code: ${RESET_DEV_CODE:123456}
+      reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}

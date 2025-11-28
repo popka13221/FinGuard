@@ -25,9 +25,13 @@
 
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
+  const resendCooldown = 60;
 
   let submittingForgot = false;
   let submittingReset = false;
+  let cooldownTimer;
+  let cooldownRemaining = 0;
+  let forgotButtonText = '';
 
   const qs = (sel) => document.querySelector(sel);
   const val = (sel) => {
@@ -92,6 +96,36 @@
     });
   }
 
+  function updateCooldownLabel() {
+    const btn = qs(selectors.forgotButton);
+    if (!btn) return;
+    if (cooldownRemaining > 0) {
+      btn.textContent = `Отправить код повторно (${cooldownRemaining}s)`;
+    } else {
+      btn.textContent = forgotButtonText || 'Отправить код';
+    }
+  }
+
+  function startCooldown() {
+    const btn = qs(selectors.forgotButton);
+    if (!btn) return;
+    if (!forgotButtonText) forgotButtonText = btn.textContent || 'Отправить код';
+    cooldownRemaining = resendCooldown;
+    btn.disabled = true;
+    updateCooldownLabel();
+    if (cooldownTimer) clearInterval(cooldownTimer);
+    cooldownTimer = setInterval(() => {
+      cooldownRemaining -= 1;
+      if (cooldownRemaining <= 0) {
+        clearInterval(cooldownTimer);
+        cooldownTimer = null;
+        btn.disabled = false;
+        cooldownRemaining = 0;
+      }
+      updateCooldownLabel();
+    }, 1000);
+  }
+
   function validateForgot() {
     clearFieldErrors();
     const email = (val(selectors.forgotEmail) || '').trim().toLowerCase();
@@ -120,6 +154,10 @@
     const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
     if (!tokenVal) {
       showFieldError('fpToken', 'Введите код из письма');
+      return;
+    }
+    if (tokenVal.length < 6) {
+      showFieldError('fpToken', 'Код слишком короткий');
       return;
     }
     const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
@@ -166,9 +204,10 @@
     setSubmitting([selectors.forgotButton], true);
     const result = await Api.call('/api/auth/forgot', 'POST', { email: validation.email }, false);
     submittingForgot = false;
-    setSubmitting([selectors.forgotButton], false);
+    if (!cooldownTimer) setSubmitting([selectors.forgotButton], false);
     if (result.ok) {
       showTokenInput();
+      startCooldown();
     } else {
       const code = result.data && result.data.code ? result.data.code : '';
       if (code === '400002') {
@@ -186,6 +225,7 @@
         showFieldError('resetPassword', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.');
         break;
       case '100005':
+        showFieldError('resetToken', 'Код неверный или устарел. Запросите новый.');
         setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
         break;
       default:

@@ -17,6 +17,10 @@ spring:
     locations: classpath:db/migration
 
 app:
+  frontend:
+    base-url: http://localhost:8080
+  mail:
+    enabled: false
   security:
     jwt:
       secret: Q29kZXhEZW1vVGVzdFNlY3JldEFuZEtleTEyMzQ1Njc4OTA=
@@ -38,3 +42,6 @@ app:
       max-per-user: 10
     cors:
       allowed-origins:
+    tokens:
+      reset-dev-code: 123456
+      reset-cooldown-seconds: 60

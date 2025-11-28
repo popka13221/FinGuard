@@ -32,6 +32,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Instant;
 import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -221,7 +222,11 @@ public class AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
         userRepository.findByEmail(email).ifPresent(user -> {
-            String token = userTokenService.issue(user, UserTokenType.RESET);
+            Instant cutoff = Instant.now().minus(userTokenService.getResetCooldown());
+            String token = userTokenService.findLatestActiveReset(user)
+                    .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(cutoff))
+                    .map(UserToken::getToken)
+                    .orElseGet(() -> userTokenService.issue(user, UserTokenType.RESET));
             mailService.sendResetEmail(user.getEmail(), token, userTokenService.getResetTtl());
         });
     }
