@@ -113,6 +113,20 @@ button.secondary { background: var(--accent-2); color: #031022; box-shadow: 0 10
 button.ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
 button:disabled { opacity: 0.65; cursor: not-allowed; }
 
+.alert {
+  background: rgba(249,115,22,0.12);
+  color: var(--warn);
+  border: 1px solid rgba(249,115,22,0.25);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+.alert.success {
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+  border-color: rgba(16,185,129,0.25);
+}
+
 .hero { text-align: center; padding: 28px 10px 12px; }
 .muted { color: var(--muted); font-size: 13px; }
 .pill { padding: 8px 11px; border-radius: 999px; background: rgba(79,139,255,0.12); color: var(--accent); font-weight: 700; border: 1px solid rgba(79,139,255,0.25); }
