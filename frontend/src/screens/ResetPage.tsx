@@ -16,7 +16,7 @@ const ResetPage: React.FC = () => {
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [errors, setErrors] = useState<{ token?: string; password?: string; confirm?: string; form?: string }>({});
+  const [errors, setErrors] = useState<{ password?: string; confirm?: string; form?: string }>({});
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,9 +32,9 @@ const ResetPage: React.FC = () => {
   const validate = () => {
     const next: typeof errors = {};
     if (!token.trim()) {
-      next.token = 'Введите код из письма';
+      next.form = 'Код не найден. Вернитесь и запросите новый.';
     } else if (token.trim().length < 6) {
-      next.token = 'Код слишком короткий';
+      next.form = 'Код слишком короткий. Запросите новый.';
     }
     if (!password) {
       next.password = 'Введите новый пароль';
@@ -67,7 +67,7 @@ const ResetPage: React.FC = () => {
       if (code === '100003' || code === '400003') {
         setErrors({ password: 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.' });
       } else if (code === '100005') {
-        setErrors({ token: 'Код неверный или устарел. Запросите новый.' });
+        setErrors({ form: 'Код неверный или устарел. Запросите новый.' });
         setSuccess('');
       } else {
         setErrors({ form: 'Не удалось обновить пароль. Попробуйте позже.' });
@@ -96,15 +96,6 @@ const ResetPage: React.FC = () => {
           </div>
 
           <div className="stack">
-            <Input
-              label="Код из письма"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Вставьте код"
-              autoComplete="one-time-code"
-              aria-label="Код восстановления"
-              error={errors.token}
-            />
             <Input
               label="Новый пароль"
               value={password}

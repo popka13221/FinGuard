@@ -5,6 +5,7 @@ import com.yourname.finguard.auth.dto.AuthTokens;
 import com.yourname.finguard.auth.dto.LoginRequest;
 import com.yourname.finguard.auth.dto.RegisterRequest;
 import com.yourname.finguard.auth.dto.ResetPasswordRequest;
+import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.VerifyRequest;
@@ -83,6 +84,12 @@ public class AuthController {
     @PostMapping("/forgot")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset/check")
+    public ResponseEntity<Void> validateReset(@Valid @RequestBody ValidateResetTokenRequest request) {
+        authService.validateResetToken(request);
         return ResponseEntity.ok().build();
     }
 

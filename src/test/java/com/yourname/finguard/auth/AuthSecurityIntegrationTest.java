@@ -387,6 +387,32 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void validateResetTokenEndpointWorks() throws Exception {
+        String email = "check-token@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+
+        UserToken token = userTokenRepository.findAll().stream()
+                .filter(t -> t.getType() == UserTokenType.RESET)
+                .findFirst()
+                .orElseThrow();
+
+        postJson("/api/auth/reset/check", """
+                {"token":"%s"}
+                """.formatted(token.getToken()))
+                .andExpect(status().isOk());
+
+        MvcResult res = postJson("/api/auth/reset/check", """
+                {"token":"invalid-token"}
+                """)
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100005");
+    }
+
+    @Test
     void multipleSessionsPruneOldRefreshTokens() throws Exception {
         String email = "sessions@" + UUID.randomUUID() + ".com";
         MvcResult login1 = registerUser(email, "StrongPass1!");

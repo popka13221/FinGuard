@@ -6,6 +6,7 @@ import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.LoginRequest;
 import com.yourname.finguard.auth.dto.RegisterRequest;
 import com.yourname.finguard.auth.dto.ResetPasswordRequest;
+import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.model.User;
@@ -244,5 +245,10 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
         userTokenService.markUsed(token);
+    }
+
+    public void validateResetToken(ValidateResetTokenRequest request) {
+        userTokenService.findValid(request.token(), UserTokenType.RESET)
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset token", HttpStatus.BAD_REQUEST));
     }
 }

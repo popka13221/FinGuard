@@ -11,8 +11,6 @@
     forgotTokenError: '#fpTokenError',
     forgotNext: '#btn-continue-reset',
     resetForm: '#form-reset',
-    resetToken: '#resetToken',
-    resetTokenError: '#resetTokenError',
     resetPassword: '#resetPassword',
     resetPasswordError: '#resetPasswordError',
     resetPasswordConfirm: '#resetPasswordConfirm',
@@ -26,6 +24,7 @@
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
   const resendCooldown = 60;
+  let resetTokenValue = '';
 
   let submittingForgot = false;
   let submittingReset = false;
@@ -54,11 +53,11 @@
   }
 
   function clearFieldErrors() {
-    [selectors.forgotEmail, selectors.forgotToken, selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
+    [selectors.forgotEmail, selectors.forgotToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
       const el = qs(sel);
       if (el) el.classList.remove('error');
     });
-    ['fpEmailError', 'fpTokenError', 'resetTokenError', 'resetPasswordError', 'resetConfirmError'].forEach((id) => {
+    ['fpEmailError', 'fpTokenError', 'resetPasswordError', 'resetConfirmError'].forEach((id) => {
       const el = qs('#' + id);
       if (el) {
         el.textContent = '';
@@ -148,7 +147,7 @@
     }
   }
 
-  function continueToReset() {
+  async function continueToReset() {
     clearFieldErrors();
     const tokenVal = (val(selectors.forgotToken) || '').trim();
     const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
@@ -160,6 +159,16 @@
       showFieldError('fpToken', 'Код слишком короткий');
       return;
     }
+    const res = await Api.call('/api/auth/reset/check', 'POST', { token: tokenVal }, false);
+    if (!res.ok) {
+      const code = res.data && res.data.code ? res.data.code : '';
+      if (code === '100005') {
+        showFieldError('fpToken', 'Код неверный или устарел. Запросите новый.');
+      } else {
+        showFieldError('fpToken', 'Не удалось проверить код. Попробуйте снова.');
+      }
+      return;
+    }
     const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
     window.location.href = url;
   }
@@ -168,12 +177,12 @@
     clearFieldErrors();
     setAlert(selectors.resetStatus, '');
     let valid = true;
-    const token = (val(selectors.resetToken) || '').trim();
+    const token = (resetTokenValue || '').trim();
     const password = (val(selectors.resetPassword) || '').trim();
     const confirm = (val(selectors.resetPasswordConfirm) || '').trim();
 
     if (!token) {
-      showFieldError('resetToken', 'Введите код из письма');
+      setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
       valid = false;
     }
 
@@ -225,7 +234,6 @@
         showFieldError('resetPassword', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.');
         break;
       case '100005':
-        showFieldError('resetToken', 'Код неверный или устарел. Запросите новый.');
         setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
         break;
       default:
@@ -244,7 +252,7 @@
     setSubmitting([selectors.resetButton], false);
     if (result.ok) {
       setAlert(selectors.resetStatus, 'Пароль обновлен. Теперь можно войти с новыми данными.', 'success');
-      [selectors.resetToken, selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
+      [selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
         const input = qs(sel);
         if (input) input.value = '';
       });
@@ -259,8 +267,7 @@
     const token = params.get('token');
     const email = params.get('email');
     if (token) {
-      const tokenInput = qs(selectors.resetToken);
-      if (tokenInput) tokenInput.value = token;
+      resetTokenValue = token;
     }
     if (email) {
       const emailInput = qs(selectors.forgotEmail);
