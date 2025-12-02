@@ -106,16 +106,20 @@ const ResetPage: React.FC = () => {
               aria-label="Новый пароль"
               error={errors.password}
             />
-            <Input
-              label="Повторите пароль"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              type="password"
-              placeholder="Ещё раз"
-              autoComplete="new-password"
-              aria-label="Подтверждение пароля"
-              error={errors.confirm}
-            />
+            <div className="field">
+              <label htmlFor="reset-confirm">Повторите пароль</label>
+              <input
+                id="reset-confirm"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                type="password"
+                placeholder="Ещё раз"
+                autoComplete="new-password"
+                aria-label="Подтверждение пароля"
+                className={errors.confirm ? 'error' : ''}
+              />
+              {errors.confirm && <div className="error-text">{errors.confirm}</div>}
+            </div>
 
             {errors.form && (
               <div className="alert" role="alert" aria-live="polite">
