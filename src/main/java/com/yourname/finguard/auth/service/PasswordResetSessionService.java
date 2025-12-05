@@ -4,6 +4,8 @@ import com.yourname.finguard.auth.model.PasswordResetSession;
 import com.yourname.finguard.auth.model.User;
 import com.yourname.finguard.auth.repository.PasswordResetSessionRepository;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -27,7 +29,7 @@ public class PasswordResetSessionService {
     }
 
     @Transactional
-    public PasswordResetSession create(User user, Instant maxExpiry, String ip, String userAgent) {
+    public CreatedSession create(User user, Instant maxExpiry, String ip, String userAgent) {
         if (user == null) {
             throw new IllegalArgumentException("User required for reset session");
         }
@@ -35,9 +37,10 @@ public class PasswordResetSessionService {
         repository.deleteExpired(now);
         repository.deleteByUserId(user.getId());
 
+        String rawToken = UUID.randomUUID().toString();
         PasswordResetSession session = new PasswordResetSession();
         session.setUser(user);
-        session.setJti(UUID.randomUUID().toString());
+        session.setTokenHash(hashToken(rawToken));
         session.setIpHash(hash(ip));
         session.setUserAgentHash(hash(userAgent));
         Instant expiry = now.plus(sessionTtl);
@@ -45,17 +48,22 @@ public class PasswordResetSessionService {
             expiry = maxExpiry;
         }
         session.setExpiresAt(expiry);
-        return repository.save(session);
+        PasswordResetSession saved = repository.save(session);
+        return new CreatedSession(saved, rawToken);
     }
 
     @Transactional(readOnly = true)
-    public Optional<PasswordResetSession> findActive(String jti) {
-        if (!StringUtils.hasText(jti)) {
+    public Optional<PasswordResetSession> findActive(String rawToken) {
+        if (!StringUtils.hasText(rawToken)) {
             return Optional.empty();
         }
         Instant now = Instant.now();
-        return repository.findByJti(jti)
+        String tokenHash = hashToken(rawToken);
+        return repository.findByTokenHash(tokenHash)
                 .filter(s -> s.getConsumedAt() == null && s.getExpiresAt() != null && s.getExpiresAt().isAfter(now));
+    }
+
+    public record CreatedSession(PasswordResetSession session, String rawToken) {
     }
 
     @Transactional
@@ -64,6 +72,14 @@ public class PasswordResetSessionService {
         session.setConsumedAt(Instant.now());
         repository.save(session);
         repository.deleteExpired(Instant.now());
+    }
+
+    @Transactional
+    public void invalidateForUser(User user) {
+        if (user == null || user.getId() == null) {
+            return;
+        }
+        repository.deleteByUserId(user.getId());
     }
 
     public Duration getSessionTtl() {
@@ -81,18 +97,56 @@ public class PasswordResetSessionService {
         return DigestUtils.md5DigestAsHex(normalized.getBytes(StandardCharsets.UTF_8));
     }
 
+    public String hashToken(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashed) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+    }
+
     public boolean matchesContext(PasswordResetSession session, String ip, String userAgent) {
+        ContextCheckResult result = evaluateContext(session, ip, userAgent, session == null ? "" : session.getIpHash(), session == null ? "" : session.getUserAgentHash());
+        return result.isExactMatch();
+    }
+
+    public ContextCheckResult evaluateContext(PasswordResetSession session, String ip, String userAgent, String tokenIpHash, String tokenUserAgentHash) {
         if (session == null) {
-            return false;
+            return ContextCheckResult.rejected();
         }
         String expectedIp = session.getIpHash();
         String expectedUa = session.getUserAgentHash();
-        if (StringUtils.hasText(expectedIp) && !expectedIp.equals(hash(ip))) {
-            return false;
+        String ipHash = hash(ip);
+        String uaHash = hash(userAgent);
+        boolean ipMatches = !StringUtils.hasText(expectedIp) || expectedIp.equals(ipHash);
+        boolean uaMatches = !StringUtils.hasText(expectedUa) || expectedUa.equals(uaHash);
+        boolean tokenIpMatches = !StringUtils.hasText(expectedIp) || expectedIp.equals(tokenIpHash);
+        boolean tokenUaMatches = !StringUtils.hasText(expectedUa) || expectedUa.equals(tokenUserAgentHash);
+        boolean tampered = !tokenIpMatches || !tokenUaMatches;
+        boolean shouldReject = tampered || (!ipMatches && !uaMatches);
+        return new ContextCheckResult(ipMatches, uaMatches, tampered, shouldReject, ipHash, uaHash);
+    }
+
+    public record ContextCheckResult(boolean ipMatches, boolean userAgentMatches, boolean tampered, boolean shouldReject, String requestIpHash, String requestUaHash) {
+        public static ContextCheckResult rejected() {
+            return new ContextCheckResult(false, false, false, true, "", "");
         }
-        if (StringUtils.hasText(expectedUa) && !expectedUa.equals(hash(userAgent))) {
-            return false;
+
+        public boolean isSoftMismatch() {
+            return !shouldReject && (!ipMatches || !userAgentMatches);
         }
-        return true;
+
+        public boolean isExactMatch() {
+            return ipMatches && userAgentMatches && !tampered;
+        }
     }
 }

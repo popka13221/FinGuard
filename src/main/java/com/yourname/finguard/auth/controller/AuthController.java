@@ -37,6 +37,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -135,7 +136,7 @@ public class AuthController {
                     .body(new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later."));
         }
         authService.forgotPassword(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("message", "If this email exists, we've sent a reset code."));
     }
 
     @PostMapping({"/reset/confirm", "/reset/check"})

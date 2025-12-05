@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,6 +60,12 @@ import org.springframework.test.web.servlet.ResultActions;
 @TestPropertySource(properties = {
         "app.security.rate-limit.auth.limit=5",
         "app.security.rate-limit.auth.window-ms=5000",
+        "app.security.rate-limit.forgot.limit=5",
+        "app.security.rate-limit.forgot.window-ms=60000",
+        "app.security.rate-limit.reset-confirm.limit=3",
+        "app.security.rate-limit.reset-confirm.window-ms=60000",
+        "app.security.rate-limit.reset.limit=3",
+        "app.security.rate-limit.reset.window-ms=60000",
         "app.security.lockout.max-attempts=2",
         "app.security.lockout.lock-minutes=60",
         "app.security.sessions.max-per-user=2",
@@ -307,7 +314,10 @@ class AuthSecurityIntegrationTest {
         assertThat(sessionsBefore).isNotEmpty();
         String resetSessionToken = confirmResetSession(token);
         String resetJti = jwtTokenProvider.getJti(resetSessionToken);
-        PasswordResetSession resetSession = passwordResetSessionRepository.findByJti(resetJti).orElseThrow();
+        String resetTokenHash = passwordResetSessionService.hashToken(resetJti);
+        PasswordResetSession resetSession = passwordResetSessionRepository.findByTokenHash(resetTokenHash).orElseThrow();
+        assertThat(resetSession.getTokenHash()).isEqualTo(resetTokenHash);
+        assertThat(resetSession.getTokenHash()).isNotEqualTo(resetJti);
         assertThat(resetSession.getExpiresAt()).isNotNull();
         assertThat(resetSession.getExpiresAt()).isAfter(Instant.now().minusSeconds(1));
         assertThat(passwordResetSessionService.matchesContext(resetSession, "127.0.0.1", null)).isTrue();
@@ -413,6 +423,59 @@ class AuthSecurityIntegrationTest {
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100005");
+        assertThat(error.get("message").asText()).containsIgnoringCase("invalid");
+    }
+
+    @Test
+    void resetAllowsSoftContextMismatchWhenUserAgentMatches() throws Exception {
+        String email = "soft-context@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        UserToken token = latestResetToken();
+
+        MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
+                {"token":"%s"}
+                """.formatted(token.getToken()), "10.0.0.1", "TestUA/1.0")
+                .andExpect(status().isOk())
+                .andReturn();
+        String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .get("resetSessionToken").asText();
+
+        postJsonFromIpAndUa("/api/auth/reset", """
+                {"resetSessionToken":"%s","password":"SoftChange1!"}
+                """.formatted(resetSessionToken), "10.0.0.2", "TestUA/1.0")
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void resetRejectsWhenIpAndUserAgentChange() throws Exception {
+        String email = "context-reject@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        UserToken token = latestResetToken();
+
+        MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
+                {"token":"%s"}
+                """.formatted(token.getToken()), "10.0.0.1", "TestUA/1.0")
+                .andExpect(status().isOk())
+                .andReturn();
+        String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .get("resetSessionToken").asText();
+
+        MvcResult res = postJsonFromIpAndUa("/api/auth/reset", """
+                {"resetSessionToken":"%s","password":"RejectChange1!"}
+                """.formatted(resetSessionToken), "10.0.0.5", "OtherUA/2.0")
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100005");
+
+        // Password remains unchanged after rejection
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isOk());
     }
 
     @Test
@@ -442,16 +505,43 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void resetConfirmRateLimitRequiresNewCode() throws Exception {
+        String email = "confirm-rl@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+
+        for (int i = 0; i < 3; i++) {
+            postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                    .andExpect(status().isOk());
+            UserToken token = latestResetToken();
+            postJsonFromIp("/api/auth/reset/confirm", """
+                    {"token":"%s"}
+                    """.formatted(token.getToken()), "127.0.0." + (10 + i))
+                    .andExpect(status().isOk());
+        }
+
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        UserToken token = latestResetToken();
+
+        MvcResult limited = postJsonFromIp("/api/auth/reset/confirm", """
+                {"token":"%s"}
+                """.formatted(token.getToken()), "127.0.0.50")
+                .andExpect(status().isTooManyRequests())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(limited.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100005");
+        assertThat(userTokenService.findValid(token.getToken(), UserTokenType.RESET)).isEmpty();
+    }
+
+    @Test
     void forgotRateLimitBlocksTooManyRequests() throws Exception {
         String email = "rl-forgot@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
 
-        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
-                .andExpect(status().isOk());
-        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
-                .andExpect(status().isOk());
-        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
-                .andExpect(status().isOk());
+        for (int i = 0; i < 5; i++) {
+            postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                    .andExpect(status().isOk());
+        }
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isTooManyRequests());
     }
@@ -600,16 +690,22 @@ class AuthSecurityIntegrationTest {
         token.setExpiresAt(Instant.now().minusSeconds(60));
         userTokenRepository.save(token);
 
-        postJson("/api/auth/reset/confirm", """
+        MvcResult res = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
                 """.formatted(token.getToken()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("message").asText()).containsIgnoringCase("expired");
     }
 
     @Test
     void forgotPasswordUnknownEmailStillReturnsOk() throws Exception {
-        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest("nouser@" + UUID.randomUUID() + ".com")))
-                .andExpect(status().isOk());
+        MvcResult res = postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest("nouser@" + UUID.randomUUID() + ".com")))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(body.get("message").asText()).containsIgnoringCase("email");
         assertThat(userTokenRepository.count()).isZero();
     }
 
@@ -637,8 +733,8 @@ class AuthSecurityIntegrationTest {
 
     private UserToken latestResetToken() {
         return userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.RESET)
-                .findFirst()
+                .filter(t -> t.getType() == UserTokenType.RESET && t.getUsedAt() == null)
+                .max(Comparator.comparing(UserToken::getCreatedAt))
                 .orElseThrow();
     }
 
@@ -684,6 +780,27 @@ class AuthSecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 ;
+    }
+
+    private ResultActions postJsonFromIp(String url, String payload, String ip) throws Exception {
+        return mockMvc.perform(post(url)
+                        .with(request -> {
+                            request.setRemoteAddr(ip);
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload));
+    }
+
+    private ResultActions postJsonFromIpAndUa(String url, String payload, String ip, String userAgent) throws Exception {
+        return mockMvc.perform(post(url)
+                        .with(request -> {
+                            request.setRemoteAddr(ip);
+                            return request;
+                        })
+                        .header(HttpHeaders.USER_AGENT, userAgent)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload));
     }
 
     private ResultActions postJsonWithCookie(String url, String payload, String cookieValue) throws Exception {

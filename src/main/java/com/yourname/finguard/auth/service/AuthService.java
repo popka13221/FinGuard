@@ -264,12 +264,23 @@ public class AuthService {
     }
 
     public ResetSessionResponse confirmResetToken(ValidateResetTokenRequest request, String ip, String userAgent) {
-        enforceRateLimit("reset-confirm:ip:" + safe(ip), resetConfirmLimit, resetConfirmWindowMs);
-        UserToken token = userTokenService.findValid(request.token(), UserTokenType.RESET)
-                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset token", HttpStatus.BAD_REQUEST));
-        enforceRateLimit("reset-confirm:email:" + safe(token.getUser().getEmail()), resetConfirmLimit, resetConfirmWindowMs);
+        enforceResetConfirmLimit("reset-confirm:ip:" + safe(ip), null);
 
-        PasswordResetSession session = passwordResetSessionService.create(token.getUser(), token.getExpiresAt(), ip, userAgent);
+        UserToken token = userTokenService.findAny(request.token(), UserTokenType.RESET)
+                .orElseThrow(this::invalidResetCode);
+        if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(Instant.now())) {
+            userTokenService.markUsed(token);
+            passwordResetSessionService.invalidateForUser(token.getUser());
+            throw expiredResetCode();
+        }
+        if (token.getUsedAt() != null) {
+            throw expiredResetCode();
+        }
+
+        enforceResetConfirmLimit("reset-confirm:email:" + safe(token.getUser().getEmail()), token.getUser());
+
+        PasswordResetSessionService.CreatedSession createdSession = passwordResetSessionService.create(token.getUser(), token.getExpiresAt(), ip, userAgent);
+        PasswordResetSession session = createdSession.session();
         long ttlSeconds = Duration.between(Instant.now(), session.getExpiresAt()).getSeconds();
         if (ttlSeconds <= 0) {
             ttlSeconds = Math.max(passwordResetSessionService.getSessionTtl().getSeconds(), 60);
@@ -277,7 +288,7 @@ public class AuthService {
         String sessionToken = jwtTokenProvider.generateResetSessionToken(
                 token.getUser().getId(),
                 token.getUser().getEmail(),
-                session.getJti(),
+                createdSession.rawToken(),
                 Math.max(ttlSeconds, 1),
                 session.getIpHash(),
                 session.getUserAgentHash()
@@ -301,13 +312,30 @@ public class AuthService {
 
         PasswordResetSession session = passwordResetSessionService.findActive(claims.jti())
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST));
-        boolean contextMatches = passwordResetSessionService.matchesContext(session, ip, userAgent);
-        if (!contextMatches) {
-            boolean ipFromTokenMatches = !StringUtils.hasText(session.getIpHash()) || session.getIpHash().equals(claims.ipHash());
-            boolean uaFromTokenMatches = !StringUtils.hasText(session.getUserAgentHash()) || session.getUserAgentHash().equals(claims.userAgentHash());
-            if (!ipFromTokenMatches || !uaFromTokenMatches) {
-                throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST);
-            }
+        PasswordResetSessionService.ContextCheckResult context = passwordResetSessionService.evaluateContext(
+                session,
+                ip,
+                userAgent,
+                claims.ipHash(),
+                claims.userAgentHash()
+        );
+        if (context.shouldReject()) {
+            log.warn("Reset session context rejected for user={}, tampered={}, ipMatch={}, uaMatch={}, ipHash={}, uaHash={}",
+                    maskEmail(session.getUser().getEmail()),
+                    context.tampered(),
+                    context.ipMatches(),
+                    context.userAgentMatches(),
+                    context.requestIpHash(),
+                    context.requestUaHash());
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Reset session token context mismatch. Please request a new code.", HttpStatus.BAD_REQUEST);
+        }
+        if (context.isSoftMismatch()) {
+            log.warn("Reset session context mismatch for user={}, ipMatch={}, uaMatch={}, ipHash={}, uaHash={}",
+                    maskEmail(session.getUser().getEmail()),
+                    context.ipMatches(),
+                    context.userAgentMatches(),
+                    context.requestIpHash(),
+                    context.requestUaHash());
         }
 
         if (PasswordValidator.isWeak(request.password())) {
@@ -323,6 +351,24 @@ public class AuthService {
         passwordResetSessionService.consume(session);
         userTokenService.invalidateActive(user, UserTokenType.RESET);
         revokeUserSessions(user);
+    }
+
+    private void enforceResetConfirmLimit(String key, User userToInvalidate) {
+        if (!rateLimiterService.allow(key, resetConfirmLimit, resetConfirmWindowMs)) {
+            if (userToInvalidate != null) {
+                userTokenService.invalidateActive(userToInvalidate, UserTokenType.RESET);
+                passwordResetSessionService.invalidateForUser(userToInvalidate);
+            }
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Too many attempts. Request a new code.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+    }
+
+    private ApiException invalidResetCode() {
+        return new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Reset code is incorrect.", HttpStatus.BAD_REQUEST);
+    }
+
+    private ApiException expiredResetCode() {
+        return new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Reset code expired. Please request a new one.", HttpStatus.BAD_REQUEST);
     }
 
     private void enforceRateLimit(String key, int limit, long windowMs) {

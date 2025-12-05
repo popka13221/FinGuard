@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserTokenRepository extends JpaRepository<UserToken, Long> {
     Optional<UserToken> findByTokenAndTypeAndUsedAtIsNullAndExpiresAtAfter(String token, UserTokenType type, Instant now);
 
+    Optional<UserToken> findByTokenAndType(String token, UserTokenType type);
+
     Optional<UserToken> findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
             User user, UserTokenType type, Instant now);
 

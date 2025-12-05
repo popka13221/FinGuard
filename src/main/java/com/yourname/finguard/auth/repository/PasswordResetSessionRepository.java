@@ -8,8 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface PasswordResetSessionRepository extends JpaRepository<PasswordResetSession, Long> {
-
-    Optional<PasswordResetSession> findByJti(String jti);
+    Optional<PasswordResetSession> findByTokenHash(String tokenHash);
 
     @Modifying
     @Query("delete from PasswordResetSession s where s.expiresAt < ?1")

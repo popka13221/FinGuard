@@ -65,6 +65,11 @@ public class UserTokenService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public Optional<UserToken> findAny(String token, UserTokenType type) {
+        return userTokenRepository.findByTokenAndType(token, type);
+    }
+
     @Transactional
     public void markUsed(UserToken token) {
         token.setUsedAt(Instant.now());

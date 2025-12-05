@@ -22,8 +22,8 @@ public class PasswordResetSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true)
-    private String jti;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 128)
+    private String tokenHash;
 
     @Column(name = "ip_hash")
     private String ipHash;
@@ -56,12 +56,12 @@ public class PasswordResetSession {
         this.user = user;
     }
 
-    public String getJti() {
-        return jti;
+    public String getTokenHash() {
+        return tokenHash;
     }
 
-    public void setJti(String jti) {
-        this.jti = jti;
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
     }
 
     public String getIpHash() {
