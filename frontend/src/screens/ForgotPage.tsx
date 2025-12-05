@@ -23,6 +23,11 @@ const ForgotPage: React.FC = () => {
   useEffect(() => {
     const fromQuery = searchParams.get('email');
     if (fromQuery) setEmail(fromQuery);
+    const reason = searchParams.get('reason');
+    if (reason === 'expired') {
+      setErrors({ form: 'Код устарел. Запросите новый.' });
+      setShowToken(true);
+    }
   }, [searchParams]);
 
   useEffect(() => {

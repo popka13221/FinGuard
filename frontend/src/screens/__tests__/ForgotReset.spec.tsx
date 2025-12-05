@@ -65,12 +65,13 @@ describe('Forgot/Reset flow', () => {
     expect(await screen.findByLabelText(/Код из письма/i)).toBeInTheDocument();
   });
 
-  it('auto-confirms reset token from query and surfaces invalid code', async () => {
+  it('auto-confirms reset token from query and redirects to request new on expiry', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: false, data: { code: '100005' } });
-    renderWithRouter('/reset?token=badtoken');
+    renderWithRouter('/reset?token=badtoken&email=user@example.com');
 
     await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
-    expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Код устарел\. Запросите новый/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/i)).toHaveValue('user@example.com');
   });
 
   it('reset validates password strength and does not call API on validation fail', async () => {

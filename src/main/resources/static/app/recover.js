@@ -194,7 +194,7 @@
     window.location.href = url;
   }
 
-  async function confirmResetSession(tokenVal) {
+  async function confirmResetSession(tokenVal, emailVal) {
     if (!tokenVal) {
       setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
       return;
@@ -203,7 +203,10 @@
     if (!res.ok) {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
-        setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
+        const qs = new URLSearchParams();
+        qs.set('reason', 'expired');
+        if (emailVal) qs.set('email', emailVal);
+        window.location.href = `/app/forgot.html?${qs.toString()}`;
       } else if (code === '429001') {
         setAlert(selectors.resetStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
       } else {
@@ -314,8 +317,13 @@
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const email = params.get('email');
+    const reason = params.get('reason');
+    if (reason === 'expired') {
+      setAlert(selectors.forgotStatus, 'Код устарел. Запросите новый.', 'error');
+      showTokenInput();
+    }
     if (token) {
-      confirmResetSession(token);
+      confirmResetSession(token, email || '');
     }
     if (email) {
       const emailInput = qs(selectors.forgotEmail);

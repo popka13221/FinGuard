@@ -32,6 +32,7 @@ const ResetPage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialToken, setInitialToken] = useState('');
+  const [emailFromQuery, setEmailFromQuery] = useState('');
 
   useEffect(() => {
     const t = searchParams.get('token');
@@ -41,15 +42,10 @@ const ResetPage: React.FC = () => {
       setInitialToken(t);
     }
     if (email) {
+      setEmailFromQuery(email);
       sessionStorage.setItem('spa_reset_email', email);
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    if (initialToken && !resetSessionToken && !isConfirming) {
-      void confirmCode(initialToken);
-    }
-  }, [initialToken, resetSessionToken, isConfirming]);
 
   useEffect(() => {
     if (!resetSessionToken) return;
@@ -67,7 +63,14 @@ const ResetPage: React.FC = () => {
     }
   }, [resetSessionToken, timer]);
 
-  const confirmCode = async (valueOverride?: string) => {
+  const redirectToForgot = () => {
+    const qs = new URLSearchParams();
+    qs.set('reason', 'expired');
+    if (emailFromQuery) qs.set('email', emailFromQuery);
+    navigate(`/forgot?${qs.toString()}`);
+  };
+
+  const confirmCode = async (valueOverride?: string, options?: { fromLink?: boolean }) => {
     if (isConfirming) return;
     setSuccess('');
     setInfo('');
@@ -93,6 +96,11 @@ const ResetPage: React.FC = () => {
     } else {
       const code = res.data && (res.data as any).code;
       if (code === '100005') {
+        if (options?.fromLink) {
+          setInitialToken('');
+          redirectToForgot();
+          return;
+        }
         setErrors({ code: 'Код неверный или устарел. Запросите новый.' });
       } else if (code === '429001') {
         setErrors({ form: 'Слишком много попыток. Подождите и попробуйте снова.' });
@@ -102,7 +110,14 @@ const ResetPage: React.FC = () => {
       setResetSessionToken('');
       setTimer(0);
     }
+    setInitialToken('');
   };
+
+  useEffect(() => {
+    if (initialToken && !resetSessionToken && !isConfirming) {
+      void confirmCode(initialToken, { fromLink: true });
+    }
+  }, [initialToken, resetSessionToken, isConfirming]);
 
   const validatePasswords = () => {
     const next: typeof errors = {};
@@ -144,6 +159,7 @@ const ResetPage: React.FC = () => {
         setErrors({ form: 'Сессия сброса устарела или неверна. Введите код снова.' });
         setResetSessionToken('');
         setTimer(0);
+        setInitialToken('');
       } else {
         setErrors({ form: 'Не удалось обновить пароль. Попробуйте позже.' });
       }
