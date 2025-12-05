@@ -11,6 +11,7 @@ public class CurrencyService {
             new CurrencyDto("USD", "US Dollar"),
             new CurrencyDto("EUR", "Euro"),
             new CurrencyDto("RUB", "Russian Ruble"),
+            new CurrencyDto("CNY", "Chinese Yuan"),
             new CurrencyDto("BTC", "Bitcoin"),
             new CurrencyDto("ETH", "Ethereum")
     );
