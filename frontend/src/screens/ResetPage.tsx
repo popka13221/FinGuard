@@ -158,9 +158,6 @@ const ResetPage: React.FC = () => {
             <h2 style={{ margin: 0 }}>FinGuard</h2>
             <div className="muted">Восстановление доступа · Шаг 2</div>
           </div>
-          <div className="actions">
-            <Button variant="ghost" onClick={() => navigate('/forgot')}>Запросить код</Button>
-          </div>
         </header>
 
         <div className="card">
