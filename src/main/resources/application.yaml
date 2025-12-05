@@ -40,6 +40,7 @@ app:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:no-reply@finguard.local}
     reset-subject: ${MAIL_RESET_SUBJECT:Сброс пароля FinGuard}
+    otp-subject: ${MAIL_OTP_SUBJECT:Код входа FinGuard}
   security:
     jwt:
       secret: ${JWT_SECRET:Q29kZXhEZW1vMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
@@ -49,6 +50,10 @@ app:
       audience: ${JWT_AUDIENCE:finguard-app}
       require-env-secret: ${JWT_REQUIRE_ENV_SECRET:false}
       cookie-secure: ${JWT_COOKIE_SECURE:false}
+    otp:
+      enabled: ${OTP_ENABLED:true}
+      dev-code: ${OTP_DEV_CODE:654321}
+      ttl-seconds: ${OTP_TTL_SECONDS:300}
     cors:
       allowed-origins: ${ALLOWED_ORIGINS:}
     rate-limit:

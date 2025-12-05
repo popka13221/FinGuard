@@ -24,6 +24,8 @@ app:
   mail:
     enabled: false
   security:
+    otp:
+      enabled: false
     jwt:
       secret: Q29kZXhEZW1vVGVzdFNlY3JldEFuZEtleTEyMzQ1Njc4OTA=
       expiration-seconds: 3600

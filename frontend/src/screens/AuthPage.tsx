@@ -18,6 +18,10 @@ const AuthPage: React.FC = () => {
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState<boolean>(true);
   const [currencyError, setCurrencyError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [otpStep, setOtpStep] = useState<boolean>(false);
+  const [otpCode, setOtpCode] = useState<string>('');
+  const [otpExpiresIn, setOtpExpiresIn] = useState<number>(0);
+  const [otpError, setOtpError] = useState<string>('');
 
   const [values, setValues] = useState({
     email: '',
@@ -56,6 +60,13 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setOtpStep(false);
+    setOtpCode('');
+    setOtpError('');
+    setOtpExpiresIn(0);
+  }, [mode, values.email]);
+
   const onChange = (field: string, val: string) => {
     setValues((prev) => ({ ...prev, [field]: val }));
   };
@@ -82,12 +93,36 @@ const AuthPage: React.FC = () => {
         : AuthApi.register(payload);
     const res = await apiCall;
     setIsSubmitting(false);
+    if (mode === 'login' && res.status === 202 && res.data && (res.data as any).otpRequired) {
+      setOtpStep(true);
+      setOtpExpiresIn((res.data as any).expiresInSeconds || 0);
+      setOtpError('');
+      return;
+    }
     if (res.ok && res.data && (res.data as any).token) {
       ApiClient.setEmail(payload.email);
       window.location.href = '/dashboard';
     } else {
       const code = res.data && res.data.code ? res.data.code : '----';
       applyErrorCode(code, '');
+    }
+  };
+
+  const submitOtp = async () => {
+    if (isSubmitting || !otpStep) return;
+    setOtpError('');
+    if (!otpCode.trim()) {
+      setOtpError('Введите код из письма.');
+      return;
+    }
+    setIsSubmitting(true);
+    const res = await AuthApi.verifyOtp({ email: values.email.trim().toLowerCase(), code: otpCode.trim() });
+    setIsSubmitting(false);
+    if (res.ok && res.data && (res.data as any).token) {
+      ApiClient.setEmail(values.email.trim().toLowerCase());
+      window.location.href = '/dashboard';
+    } else {
+      setOtpError('Код неверный или истек. Попробуйте снова.');
     }
   };
 
@@ -140,9 +175,36 @@ const AuthPage: React.FC = () => {
                   aria-label="Пароль"
                   error={errors.password}
                 />
-                {errors.form && <div className="alert" role="alert" aria-live="polite">{errors.form}</div>}
+                {otpStep && (
+                  <>
+                    <Input
+                      label="Код из письма"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="123456"
+                      aria-label="Код из письма"
+                      error={otpError}
+                    />
+                    <div className="muted">
+                      Отправили код на почту. Срок действия: {otpExpiresIn ? Math.max(otpExpiresIn, 1) : 5 * 60} сек.
+                    </div>
+                  </>
+                )}
+                {(errors.form || otpError) && (
+                  <div className="alert" role="alert" aria-live="polite">
+                    {errors.form || otpError}
+                  </div>
+                )}
                 <div className="actions">
-                  <Button variant="secondary" onClick={submit} disabled={isSubmitting}>Войти</Button>
+                  {!otpStep ? (
+                    <Button variant="secondary" onClick={submit} disabled={isSubmitting}>
+                      Войти
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" onClick={submitOtp} disabled={isSubmitting}>
+                      Подтвердить код
+                    </Button>
+                  )}
                 </div>
               </>
             ) : (
