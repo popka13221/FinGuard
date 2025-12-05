@@ -10,6 +10,8 @@ import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.VerifyRequest;
+import com.yourname.finguard.auth.dto.OtpVerifyRequest;
+import com.yourname.finguard.auth.dto.OtpChallengeResponse;
 import com.yourname.finguard.auth.service.AuthService;
 import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.dto.ApiError;
@@ -84,11 +86,17 @@ public class AuthController {
     @Operation(summary = "Вход", description = "Проверяет email/пароль, выдает access/refresh JWT и ставит httpOnly cookies")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Успешный вход"),
+            @ApiResponse(responseCode = "202", description = "Требуется OTP"),
             @ApiResponse(responseCode = "401", description = "Неверные учетные данные", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "429", description = "Аккаунт временно заблокирован", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthTokens tokens = authService.login(request);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        AuthService.LoginOutcome outcome = authService.login(request);
+        if (outcome.otpRequired()) {
+            return ResponseEntity.accepted()
+                    .body(new OtpChallengeResponse(true, outcome.otpExpiresInSeconds()));
+        }
+        AuthTokens tokens = outcome.tokens();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
@@ -118,6 +126,20 @@ public class AuthController {
     public ResponseEntity<Void> verify(@Valid @RequestBody VerifyRequest request) {
         authService.verify(request);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/login/otp")
+    @Operation(summary = "Завершение входа по OTP", description = "Принимает email+OTP код, выдает access/refresh JWT и ставит cookies")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Вход завершен"),
+            @ApiResponse(responseCode = "401", description = "Неверный или истекший OTP", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
+        AuthTokens tokens = authService.verifyOtp(request);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
+                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
+                .body(new AuthResponse(tokens.accessToken()));
     }
 
     @PostMapping("/forgot")

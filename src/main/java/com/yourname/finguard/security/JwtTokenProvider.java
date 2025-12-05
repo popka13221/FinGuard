@@ -34,7 +34,7 @@ public class JwtTokenProvider implements InitializingBean {
             @Value("${app.security.jwt.refresh-expiration-seconds:604800}") long refreshValiditySeconds,
             @Value("${app.security.jwt.issuer:finguard}") String issuer,
             @Value("${app.security.jwt.audience:finguard-app}") String audience,
-            @Value("${app.security.jwt.require-env-secret:false}") boolean requireEnvSecret
+            @Value("${app.security.jwt.require-env-secret:true}") boolean requireEnvSecret
     ) {
         this.secretRaw = secret;
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));

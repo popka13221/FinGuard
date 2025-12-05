@@ -10,6 +10,7 @@ import com.yourname.finguard.auth.dto.ResetSessionResponse;
 import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.VerifyRequest;
+import com.yourname.finguard.auth.dto.OtpVerifyRequest;
 import com.yourname.finguard.auth.model.User;
 import com.yourname.finguard.auth.model.PasswordResetSession;
 import com.yourname.finguard.auth.model.UserToken;
@@ -26,6 +27,7 @@ import com.yourname.finguard.security.JwtTokenProvider;
 import com.yourname.finguard.security.LoginAttemptService;
 import com.yourname.finguard.security.RateLimiterService;
 import com.yourname.finguard.security.TokenBlacklistService;
+import com.yourname.finguard.security.OtpService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,10 +63,14 @@ public class AuthService {
     private final MailService mailService;
     private final PasswordResetSessionService passwordResetSessionService;
     private final RateLimiterService rateLimiterService;
+    private final OtpService otpService;
     private final int resetConfirmLimit;
     private final long resetConfirmWindowMs;
     private final int resetLimit;
     private final long resetWindowMs;
+    private final int loginEmailLimit;
+    private final long loginEmailWindowMs;
+    private final boolean otpEnabled;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -78,11 +84,15 @@ public class AuthService {
                        UserSessionService userSessionService,
                        PasswordResetSessionService passwordResetSessionService,
                        RateLimiterService rateLimiterService,
+                       OtpService otpService,
                        MailService mailService,
                        @Value("${app.security.rate-limit.reset-confirm.limit:5}") int resetConfirmLimit,
                        @Value("${app.security.rate-limit.reset-confirm.window-ms:300000}") long resetConfirmWindowMs,
                        @Value("${app.security.rate-limit.reset.limit:5}") int resetLimit,
-                       @Value("${app.security.rate-limit.reset.window-ms:300000}") long resetWindowMs) {
+                       @Value("${app.security.rate-limit.reset.window-ms:300000}") long resetWindowMs,
+                       @Value("${app.security.rate-limit.login-email.limit:0}") int loginEmailLimit,
+                       @Value("${app.security.rate-limit.login-email.window-ms:300000}") long loginEmailWindowMs,
+                       @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
@@ -96,10 +106,14 @@ public class AuthService {
         this.mailService = mailService;
         this.passwordResetSessionService = passwordResetSessionService;
         this.rateLimiterService = rateLimiterService;
+        this.otpService = otpService;
         this.resetConfirmLimit = resetConfirmLimit;
         this.resetConfirmWindowMs = resetConfirmWindowMs;
         this.resetLimit = resetLimit;
         this.resetWindowMs = resetWindowMs;
+        this.loginEmailLimit = loginEmailLimit;
+        this.loginEmailWindowMs = loginEmailWindowMs;
+        this.otpEnabled = otpEnabled;
     }
 
     @Transactional
@@ -136,8 +150,9 @@ public class AuthService {
         return issueTokens(saved.getId(), saved.getEmail());
     }
 
-    public AuthTokens login(LoginRequest request) {
+    public LoginOutcome login(LoginRequest request) {
         String email = request.email().trim().toLowerCase();
+        enforceRateLimit("login:email:" + email, loginEmailLimit, loginEmailWindowMs);
         if (loginAttemptService.isLocked(email)) {
             log.warn("Login blocked due to lockout for email={}", email);
             throw new ApiException(ErrorCodes.AUTH_LOCKED, "Too many attempts. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
@@ -156,7 +171,13 @@ public class AuthService {
                         .getId();
             }
             loginAttemptService.recordSuccess(email);
-            return issueTokens(userId, email);
+            AuthTokens tokens = issueTokens(userId, email);
+            if (!otpEnabled) {
+                return new LoginOutcome(tokens, false, 0);
+            }
+            OtpService.IssuedOtp issued = otpService.issue(email);
+            mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
+            return new LoginOutcome(null, true, Duration.between(Instant.now(), issued.expiresAt()).getSeconds());
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(email);
             log.warn("Login failed for email={}", email);
@@ -353,6 +374,20 @@ public class AuthService {
         revokeUserSessions(user);
     }
 
+    public AuthTokens verifyOtp(OtpVerifyRequest request) {
+        if (!otpEnabled) {
+            throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "OTP is not enabled", HttpStatus.BAD_REQUEST);
+        }
+        String email = request.email().trim().toLowerCase();
+        boolean ok = otpService.verify(email, request.code());
+        if (!ok) {
+            throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED);
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED));
+        return issueTokens(user.getId(), email);
+    }
+
     private void enforceResetConfirmLimit(String key, User userToInvalidate) {
         if (!rateLimiterService.allow(key, resetConfirmLimit, resetConfirmWindowMs)) {
             if (userToInvalidate != null) {
@@ -391,5 +426,8 @@ public class AuthService {
         int at = email.indexOf('@');
         if (at <= 1) return "***";
         return email.charAt(0) + "***" + email.substring(at);
+    }
+
+    public record LoginOutcome(AuthTokens tokens, boolean otpRequired, long otpExpiresInSeconds) {
     }
 }

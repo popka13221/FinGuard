@@ -66,6 +66,8 @@ import org.springframework.test.web.servlet.ResultActions;
         "app.security.rate-limit.reset-confirm.window-ms=60000",
         "app.security.rate-limit.reset.limit=3",
         "app.security.rate-limit.reset.window-ms=60000",
+        "app.security.rate-limit.login-email.limit=3",
+        "app.security.rate-limit.login-email.window-ms=60000",
         "app.security.lockout.max-attempts=2",
         "app.security.lockout.lock-minutes=60",
         "app.security.sessions.max-per-user=2",
@@ -729,6 +731,29 @@ class AuthSecurityIntegrationTest {
         }
         postJson("/api/auth/verify/request", payload)
                 .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void loginPerEmailRateLimitBlocksEvenWithSuccess() throws Exception {
+        String email = "login-rl@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isOk());
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isOk());
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isOk());
+        MvcResult limited = postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isTooManyRequests())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(limited.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("429001");
     }
 
     private UserToken latestResetToken() {

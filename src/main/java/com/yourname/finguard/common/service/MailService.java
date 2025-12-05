@@ -23,6 +23,7 @@ public class MailService {
     private final boolean enabled;
     private final String from;
     private final String resetSubject;
+    private final String otpSubject;
     private final String frontendBaseUrl;
     private final String devResetCode;
     private final JavaMailSender mailSender;
@@ -34,12 +35,14 @@ public class MailService {
     public MailService(@Value("${app.mail.enabled:false}") boolean enabled,
                        @Value("${app.mail.from:no-reply@finguard.local}") String from,
                        @Value("${app.mail.reset-subject:Сброс пароля FinGuard}") String resetSubject,
+                       @Value("${app.mail.otp-subject:Код входа FinGuard}") String otpSubject,
                        @Value("${app.frontend.base-url:http://localhost:8080}") String frontendBaseUrl,
                        @Value("${app.security.tokens.reset-dev-code:123456}") String devResetCode,
                        @Autowired(required = false) JavaMailSender mailSender) {
         this.enabled = enabled;
         this.from = from;
         this.resetSubject = resetSubject;
+        this.otpSubject = otpSubject;
         this.frontendBaseUrl = trimTrailingSlash(frontendBaseUrl);
         this.devResetCode = devResetCode == null ? "" : devResetCode.trim();
         this.mailSender = mailSender;
@@ -79,6 +82,38 @@ public class MailService {
             mailSender.send(mail);
         } catch (Exception e) {
             log.warn("Failed to send reset email to {}", maskEmail(to), e);
+        }
+    }
+
+    public void sendOtpEmail(String to, String code, Duration ttl) {
+        if (!StringUtils.hasText(to) || !StringUtils.hasText(code)) {
+            return;
+        }
+        String body = """
+                Привет!
+
+                Ваш код для входа в FinGuard: %s
+                Код действует примерно %s минут.
+
+                Если запрос сделали не вы — игнорируйте письмо.
+                """.formatted(code, ttl == null ? "5" : String.valueOf(ttl.toMinutes()));
+        MailMessage message = new MailMessage(to, otpSubject, body, Instant.now());
+        outbox.add(message);
+
+        if (!enabled || mailSender == null) {
+            log.info("Mail disabled, would send OTP email to {} with code {}", maskEmail(to), code);
+            return;
+        }
+
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(from);
+            mail.setTo(to);
+            mail.setSubject(otpSubject);
+            mail.setText(body);
+            mailSender.send(mail);
+        } catch (Exception e) {
+            log.warn("Failed to send OTP email to {}", maskEmail(to), e);
         }
     }
 
