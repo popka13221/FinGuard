@@ -21,6 +21,7 @@ const ResetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  const maxAttempts = 5;
   const [code, setCode] = useState('');
   const [resetSessionToken, setResetSessionToken] = useState('');
   const [timer, setTimer] = useState(0);
@@ -32,18 +33,22 @@ const ResetPage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialToken, setInitialToken] = useState('');
-  const [emailFromQuery, setEmailFromQuery] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [confirmedFlag, setConfirmedFlag] = useState(false);
 
   useEffect(() => {
     const t = searchParams.get('token');
     const email = searchParams.get('email');
+    const confirmed = searchParams.get('confirmed');
     if (t) {
       setCode(t);
       setInitialToken(t);
     }
     if (email) {
-      setEmailFromQuery(email);
       sessionStorage.setItem('spa_reset_email', email);
+    }
+    if (confirmed) {
+      setConfirmedFlag(true);
     }
   }, [searchParams]);
 
@@ -63,14 +68,12 @@ const ResetPage: React.FC = () => {
     }
   }, [resetSessionToken, timer]);
 
-  const redirectToForgot = () => {
-    const qs = new URLSearchParams();
-    qs.set('reason', 'expired');
-    if (emailFromQuery) qs.set('email', emailFromQuery);
-    navigate(`/forgot?${qs.toString()}`);
-  };
-
-  const confirmCode = async (valueOverride?: string, options?: { fromLink?: boolean }) => {
+  const confirmCode = async (valueOverride?: string) => {
+    if (confirmedFlag && resetSessionToken) return;
+    if (attempts >= maxAttempts) {
+      setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
+      return;
+    }
     if (isConfirming) return;
     setSuccess('');
     setInfo('');
@@ -89,19 +92,21 @@ const ResetPage: React.FC = () => {
     setIsConfirming(true);
     const res = await AuthApi.confirmReset({ token: value });
     setIsConfirming(false);
-    if (res.ok && res.data) {
+    if (res.ok && res.data && res.data.resetSessionToken) {
+      setAttempts(0);
       setResetSessionToken(res.data.resetSessionToken);
       setTimer(res.data.expiresInSeconds || 0);
       setInfo('Код подтверждён. Введите новый пароль.');
     } else {
       const code = res.data && (res.data as any).code;
       if (code === '100005') {
-        if (options?.fromLink) {
-          setInitialToken('');
-          redirectToForgot();
-          return;
+        const nextAttempts = attempts + 1;
+        setAttempts(nextAttempts);
+        if (nextAttempts >= maxAttempts) {
+          setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
+        } else {
+          setErrors({ code: 'Код неверный или устарел. Запросите новый.' });
         }
-        setErrors({ code: 'Код неверный или устарел. Запросите новый.' });
       } else if (code === '429001') {
         setErrors({ form: 'Слишком много попыток. Подождите и попробуйте снова.' });
       } else {
@@ -109,15 +114,16 @@ const ResetPage: React.FC = () => {
       }
       setResetSessionToken('');
       setTimer(0);
+      setConfirmedFlag(false);
     }
     setInitialToken('');
   };
 
   useEffect(() => {
-    if (initialToken && !resetSessionToken && !isConfirming) {
-      void confirmCode(initialToken, { fromLink: true });
+    if (initialToken && !resetSessionToken && !isConfirming && !confirmedFlag) {
+      void confirmCode(initialToken);
     }
-  }, [initialToken, resetSessionToken, isConfirming]);
+  }, [initialToken, resetSessionToken, isConfirming, confirmedFlag]);
 
   const validatePasswords = () => {
     const next: typeof errors = {};
@@ -199,7 +205,7 @@ const ResetPage: React.FC = () => {
                   </div>
                 )}
                 <div className="actions">
-                  <Button onClick={() => confirmCode()} disabled={isConfirming}>Подтвердить код</Button>
+                  <Button onClick={() => confirmCode()} disabled={isConfirming || attempts >= maxAttempts}>Подтвердить код</Button>
                   <Button variant="ghost" onClick={() => navigate('/forgot')}>Запросить новый</Button>
                 </div>
               </>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ForgotPage from '../ForgotPage';
 import ResetPage from '../ResetPage';
@@ -40,11 +40,13 @@ function renderWithRouter(path: string) {
 
 describe('Forgot/Reset flow', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
+    cleanup();
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('shows error on invalid email and does not call API', async () => {
@@ -65,13 +67,48 @@ describe('Forgot/Reset flow', () => {
     expect(await screen.findByLabelText(/Код из письма/i)).toBeInTheDocument();
   });
 
-  it('auto-confirms reset token from query and redirects to request new on expiry', async () => {
+  it('stays on step 1 when token invalid on forgot step', async () => {
+    mockedAuth.AuthApi.forgot.mockResolvedValue({ ok: true });
+    mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: false, data: { code: '100005' } });
+    renderWithRouter('/forgot');
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /Отправить код/i }));
+    await screen.findByLabelText(/Код из письма/i);
+
+    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: 'badtoken' } });
+    fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
+
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
+    expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
+    expect(screen.getByText(/Забыли пароль/i)).toBeInTheDocument();
+  });
+
+  it('navigates to reset after token confirmed on forgot step', async () => {
+    mockedAuth.AuthApi.forgot.mockResolvedValue({ ok: true });
+    mockedAuth.AuthApi.confirmReset
+      .mockResolvedValueOnce({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } })
+      .mockResolvedValueOnce({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
+    renderWithRouter('/forgot');
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /Отправить код/i }));
+    await screen.findByLabelText(/Код из письма/i);
+
+    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
+
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: '123456' }));
+    expect(await screen.findByText(/Смена пароля/i)).toBeInTheDocument();
+  });
+
+  it('auto-confirms reset token from query and shows error without redirect on expiry', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: false, data: { code: '100005' } });
     renderWithRouter('/reset?token=badtoken&email=user@example.com');
 
     await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
-    expect(await screen.findByText(/Код устарел\. Запросите новый/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Email/i)).toHaveValue('user@example.com');
+    expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Код из письма/i)).toHaveValue('badtoken');
   });
 
   it('reset validates password strength and does not call API on validation fail', async () => {

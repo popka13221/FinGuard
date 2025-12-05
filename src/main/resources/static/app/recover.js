@@ -24,9 +24,16 @@
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
   const resendCooldown = 60;
+  const maxTokenAttempts = 5;
+  const storageKeys = {
+    email: 'fg_forgot_email',
+    until: 'fg_forgot_cooldown_until',
+    stage: 'fg_forgot_stage'
+  };
   let resetSessionToken = '';
   let resetCountdown = 0;
   let resetCountdownTimer;
+  let tokenAttempts = 0;
 
   let submittingForgot = false;
   let submittingReset = false;
@@ -136,11 +143,19 @@
     }
   }
 
-  function startCooldown() {
+  function startCooldown(secondsOverride) {
     const btn = qs(selectors.forgotButton);
     if (!btn) return;
     if (!forgotButtonText) forgotButtonText = btn.textContent || 'Отправить код';
-    cooldownRemaining = resendCooldown;
+    cooldownRemaining = typeof secondsOverride === 'number' ? Math.max(secondsOverride, 0) : resendCooldown;
+    if (cooldownRemaining <= 0) {
+      btn.disabled = false;
+      localStorage.removeItem(storageKeys.until);
+      updateCooldownLabel();
+      return;
+    }
+    const untilTs = Date.now() + cooldownRemaining * 1000;
+    localStorage.setItem(storageKeys.until, String(untilTs));
     btn.disabled = true;
     updateCooldownLabel();
     if (cooldownTimer) clearInterval(cooldownTimer);
@@ -151,6 +166,7 @@
         cooldownTimer = null;
         btn.disabled = false;
         cooldownRemaining = 0;
+        localStorage.removeItem(storageKeys.until);
       }
       updateCooldownLabel();
     }, 1000);
@@ -178,7 +194,18 @@
     }
   }
 
+  function disableTokenEntry() {
+    const tokenInput = qs(selectors.forgotToken);
+    const continueBtn = qs(selectors.forgotNext);
+    if (tokenInput) tokenInput.disabled = true;
+    if (continueBtn) continueBtn.disabled = true;
+  }
+
   async function continueToReset() {
+    if (tokenAttempts >= maxTokenAttempts) {
+      setAlert(selectors.forgotStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+      return;
+    }
     clearFieldErrors();
     const tokenVal = (val(selectors.forgotToken) || '').trim();
     const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
@@ -190,11 +217,47 @@
       showFieldError('fpToken', 'Код слишком короткий');
       return;
     }
-    const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
-    window.location.href = url;
+    setAlert(selectors.forgotStatus, '');
+    setSubmitting([selectors.forgotNext], true);
+    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal }, false);
+    setSubmitting([selectors.forgotNext], false);
+    if (res.ok) {
+      tokenAttempts = 0;
+      const ttl = res.data && res.data.expiresInSeconds ? res.data.expiresInSeconds : 0;
+      const sessionToken = res.data && res.data.resetSessionToken ? res.data.resetSessionToken : '';
+      if (sessionToken) {
+        sessionStorage.setItem('reset_session_token', sessionToken);
+        if (ttl > 0) {
+          const expiresAt = Date.now() + ttl * 1000;
+          sessionStorage.setItem('reset_session_expires', String(expiresAt));
+        }
+      }
+      const url = '/app/reset.html?confirmed=1' + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
+      window.location.href = url;
+      return;
+    }
+    const code = res.data && res.data.code ? res.data.code : '';
+    if (code === '100005') {
+      tokenAttempts += 1;
+      if (tokenAttempts >= maxTokenAttempts) {
+        setAlert(selectors.forgotStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+        disableTokenEntry();
+      } else {
+        setAlert(selectors.forgotStatus, 'Код неверный или устарел. Запросите новый.', 'error');
+      }
+    } else if (code === '429001') {
+      setAlert(selectors.forgotStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
+    } else {
+      setAlert(selectors.forgotStatus, 'Не удалось подтвердить код. Попробуйте снова.', 'error');
+    }
   }
 
   async function confirmResetSession(tokenVal, emailVal) {
+    if (tokenAttempts >= maxTokenAttempts) {
+      setAlert(selectors.resetStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+      disableTokenEntry();
+      return;
+    }
     if (!tokenVal) {
       setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
       return;
@@ -203,10 +266,13 @@
     if (!res.ok) {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
-        const qs = new URLSearchParams();
-        qs.set('reason', 'expired');
-        if (emailVal) qs.set('email', emailVal);
-        window.location.href = `/app/forgot.html?${qs.toString()}`;
+        tokenAttempts += 1;
+        if (tokenAttempts >= maxTokenAttempts) {
+          setAlert(selectors.resetStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+          disableTokenEntry();
+        } else {
+          setAlert(selectors.resetStatus, 'Код неверный или устарел. Запросите новый.', 'error');
+        }
       } else if (code === '429001') {
         setAlert(selectors.resetStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
       } else {
@@ -215,6 +281,7 @@
       resetSessionToken = '';
       return;
     }
+    tokenAttempts = 0;
     resetSessionToken = res.data && res.data.resetSessionToken ? res.data.resetSessionToken : '';
     const ttl = res.data && res.data.expiresInSeconds ? res.data.expiresInSeconds : 0;
     startResetCountdown(ttl);
@@ -254,6 +321,7 @@
 
   async function submitForgot() {
     if (submittingForgot) return;
+    if (cooldownRemaining > 0) return;
     const validation = validateForgot();
     if (!validation.valid) return;
     submittingForgot = true;
@@ -263,6 +331,8 @@
     if (!cooldownTimer) setSubmitting([selectors.forgotButton], false);
     if (result.ok) {
       showTokenInput();
+      localStorage.setItem(storageKeys.email, validation.email);
+      localStorage.setItem(storageKeys.stage, 'sent');
       startCooldown();
     } else {
       const code = result.data && result.data.code ? result.data.code : '';
@@ -317,17 +387,43 @@
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const email = params.get('email');
-    const reason = params.get('reason');
-    if (reason === 'expired') {
-      setAlert(selectors.forgotStatus, 'Код устарел. Запросите новый.', 'error');
-      showTokenInput();
-    }
-    if (token) {
+    const confirmed = params.get('confirmed');
+    const storedToken = sessionStorage.getItem('reset_session_token') || '';
+    const expiresRaw = sessionStorage.getItem('reset_session_expires');
+    if (storedToken) {
+      resetSessionToken = storedToken;
+      if (expiresRaw) {
+        const expiresAt = Number(expiresRaw);
+        const left = Math.max(Math.floor((expiresAt - Date.now()) / 1000), 0);
+        startResetCountdown(left);
+      }
+    } else if (token && !confirmed) {
       confirmResetSession(token, email || '');
     }
     if (email) {
       const emailInput = qs(selectors.forgotEmail);
       if (emailInput) emailInput.value = email;
+    }
+  }
+
+  function restoreForgotState() {
+    const savedEmail = localStorage.getItem(storageKeys.email) || '';
+    const savedUntil = localStorage.getItem(storageKeys.until);
+    const savedStage = localStorage.getItem(storageKeys.stage);
+    if (savedEmail) {
+      const emailInput = qs(selectors.forgotEmail);
+      if (emailInput) emailInput.value = savedEmail;
+    }
+    if (savedStage === 'sent') {
+      showTokenInput();
+    }
+    if (savedUntil) {
+      const left = Math.max(Math.floor((Number(savedUntil) - Date.now()) / 1000), 0);
+      if (left > 0) {
+        startCooldown(left);
+      } else {
+        localStorage.removeItem(storageKeys.until);
+      }
     }
   }
 
@@ -346,6 +442,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     Theme.init(selectors.themeToggle);
+    restoreForgotState();
     prefillFromQuery();
     bindActions();
   });

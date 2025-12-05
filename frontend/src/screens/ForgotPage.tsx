@@ -8,6 +8,12 @@ import '../theme.css';
 const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 const resendSeconds = 60;
+const maxAttempts = 5;
+const storageKeys = {
+  email: 'fg_forgot_email',
+  until: 'fg_forgot_cooldown_until',
+  stage: 'fg_forgot_stage',
+};
 
 const ForgotPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,14 +25,29 @@ const ForgotPage: React.FC = () => {
   const [showToken, setShowToken] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [isChecking, setIsChecking] = useState(false);
+  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     const fromQuery = searchParams.get('email');
     if (fromQuery) setEmail(fromQuery);
-    const reason = searchParams.get('reason');
-    if (reason === 'expired') {
-      setErrors({ form: 'Код устарел. Запросите новый.' });
+
+    const savedEmail = localStorage.getItem(storageKeys.email);
+    const savedUntil = localStorage.getItem(storageKeys.until);
+    const savedStage = localStorage.getItem(storageKeys.stage);
+    if (!email && savedEmail) {
+      setEmail(savedEmail);
+    }
+    if (savedStage === 'sent') {
       setShowToken(true);
+    }
+    if (savedUntil) {
+      const left = Math.max(Math.floor((Number(savedUntil) - Date.now()) / 1000), 0);
+      if (left > 0) {
+        setCooldown(left);
+      } else {
+        localStorage.removeItem(storageKeys.until);
+      }
     }
   }, [searchParams]);
 
@@ -34,6 +55,8 @@ const ForgotPage: React.FC = () => {
     let timer: ReturnType<typeof setInterval> | undefined;
     if (cooldown > 0) {
       timer = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    } else {
+      localStorage.removeItem(storageKeys.until);
     }
     return () => {
       if (timer) clearInterval(timer);
@@ -62,6 +85,10 @@ const ForgotPage: React.FC = () => {
     if (res.ok) {
       setShowToken(true);
       setCooldown(resendSeconds);
+      localStorage.setItem(storageKeys.email, email.trim().toLowerCase());
+      localStorage.setItem(storageKeys.stage, 'sent');
+      const until = Date.now() + resendSeconds * 1000;
+      localStorage.setItem(storageKeys.until, String(until));
     } else {
       const code = res.data && (res.data as any).code;
       if (code === '400002') {
@@ -72,7 +99,12 @@ const ForgotPage: React.FC = () => {
     }
   };
 
-  const goToReset = () => {
+  const goToReset = async () => {
+    if (isChecking) return;
+    if (attempts >= maxAttempts) {
+      setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
+      return;
+    }
     if (!token.trim()) {
       setErrors({ token: 'Введите код из письма' });
       return;
@@ -81,8 +113,39 @@ const ForgotPage: React.FC = () => {
       setErrors({ token: 'Код слишком короткий' });
       return;
     }
-    const url = `/reset?token=${encodeURIComponent(token.trim())}${email ? `&email=${encodeURIComponent(email.trim())}` : ''}`;
-    navigate(url);
+    setErrors({});
+    setIsChecking(true);
+    const res = await AuthApi.confirmReset({ token: token.trim() });
+    setIsChecking(false);
+    if (res.ok && res.data) {
+      setAttempts(0);
+      const resetSessionToken = (res.data as any).resetSessionToken;
+      const expiresInSeconds = (res.data as any).expiresInSeconds;
+      if (resetSessionToken) {
+        sessionStorage.setItem('spa_reset_session', resetSessionToken);
+        if (expiresInSeconds) {
+          const expiresAt = Date.now() + expiresInSeconds * 1000;
+          sessionStorage.setItem('spa_reset_session_expires', String(expiresAt));
+        }
+      }
+      const url = `/reset?confirmed=1${email ? `&email=${encodeURIComponent(email.trim())}` : ''}`;
+      navigate(url);
+      return;
+    }
+    const code = res.data && (res.data as any).code;
+    if (code === '100005') {
+      const nextAttempts = attempts + 1;
+      setAttempts(nextAttempts);
+      if (nextAttempts >= maxAttempts) {
+        setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
+      } else {
+        setErrors({ token: 'Код неверный или устарел. Запросите новый.' });
+      }
+    } else if (code === '429001') {
+      setErrors({ form: 'Слишком много попыток. Подождите и попробуйте снова.' });
+    } else {
+      setErrors({ form: 'Не удалось подтвердить код. Попробуйте позже.' });
+    }
   };
 
   return (
@@ -136,7 +199,7 @@ const ForgotPage: React.FC = () => {
               <Button variant="secondary" onClick={handleSend} disabled={isSubmitting || cooldown > 0}>
                 {cooldown > 0 ? `Отправить повторно (${cooldown}s)` : 'Отправить код'}
               </Button>
-              <Button variant="ghost" onClick={goToReset}>Ввести код</Button>
+              <Button variant="ghost" onClick={goToReset} disabled={isChecking || attempts >= maxAttempts}>Ввести код</Button>
             </div>
           </div>
         </div>
