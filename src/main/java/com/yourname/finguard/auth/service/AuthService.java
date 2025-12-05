@@ -6,14 +6,15 @@ import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.LoginRequest;
 import com.yourname.finguard.auth.dto.RegisterRequest;
 import com.yourname.finguard.auth.dto.ResetPasswordRequest;
+import com.yourname.finguard.auth.dto.ResetSessionResponse;
 import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.model.User;
+import com.yourname.finguard.auth.model.PasswordResetSession;
 import com.yourname.finguard.auth.model.UserToken;
 import com.yourname.finguard.auth.model.UserTokenType;
 import com.yourname.finguard.auth.repository.UserRepository;
-import com.yourname.finguard.auth.service.UserTokenService;
 import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.model.Role;
 import com.yourname.finguard.common.util.PasswordValidator;
@@ -23,8 +24,9 @@ import com.yourname.finguard.common.service.PwnedPasswordChecker;
 import com.yourname.finguard.common.exception.ApiException;
 import com.yourname.finguard.security.JwtTokenProvider;
 import com.yourname.finguard.security.LoginAttemptService;
+import com.yourname.finguard.security.RateLimiterService;
 import com.yourname.finguard.security.TokenBlacklistService;
-import com.yourname.finguard.auth.service.UserSessionService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,8 +35,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +59,12 @@ public class AuthService {
     private final UserTokenService userTokenService;
     private final UserSessionService userSessionService;
     private final MailService mailService;
+    private final PasswordResetSessionService passwordResetSessionService;
+    private final RateLimiterService rateLimiterService;
+    private final int resetConfirmLimit;
+    private final long resetConfirmWindowMs;
+    private final int resetLimit;
+    private final long resetWindowMs;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -65,7 +76,13 @@ public class AuthService {
                        TokenBlacklistService tokenBlacklistService,
                        UserTokenService userTokenService,
                        UserSessionService userSessionService,
-                       MailService mailService) {
+                       PasswordResetSessionService passwordResetSessionService,
+                       RateLimiterService rateLimiterService,
+                       MailService mailService,
+                       @Value("${app.security.rate-limit.reset-confirm.limit:5}") int resetConfirmLimit,
+                       @Value("${app.security.rate-limit.reset-confirm.window-ms:300000}") long resetConfirmWindowMs,
+                       @Value("${app.security.rate-limit.reset.limit:5}") int resetLimit,
+                       @Value("${app.security.rate-limit.reset.window-ms:300000}") long resetWindowMs) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
@@ -77,6 +94,12 @@ public class AuthService {
         this.userTokenService = userTokenService;
         this.userSessionService = userSessionService;
         this.mailService = mailService;
+        this.passwordResetSessionService = passwordResetSessionService;
+        this.rateLimiterService = rateLimiterService;
+        this.resetConfirmLimit = resetConfirmLimit;
+        this.resetConfirmWindowMs = resetConfirmWindowMs;
+        this.resetLimit = resetLimit;
+        this.resetWindowMs = resetWindowMs;
     }
 
     @Transactional
@@ -223,32 +246,104 @@ public class AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
         userRepository.findByEmail(email).ifPresent(user -> {
-            Instant cutoff = Instant.now().minus(userTokenService.getResetCooldown());
-            String token = userTokenService.findLatestActiveReset(user)
+            Instant now = Instant.now();
+            Instant cutoff = now.minus(userTokenService.getResetCooldown());
+            UserToken latest = userTokenService.findLatestActiveReset(user)
                     .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(cutoff))
-                    .map(UserToken::getToken)
-                    .orElseGet(() -> userTokenService.issue(user, UserTokenType.RESET));
-            mailService.sendResetEmail(user.getEmail(), token, userTokenService.getResetTtl());
+                    .orElse(null);
+            String tokenValue;
+            if (latest != null) {
+                tokenValue = latest.getToken();
+            } else {
+                userTokenService.invalidateActive(user, UserTokenType.RESET);
+                tokenValue = userTokenService.issue(user, UserTokenType.RESET);
+            }
+            mailService.sendResetEmail(user.getEmail(), tokenValue, userTokenService.getResetTtl());
+            log.info("Reset requested for email={}", maskEmail(user.getEmail()));
         });
     }
 
-    public void resetPassword(ResetPasswordRequest request) {
+    public ResetSessionResponse confirmResetToken(ValidateResetTokenRequest request, String ip, String userAgent) {
+        enforceRateLimit("reset-confirm:ip:" + safe(ip), resetConfirmLimit, resetConfirmWindowMs);
         UserToken token = userTokenService.findValid(request.token(), UserTokenType.RESET)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset token", HttpStatus.BAD_REQUEST));
+        enforceRateLimit("reset-confirm:email:" + safe(token.getUser().getEmail()), resetConfirmLimit, resetConfirmWindowMs);
+
+        PasswordResetSession session = passwordResetSessionService.create(token.getUser(), token.getExpiresAt(), ip, userAgent);
+        long ttlSeconds = Duration.between(Instant.now(), session.getExpiresAt()).getSeconds();
+        if (ttlSeconds <= 0) {
+            ttlSeconds = Math.max(passwordResetSessionService.getSessionTtl().getSeconds(), 60);
+        }
+        String sessionToken = jwtTokenProvider.generateResetSessionToken(
+                token.getUser().getId(),
+                token.getUser().getEmail(),
+                session.getJti(),
+                Math.max(ttlSeconds, 1),
+                session.getIpHash(),
+                session.getUserAgentHash()
+        );
+        userTokenService.markUsed(token);
+        return new ResetSessionResponse(sessionToken, ttlSeconds);
+    }
+
+    public void resetPassword(ResetPasswordRequest request, String ip, String userAgent) {
+        enforceRateLimit("reset:ip:" + safe(ip), resetLimit, resetWindowMs);
+        JwtTokenProvider.ResetSessionClaims claims;
+        try {
+            claims = jwtTokenProvider.parseResetSessionToken(request.resetSessionToken());
+        } catch (Exception e) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST);
+        }
+        enforceRateLimit("reset:email:" + safe(claims.email()), resetLimit, resetWindowMs);
+        if (claims.expiresAt() == null || claims.expiresAt().isBefore(Instant.now())) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST);
+        }
+
+        PasswordResetSession session = passwordResetSessionService.findActive(claims.jti())
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST));
+        boolean contextMatches = passwordResetSessionService.matchesContext(session, ip, userAgent);
+        if (!contextMatches) {
+            boolean ipFromTokenMatches = !StringUtils.hasText(session.getIpHash()) || session.getIpHash().equals(claims.ipHash());
+            boolean uaFromTokenMatches = !StringUtils.hasText(session.getUserAgentHash()) || session.getUserAgentHash().equals(claims.userAgentHash());
+            if (!ipFromTokenMatches || !uaFromTokenMatches) {
+                throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset session token", HttpStatus.BAD_REQUEST);
+            }
+        }
+
         if (PasswordValidator.isWeak(request.password())) {
             throw new ApiException(ErrorCodes.AUTH_WEAK_PASSWORD, "Password is too weak. Use a unique, strong password.", HttpStatus.BAD_REQUEST);
         }
         if (pwnedPasswordChecker.isPwned(request.password())) {
             throw new ApiException(ErrorCodes.AUTH_WEAK_PASSWORD, "Password is compromised. Choose another password.", HttpStatus.BAD_REQUEST);
         }
-        User user = token.getUser();
+
+        User user = session.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
-        userTokenService.markUsed(token);
+        passwordResetSessionService.consume(session);
+        userTokenService.invalidateActive(user, UserTokenType.RESET);
+        revokeUserSessions(user);
     }
 
-    public void validateResetToken(ValidateResetTokenRequest request) {
-        userTokenService.findValid(request.token(), UserTokenType.RESET)
-                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid reset token", HttpStatus.BAD_REQUEST));
+    private void enforceRateLimit(String key, int limit, long windowMs) {
+        if (!rateLimiterService.allow(key, limit, windowMs)) {
+            throw new ApiException(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private void revokeUserSessions(User user) {
+        List<com.yourname.finguard.auth.model.UserSession> sessions = userSessionService.revokeAll(user);
+        sessions.forEach(session -> tokenBlacklistService.revoke(session.getJti(), session.getExpiresAt()));
+    }
+
+    private String maskEmail(String email) {
+        if (email == null) return "";
+        int at = email.indexOf('@');
+        if (at <= 1) return "***";
+        return email.charAt(0) + "***" + email.substring(at);
     }
 }

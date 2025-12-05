@@ -78,16 +78,8 @@ const ForgotPage: React.FC = () => {
       setErrors({ token: 'Код слишком короткий' });
       return;
     }
-    setIsSubmitting(true);
-    AuthApi.validateReset({ token: token.trim() }).then((res) => {
-      setIsSubmitting(false);
-      if (res.ok) {
-        const url = `/reset?token=${encodeURIComponent(token.trim())}${email ? `&email=${encodeURIComponent(email.trim())}` : ''}`;
-        navigate(url);
-      } else {
-        setErrors({ token: 'Код неверный или устарел. Запросите новый.' });
-      }
-    });
+    const url = `/reset?token=${encodeURIComponent(token.trim())}${email ? `&email=${encodeURIComponent(email.trim())}` : ''}`;
+    navigate(url);
   };
 
   return (

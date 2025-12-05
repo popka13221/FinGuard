@@ -11,9 +11,13 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UserTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserTokenService.class);
 
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;
@@ -27,8 +31,8 @@ public class UserTokenService {
                             @Value("${app.security.tokens.reset-dev-code:123456}") String resetDevCode,
                             @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
         this.userTokenRepository = userTokenRepository;
-        this.verifyTtl = Duration.ofMinutes(verifyTtlMinutes);
-        this.resetTtl = Duration.ofMinutes(resetTtlMinutes);
+        this.verifyTtl = Duration.ofMinutes(Math.max(verifyTtlMinutes, 1));
+        this.resetTtl = Duration.ofMinutes(Math.max(resetTtlMinutes, 1));
         this.resetDevCode = resetDevCode == null ? "" : resetDevCode.trim();
         this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
     }
@@ -48,6 +52,9 @@ public class UserTokenService {
         token.setType(type);
         token.setExpiresAt(Instant.now().plus(ttl));
         userTokenRepository.save(token);
+        if (type == UserTokenType.RESET) {
+            log.debug("Issued {} token for user={} exp={}", type, user.getEmail(), token.getExpiresAt());
+        }
         return token.getToken();
     }
 
@@ -70,6 +77,19 @@ public class UserTokenService {
 
     public Duration getResetCooldown() {
         return resetCooldown;
+    }
+
+    @Transactional
+    public void invalidateActive(User user, UserTokenType type) {
+        if (user == null || type == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        userTokenRepository.findByUserAndTypeAndUsedAtIsNullAndExpiresAtAfter(user, type, now)
+                .forEach(t -> {
+                    t.setUsedAt(now);
+                    userTokenRepository.save(t);
+                });
     }
 
     @Transactional(readOnly = true)

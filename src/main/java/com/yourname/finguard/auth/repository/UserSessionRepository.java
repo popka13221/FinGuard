@@ -17,4 +17,8 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
     void deleteExpired(Instant now);
 
     List<UserSession> findTop10ByUserIdOrderByCreatedAtAsc(Long userId);
+
+    List<UserSession> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }

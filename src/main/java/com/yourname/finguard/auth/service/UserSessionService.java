@@ -56,4 +56,14 @@ public class UserSessionService {
     public void revoke(String jti) {
         repository.findByJti(jti).ifPresent(repository::delete);
     }
+
+    @Transactional
+    public List<UserSession> revokeAll(User user) {
+        if (user == null || user.getId() == null) {
+            return List.of();
+        }
+        List<UserSession> sessions = repository.findByUserId(user.getId());
+        repository.deleteByUserId(user.getId());
+        return sessions;
+    }
 }

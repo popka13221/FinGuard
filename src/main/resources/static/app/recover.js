@@ -24,7 +24,9 @@
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
   const resendCooldown = 60;
-  let resetTokenValue = '';
+  let resetSessionToken = '';
+  let resetCountdown = 0;
+  let resetCountdownTimer;
 
   let submittingForgot = false;
   let submittingReset = false;
@@ -50,6 +52,12 @@
     box.textContent = msg;
     box.style.display = 'block';
     box.classList.toggle('success', type === 'success');
+  }
+
+  function formatTimer(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(Math.max(seconds % 60, 0)).padStart(2, '0');
+    return `${m}:${s}`;
   }
 
   function clearFieldErrors() {
@@ -86,6 +94,29 @@
       input.type = 'password';
       if (btn) btn.textContent = 'Показать';
     }
+  }
+
+  function startResetCountdown(seconds) {
+    if (resetCountdownTimer) {
+      clearInterval(resetCountdownTimer);
+      resetCountdownTimer = null;
+    }
+    resetCountdown = Math.max(seconds, 0);
+    if (resetCountdown <= 0) {
+      return;
+    }
+    setAlert(selectors.resetStatus, `Сессия сброса активна: ${formatTimer(resetCountdown)}`, 'success');
+    resetCountdownTimer = setInterval(() => {
+      resetCountdown -= 1;
+      if (resetCountdown <= 0) {
+        clearInterval(resetCountdownTimer);
+        resetCountdownTimer = null;
+        resetSessionToken = '';
+        setAlert(selectors.resetStatus, 'Сессия сброса истекла. Введите код снова.', 'error');
+      } else {
+        setAlert(selectors.resetStatus, `Сессия сброса активна: ${formatTimer(resetCountdown)}`, 'success');
+      }
+    }, 1000);
   }
 
   function setSubmitting(buttonSelectors, state) {
@@ -159,30 +190,43 @@
       showFieldError('fpToken', 'Код слишком короткий');
       return;
     }
-    const res = await Api.call('/api/auth/reset/check', 'POST', { token: tokenVal }, false);
+    const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
+    window.location.href = url;
+  }
+
+  async function confirmResetSession(tokenVal) {
+    if (!tokenVal) {
+      setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
+      return;
+    }
+    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal }, false);
     if (!res.ok) {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
-        showFieldError('fpToken', 'Код неверный или устарел. Запросите новый.');
+        setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
+      } else if (code === '429001') {
+        setAlert(selectors.resetStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
       } else {
-        showFieldError('fpToken', 'Не удалось проверить код. Попробуйте снова.');
+        setAlert(selectors.resetStatus, 'Не удалось подтвердить код. Попробуйте снова.', 'error');
       }
+      resetSessionToken = '';
       return;
     }
-    const url = '/app/reset.html?token=' + encodeURIComponent(tokenVal) + (emailVal ? `&email=${encodeURIComponent(emailVal)}` : '');
-    window.location.href = url;
+    resetSessionToken = res.data && res.data.resetSessionToken ? res.data.resetSessionToken : '';
+    const ttl = res.data && res.data.expiresInSeconds ? res.data.expiresInSeconds : 0;
+    startResetCountdown(ttl);
   }
 
   function validateReset() {
     clearFieldErrors();
     setAlert(selectors.resetStatus, '');
     let valid = true;
-    const token = (resetTokenValue || '').trim();
+    const sessionToken = (resetSessionToken || '').trim();
     const password = (val(selectors.resetPassword) || '').trim();
     const confirm = (val(selectors.resetPasswordConfirm) || '').trim();
 
-    if (!token) {
-      setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
+    if (!sessionToken) {
+      setAlert(selectors.resetStatus, 'Сначала подтвердите код из письма.', 'error');
       valid = false;
     }
 
@@ -202,7 +246,7 @@
       valid = false;
     }
 
-    return { valid, payload: { token, password } };
+    return { valid, payload: { resetSessionToken: sessionToken, password } };
   }
 
   async function submitForgot() {
@@ -234,7 +278,8 @@
         showFieldError('resetPassword', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.');
         break;
       case '100005':
-        setAlert(selectors.resetStatus, 'Код сброса устарел или уже использован. Запросите новый.', 'error');
+        resetSessionToken = '';
+        setAlert(selectors.resetStatus, 'Сессия сброса устарела или уже использована. Запросите новый код.', 'error');
         break;
       default:
         setAlert(selectors.resetStatus, 'Не удалось обновить пароль. Проверьте данные или повторите позже.');
@@ -251,7 +296,10 @@
     submittingReset = false;
     setSubmitting([selectors.resetButton], false);
     if (result.ok) {
-      setAlert(selectors.resetStatus, 'Пароль обновлен. Теперь можно войти с новыми данными.', 'success');
+      setAlert(selectors.resetStatus, 'Пароль обновлен. Сейчас перенаправим на экран входа.', 'success');
+      setTimeout(() => {
+        window.location.href = '/app/login.html';
+      }, 900);
       [selectors.resetPassword, selectors.resetPasswordConfirm].forEach((sel) => {
         const input = qs(sel);
         if (input) input.value = '';
@@ -267,7 +315,7 @@
     const token = params.get('token');
     const email = params.get('email');
     if (token) {
-      resetTokenValue = token;
+      confirmResetSession(token);
     }
     if (email) {
       const emailInput = qs(selectors.forgotEmail);

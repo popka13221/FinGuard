@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ResetPasswordRequest(
-        @NotBlank String token,
+        @NotBlank String resetSessionToken,
         @NotBlank
         @Size(min = 10, max = 100, message = "Password must be at least 10 characters long")
         @Pattern(

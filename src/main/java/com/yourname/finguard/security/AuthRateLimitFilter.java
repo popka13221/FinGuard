@@ -20,6 +20,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/auth/login",
             "/api/auth/register",
             "/api/auth/forgot",
+            "/api/auth/reset/confirm",
             "/api/auth/reset",
             "/api/auth/reset/check",
             "/api/auth/refresh",

@@ -10,6 +10,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
     show-sql: false
     open-in-view: false
   flyway:
@@ -35,6 +37,15 @@ app:
       auth:
         limit: 1000
         window-ms: 60000
+      forgot:
+        limit: 3
+        window-ms: 60000
+      reset-confirm:
+        limit: 100
+        window-ms: 60000
+      reset:
+        limit: 100
+        window-ms: 60000
     lockout:
       max-attempts: 5
       lock-minutes: 15
@@ -45,3 +56,4 @@ app:
     tokens:
       reset-dev-code: 123456
       reset-cooldown-seconds: 60
+      reset-session-ttl-minutes: 15

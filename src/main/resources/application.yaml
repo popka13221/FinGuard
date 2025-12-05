@@ -11,6 +11,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
     show-sql: false
     open-in-view: false
   flyway:
@@ -49,6 +51,20 @@ app:
       cookie-secure: ${JWT_COOKIE_SECURE:false}
     cors:
       allowed-origins: ${ALLOWED_ORIGINS:}
+    rate-limit:
+      auth:
+        limit: ${RATE_LIMIT_AUTH_LIMIT:30}
+        window-ms: ${RATE_LIMIT_AUTH_WINDOW_MS:60000}
+      forgot:
+        limit: ${RATE_LIMIT_FORGOT_LIMIT:5}
+        window-ms: ${RATE_LIMIT_FORGOT_WINDOW_MS:300000}
+      reset-confirm:
+        limit: ${RATE_LIMIT_RESET_CONFIRM_LIMIT:5}
+        window-ms: ${RATE_LIMIT_RESET_CONFIRM_WINDOW_MS:300000}
+      reset:
+        limit: ${RATE_LIMIT_RESET_LIMIT:5}
+        window-ms: ${RATE_LIMIT_RESET_WINDOW_MS:300000}
     tokens:
       reset-dev-code: ${RESET_DEV_CODE:123456}
       reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}
+      reset-session-ttl-minutes: ${RESET_SESSION_TTL_MINUTES:15}

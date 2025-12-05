@@ -9,6 +9,7 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,27 +68,55 @@ public class JwtTokenProvider implements InitializingBean {
     }
 
     public String generateAccessToken(Long userId, String email) {
-        return buildToken(userId, email, validitySeconds, "access");
+        return buildToken(userId, email, validitySeconds, "access", null, null);
     }
 
     public String generateRefreshToken(Long userId, String email) {
-        return buildToken(userId, email, refreshValiditySeconds, "refresh");
+        return buildToken(userId, email, refreshValiditySeconds, "refresh", null, null);
     }
 
-    private String buildToken(Long userId, String email, long ttlSeconds, String type) {
+    public String generateResetSessionToken(Long userId, String email, String jti, long ttlSeconds, String ipHash, String userAgentHash) {
+        Map<String, Object> claims = Map.of(
+                "rsh", ipHash == null ? "" : ipHash,
+                "uah", userAgentHash == null ? "" : userAgentHash
+        );
+        return buildToken(userId, email, ttlSeconds, "reset_session", jti, claims);
+    }
+
+    public ResetSessionClaims parseResetSessionToken(String token) {
+        Claims claims = parseClaims(token);
+        Object typ = claims.get("typ");
+        if (typ == null || !"reset_session".equals(typ.toString())) {
+            throw new JwtException("Invalid token type");
+        }
+        Long userId = getUserIdFromClaims(claims);
+        String email = claims.getSubject();
+        String jti = claims.getId();
+        String ipHash = toStringClaim(claims.get("rsh"));
+        String uaHash = toStringClaim(claims.get("uah"));
+        return new ResetSessionClaims(userId, email, jti, ipHash, uaHash, claims.getExpiration().toInstant());
+    }
+
+    private String buildToken(Long userId, String email, long ttlSeconds, String type, String jti, Map<String, Object> extraClaims) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(ttlSeconds);
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(email)
                 .setIssuer(issuer)
                 .setAudience(audience)
-                .setId(UUID.randomUUID().toString())
+                .setId(jti == null || jti.isBlank() ? UUID.randomUUID().toString() : jti)
                 .claim("uid", userId)
                 .claim("typ", type)
                 .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiry))
-                .signWith(signingKey, SignatureAlgorithm.HS256)
-                .compact();
+                .setExpiration(Date.from(expiry));
+        if (extraClaims != null) {
+            extraClaims.forEach((k, v) -> {
+                if (v != null) {
+                    builder.claim(k, v);
+                }
+            });
+        }
+        return builder.signWith(signingKey, SignatureAlgorithm.HS256).compact();
     }
 
     public String getEmail(String token) {
@@ -100,19 +129,7 @@ public class JwtTokenProvider implements InitializingBean {
     }
 
     public Long getUserId(String token) {
-        Claims claims = parseClaims(token);
-        Object uid = claims.get("uid");
-        if (uid instanceof Number n) {
-            return n.longValue();
-        }
-        if (uid != null) {
-            try {
-                return Long.parseLong(uid.toString());
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
+        return getUserIdFromClaims(parseClaims(token));
     }
 
     public String getJti(String token) {
@@ -146,5 +163,27 @@ public class JwtTokenProvider implements InitializingBean {
         } catch (JwtException e) {
             throw e;
         }
+    }
+
+    private Long getUserIdFromClaims(Claims claims) {
+        Object uid = claims.get("uid");
+        if (uid instanceof Number n) {
+            return n.longValue();
+        }
+        if (uid != null) {
+            try {
+                return Long.parseLong(uid.toString());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private String toStringClaim(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    public record ResetSessionClaims(Long userId, String email, String jti, String ipHash, String userAgentHash, Instant expiresAt) {
     }
 }

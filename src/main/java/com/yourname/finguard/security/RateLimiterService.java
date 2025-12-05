@@ -27,16 +27,23 @@ public class RateLimiterService {
     }
 
     public boolean allow(String key) {
+        return allow(key, limit, windowMs);
+    }
+
+    public boolean allow(String key, int customLimit, long customWindowMs) {
+        if (customLimit <= 0 || customWindowMs <= 0) {
+            return true;
+        }
         long now = System.currentTimeMillis();
         AtomicBoolean allowed = new AtomicBoolean(true);
         buckets.compute(key, (k, bucket) -> {
-            if (bucket == null || now - bucket.windowStartMs >= windowMs) {
+            if (bucket == null || now - bucket.windowStartMs >= customWindowMs) {
                 Bucket fresh = new Bucket();
                 fresh.windowStartMs = now;
                 fresh.count = 1;
                 return fresh;
             }
-            if (bucket.count >= limit) {
+            if (bucket.count >= customLimit) {
                 allowed.set(false);
                 return bucket;
             }

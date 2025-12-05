@@ -13,7 +13,7 @@ vi.mock('../../api/auth', async (importOriginal) => {
     AuthApi: {
       ...actual.AuthApi,
       forgot: vi.fn(),
-      validateReset: vi.fn(),
+      confirmReset: vi.fn(),
       reset: vi.fn(),
     },
   };
@@ -22,7 +22,7 @@ vi.mock('../../api/auth', async (importOriginal) => {
 const mockedAuth = AuthApi as unknown as {
   AuthApi: {
     forgot: ReturnType<typeof vi.fn>;
-    validateReset: ReturnType<typeof vi.fn>;
+    confirmReset: ReturnType<typeof vi.fn>;
     reset: ReturnType<typeof vi.fn>;
   };
 };
@@ -55,22 +55,29 @@ describe('Forgot/Reset flow', () => {
     expect(mockedAuth.AuthApi.forgot).not.toHaveBeenCalled();
   });
 
-  it('sends forgot request, then validates token before navigation', async () => {
+  it('sends forgot request and reveals code input', async () => {
     mockedAuth.AuthApi.forgot.mockResolvedValue({ ok: true });
-    mockedAuth.AuthApi.validateReset.mockResolvedValue({ ok: true });
     renderWithRouter('/forgot');
 
     fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /Отправить код/i }));
     await waitFor(() => expect(mockedAuth.AuthApi.forgot).toHaveBeenCalledTimes(1));
-
-    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '123456' } });
-    fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
-    await waitFor(() => expect(mockedAuth.AuthApi.validateReset).toHaveBeenCalledWith({ token: '123456' }));
+    expect(await screen.findByLabelText(/Код из письма/i)).toBeInTheDocument();
   });
 
-  it('reset shows error for weak password and does not call API on validation fail', async () => {
+  it('auto-confirms reset token from query and surfaces invalid code', async () => {
+    mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: false, data: { code: '100005' } });
+    renderWithRouter('/reset?token=badtoken');
+
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
+    expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
+  });
+
+  it('reset validates password strength and does not call API on validation fail', async () => {
+    mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
     renderWithRouter('/reset?token=123456');
+    await screen.findByText(/Сессия сброса активна/i);
+
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'weak' } });
     fireEvent.change(screen.getByLabelText(/Повторите пароль/i), { target: { value: 'weak' } });
     fireEvent.click(screen.getByRole('button', { name: /Сменить пароль/i }));
@@ -78,15 +85,17 @@ describe('Forgot/Reset flow', () => {
     expect(mockedAuth.AuthApi.reset).not.toHaveBeenCalled();
   });
 
-  it('reset calls API and handles invalid token error', async () => {
+  it('reset calls API and handles invalid session error', async () => {
+    mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
     mockedAuth.AuthApi.reset.mockResolvedValue({ ok: false, data: { code: '100005' } });
     renderWithRouter('/reset?token=123456');
 
+    await screen.findByText(/Сессия сброса активна/i);
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'StrongPass1!' } });
     fireEvent.change(screen.getByLabelText(/Повторите пароль/i), { target: { value: 'StrongPass1!' } });
     fireEvent.click(screen.getByRole('button', { name: /Сменить пароль/i }));
 
-    await waitFor(() => expect(mockedAuth.AuthApi.reset).toHaveBeenCalledWith({ token: '123456', password: 'StrongPass1!' }));
-    expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
+    await waitFor(() => expect(mockedAuth.AuthApi.reset).toHaveBeenCalledWith({ resetSessionToken: 'session-token', password: 'StrongPass1!' }));
+    expect(await screen.findByText(/Сессия сброса устарела/i)).toBeInTheDocument();
   });
 });

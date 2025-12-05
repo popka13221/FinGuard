@@ -10,15 +10,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.model.User;
+import com.yourname.finguard.auth.model.PasswordResetSession;
 import com.yourname.finguard.auth.model.UserToken;
 import com.yourname.finguard.auth.model.UserTokenType;
 import com.yourname.finguard.auth.repository.UserRepository;
+import com.yourname.finguard.auth.repository.PasswordResetSessionRepository;
 import com.yourname.finguard.auth.repository.UserSessionRepository;
 import com.yourname.finguard.auth.repository.UserTokenRepository;
 import com.yourname.finguard.common.service.MailService;
 import com.yourname.finguard.security.LoginAttemptService;
 import com.yourname.finguard.security.RateLimiterService;
+import com.yourname.finguard.security.JwtTokenProvider;
 import com.yourname.finguard.security.TokenBlacklistService;
+import com.yourname.finguard.auth.service.UserTokenService;
 import jakarta.servlet.http.Cookie;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -27,8 +31,10 @@ import io.jsonwebtoken.security.Keys;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +64,8 @@ import org.springframework.test.web.servlet.ResultActions;
         "app.security.sessions.max-per-user=2",
         "app.security.pwned-check.enabled=false",
         "app.security.jwt.require-env-secret=false",
-        "app.security.cors.allowed-origins=http://example.com"
+        "app.security.cors.allowed-origins=http://example.com",
+        "app.security.tokens.reset-session-ttl-minutes=15"
 })
 class AuthSecurityIntegrationTest {
 
@@ -71,6 +78,8 @@ class AuthSecurityIntegrationTest {
     @Autowired
     private UserTokenRepository userTokenRepository;
     @Autowired
+    private PasswordResetSessionRepository passwordResetSessionRepository;
+    @Autowired
     private UserSessionRepository userSessionRepository;
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
@@ -80,6 +89,12 @@ class AuthSecurityIntegrationTest {
     private LoginAttemptService loginAttemptService;
     @Autowired
     private MailService mailService;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private com.yourname.finguard.auth.service.PasswordResetSessionService passwordResetSessionService;
+    @Autowired
+    private UserTokenService userTokenService;
     @Value("${app.security.jwt.secret}")
     private String jwtSecret;
     @Value("${app.security.jwt.issuer}")
@@ -89,6 +104,7 @@ class AuthSecurityIntegrationTest {
 
     @AfterEach
     void cleanup() {
+        passwordResetSessionRepository.deleteAll();
         userSessionRepository.deleteAll();
         userTokenRepository.deleteAll();
         userRepository.deleteAll();
@@ -279,18 +295,27 @@ class AuthSecurityIntegrationTest {
     void resetFlowChangesPasswordAndInvalidatesToken() throws Exception {
         String email = "reset@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
+        assertThat(userTokenService.getResetTtl().toMinutes()).isGreaterThan(0);
 
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
 
-        UserToken token = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.RESET)
-                .findFirst()
-                .orElseThrow();
+        UserToken token = latestResetToken();
+        assertThat(token.getExpiresAt()).isAfter(token.getCreatedAt());
+        assertThat(Duration.between(token.getCreatedAt(), token.getExpiresAt()).getSeconds()).isGreaterThan(0);
+        List<com.yourname.finguard.auth.model.UserSession> sessionsBefore = userSessionRepository.findByUserId(token.getUser().getId());
+        assertThat(sessionsBefore).isNotEmpty();
+        String resetSessionToken = confirmResetSession(token);
+        String resetJti = jwtTokenProvider.getJti(resetSessionToken);
+        PasswordResetSession resetSession = passwordResetSessionRepository.findByJti(resetJti).orElseThrow();
+        assertThat(resetSession.getExpiresAt()).isNotNull();
+        assertThat(resetSession.getExpiresAt()).isAfter(Instant.now().minusSeconds(1));
+        assertThat(passwordResetSessionService.matchesContext(resetSession, "127.0.0.1", null)).isTrue();
+        assertThat(passwordResetSessionService.findActive(resetJti)).isPresent();
 
         postJson("/api/auth/reset", """
-                {"token":"%s","password":"NewStrong1!"}
-                """.formatted(token.getToken()))
+                {"resetSessionToken":"%s","password":"NewStrong1!"}
+                """.formatted(resetSessionToken))
                 .andExpect(status().isOk());
 
         // old password rejected, new works
@@ -304,9 +329,15 @@ class AuthSecurityIntegrationTest {
 
         // reuse reset token blocked
         postJson("/api/auth/reset", """
-                {"token":"%s","password":"AnotherStrong1!"}
-                """.formatted(token.getToken()))
+                {"resetSessionToken":"%s","password":"AnotherStrong1!"}
+                """.formatted(resetSessionToken))
                 .andExpect(status().isBadRequest());
+
+        List<com.yourname.finguard.auth.model.UserSession> sessionsAfter = userSessionRepository.findByUserId(token.getUser().getId());
+        assertThat(sessionsAfter).hasSize(1);
+        assertThat(sessionsBefore.stream().map(com.yourname.finguard.auth.model.UserSession::getJti).toList())
+                .doesNotContain(sessionsAfter.get(0).getJti());
+        sessionsBefore.forEach(session -> assertThat(tokenBlacklistService.isRevoked(session.getJti())).isTrue());
     }
 
     @Test
@@ -359,14 +390,12 @@ class AuthSecurityIntegrationTest {
         registerUser(email, "StrongPass1!");
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
-        UserToken token = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.RESET)
-                .findFirst()
-                .orElseThrow();
+        UserToken token = latestResetToken();
+        String resetSessionToken = confirmResetSession(token);
 
         MvcResult res = postJson("/api/auth/reset", """
-                {"token":"%s","password":"password1"}
-                """.formatted(token.getToken()))
+                {"resetSessionToken":"%s","password":"password1"}
+                """.formatted(resetSessionToken))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -378,7 +407,7 @@ class AuthSecurityIntegrationTest {
         String email = "invalid-token@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
         MvcResult res = postJson("/api/auth/reset", """
-                {"token":"invalid-token-123","password":"NewStrong1!"}
+                {"resetSessionToken":"invalid-token-123","password":"NewStrong1!"}
                 """)
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -393,23 +422,38 @@ class AuthSecurityIntegrationTest {
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
 
-        UserToken token = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.RESET)
-                .findFirst()
-                .orElseThrow();
+        UserToken token = latestResetToken();
 
-        postJson("/api/auth/reset/check", """
+        MvcResult okRes = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
                 """.formatted(token.getToken()))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode okBody = objectMapper.readTree(okRes.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(okBody.get("resetSessionToken").asText()).isNotBlank();
 
-        MvcResult res = postJson("/api/auth/reset/check", """
+        MvcResult res = postJson("/api/auth/reset/confirm", """
                 {"token":"invalid-token"}
                 """)
                 .andExpect(status().isBadRequest())
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100005");
+    }
+
+    @Test
+    void forgotRateLimitBlocksTooManyRequests() throws Exception {
+        String email = "rl-forgot@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isOk());
+        postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test
@@ -556,8 +600,8 @@ class AuthSecurityIntegrationTest {
         token.setExpiresAt(Instant.now().minusSeconds(60));
         userTokenRepository.save(token);
 
-        postJson("/api/auth/reset", """
-                {"token":"%s","password":"AnotherStrong1!"}
+        postJson("/api/auth/reset/confirm", """
+                {"token":"%s"}
                 """.formatted(token.getToken()))
                 .andExpect(status().isBadRequest());
     }
@@ -589,6 +633,23 @@ class AuthSecurityIntegrationTest {
         }
         postJson("/api/auth/verify/request", payload)
                 .andExpect(status().isTooManyRequests());
+    }
+
+    private UserToken latestResetToken() {
+        return userTokenRepository.findAll().stream()
+                .filter(t -> t.getType() == UserTokenType.RESET)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private String confirmResetSession(UserToken token) throws Exception {
+        MvcResult res = postJson("/api/auth/reset/confirm", """
+                {"token":"%s"}
+                """.formatted(token.getToken()))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode node = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        return node.get("resetSessionToken").asText();
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {

@@ -5,6 +5,7 @@ import com.yourname.finguard.auth.dto.AuthTokens;
 import com.yourname.finguard.auth.dto.LoginRequest;
 import com.yourname.finguard.auth.dto.RegisterRequest;
 import com.yourname.finguard.auth.dto.ResetPasswordRequest;
+import com.yourname.finguard.auth.dto.ResetSessionResponse;
 import com.yourname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
@@ -12,6 +13,7 @@ import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.service.AuthService;
 import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.dto.ApiError;
+import com.yourname.finguard.security.RateLimiterService;
 import com.yourname.finguard.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.Cookie;
@@ -36,13 +38,22 @@ public class AuthController {
     private final AuthService authService;
     private final boolean cookieSecure;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RateLimiterService rateLimiterService;
+    private final int forgotLimit;
+    private final long forgotWindowMs;
 
     public AuthController(AuthService authService,
                           JwtTokenProvider jwtTokenProvider,
-                          @Value("${app.security.jwt.cookie-secure:false}") boolean cookieSecure) {
+                          RateLimiterService rateLimiterService,
+                          @Value("${app.security.jwt.cookie-secure:false}") boolean cookieSecure,
+                          @Value("${app.security.rate-limit.forgot.limit:5}") int forgotLimit,
+                          @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs) {
         this.authService = authService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.cookieSecure = cookieSecure;
+        this.rateLimiterService = rateLimiterService;
+        this.forgotLimit = forgotLimit;
+        this.forgotWindowMs = forgotWindowMs;
     }
 
     @PostMapping("/register")
@@ -82,20 +93,28 @@ public class AuthController {
     }
 
     @PostMapping("/forgot")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
+        String email = request.email().trim().toLowerCase();
+        String ipKey = "forgot:ip:" + httpRequest.getRemoteAddr();
+        String emailKey = "forgot:email:" + email;
+        if (!rateLimiterService.allow(ipKey, forgotLimit, forgotWindowMs)
+                || !rateLimiterService.allow(emailKey, forgotLimit, forgotWindowMs)) {
+            return ResponseEntity.status(429)
+                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later."));
+        }
         authService.forgotPassword(request);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/reset/check")
-    public ResponseEntity<Void> validateReset(@Valid @RequestBody ValidateResetTokenRequest request) {
-        authService.validateResetToken(request);
-        return ResponseEntity.ok().build();
+    @PostMapping({"/reset/confirm", "/reset/check"})
+    public ResponseEntity<ResetSessionResponse> confirmReset(@Valid @RequestBody ValidateResetTokenRequest request, HttpServletRequest httpRequest) {
+        ResetSessionResponse response = authService.confirmResetToken(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reset")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request);
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest httpRequest) {
+        authService.resetPassword(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
         return ResponseEntity.ok().build();
     }
 
