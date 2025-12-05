@@ -40,13 +40,15 @@
 - Регистрация/вход: токены `FG_AUTH` и `FG_REFRESH` в httpOnly cookie; фронт хранит лишь email в `sessionStorage`.
 - Refresh: `POST /api/auth/refresh`
 - Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify`
-- Восстановление пароля: `POST /api/auth/forgot`, `POST /api/auth/reset` (унифицированные ответы для защиты от enumeration)
+- Восстановление пароля (двухшаговый, без прямой смены по коду):
+  1) `POST /api/auth/forgot` — письмо/код.
+  2) `POST /api/auth/reset/confirm` — принимает код, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
+  3) `POST /api/auth/reset` — принимает `resetSessionToken` + новый пароль, инвалидация всех refresh-сессий.
 - CORS: задайте `ALLOWED_ORIGINS` для SPA на другом домене, включено `credentials: true`.
 
 ## Frontend
 - Статический клиент (русский): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`; вкладки «Вход/Регистрация», формы для восстановления пароля, дашборд с проверкой health.
 - SPA (React+TS, Vite): аналогичный флоу; запуск — `cd frontend && npm install && npm run dev` (прокси на бэк для `/api/**`, `/health`, `/actuator`, `/swagger-ui`). Детали: `frontend/README.md`.
-- Тема (светлая/тёмная) переключается кнопкой «Тема».
 
 ## Статус
-Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3 для токенов/сессий, JWT security и Auth API (register/login/refresh/verify/reset), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты, перенос токена в httpOnly cookies для SPA.
+Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты, перенос токена в httpOnly cookies для SPA.

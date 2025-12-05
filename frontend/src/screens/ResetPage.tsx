@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTheme } from '../hooks/useTheme';
 import { AuthApi } from '../api/auth';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -21,7 +20,6 @@ const formatTimer = (seconds: number) => {
 const ResetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toggle } = useTheme();
 
   const [code, setCode] = useState('');
   const [resetSessionToken, setResetSessionToken] = useState('');
@@ -162,7 +160,6 @@ const ResetPage: React.FC = () => {
           </div>
           <div className="actions">
             <Button variant="ghost" onClick={() => navigate('/forgot')}>Запросить код</Button>
-            <Button variant="ghost" onClick={toggle}>Тема</Button>
           </div>
         </header>
 

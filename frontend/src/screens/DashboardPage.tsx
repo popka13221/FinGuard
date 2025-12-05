@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
-import { useTheme } from '../hooks/useTheme';
 import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
 import '../theme.css';
@@ -8,7 +7,6 @@ import '../theme.css';
 type Status = 'idle' | 'ok' | 'error';
 
 const DashboardPage: React.FC = () => {
-  const { toggle } = useTheme();
   const [email, setEmail] = useState<string>('user');
   const [status, setStatus] = useState<Status>('idle');
   const tokenText = 'Токен в httpOnly cookie';
@@ -47,7 +45,6 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="actions">
             <div className="pill">Dashboard</div>
-            <Button variant="ghost" onClick={toggle}>Тема</Button>
           </div>
         </header>
 

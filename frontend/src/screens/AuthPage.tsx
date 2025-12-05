@@ -4,7 +4,6 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Select } from '../components/Select';
 import { useAuthForm } from '../hooks/useAuthForm';
-import { useTheme } from '../hooks/useTheme';
 import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
 import { LookupApi, type Currency } from '../api/lookup';
@@ -13,7 +12,6 @@ import '../theme.css';
 type Mode = 'login' | 'register';
 
 const AuthPage: React.FC = () => {
-  const { toggle } = useTheme();
   const [mode, setMode] = useState<Mode>('login');
   const { errors, validate, applyErrorCode, setFormError } = useAuthForm(mode === 'register');
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -99,11 +97,9 @@ const AuthPage: React.FC = () => {
         <header className="card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div>
             <h2 style={{ margin: 0 }}>FinGuard</h2>
-            <div className="muted">Войдите, чтобы продолжить</div>
           </div>
           <div className="actions">
             <div className="pill">Secure Login</div>
-            <Button variant="ghost" onClick={toggle}>Тема</Button>
           </div>
         </header>
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTheme } from '../hooks/useTheme';
 import { AuthApi } from '../api/auth';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -13,7 +12,6 @@ const resendSeconds = 60;
 const ForgotPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toggle } = useTheme();
 
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -92,7 +90,6 @@ const ForgotPage: React.FC = () => {
           </div>
           <div className="actions">
             <Button variant="ghost" onClick={() => navigate('/auth')}>К входу</Button>
-            <Button variant="ghost" onClick={toggle}>Тема</Button>
           </div>
         </header>
 
