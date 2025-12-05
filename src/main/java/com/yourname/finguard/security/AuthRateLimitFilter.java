@@ -25,7 +25,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/auth/reset/check",
             "/api/auth/refresh",
             "/api/auth/verify",
-            "/api/auth/verify/request"
+            "/api/auth/verify/request",
+            "/api/auth/login/otp"
     );
 
     private final RateLimiterService rateLimiterService;

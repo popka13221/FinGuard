@@ -16,19 +16,23 @@ public class OtpService {
     private static final class OtpEntry {
         String code;
         Instant expiresAt;
+        int attempts;
     }
 
     private final Map<String, OtpEntry> store = new ConcurrentHashMap<>();
     private final long ttlSeconds;
     private final String devCode;
     private final int maxEntries;
+    private final int maxAttempts;
 
     public OtpService(@Value("${app.security.otp.ttl-seconds:300}") long ttlSeconds,
                       @Value("${app.security.otp.dev-code:}") String devCode,
-                      @Value("${app.security.otp.max-entries:10000}") int maxEntries) {
+                      @Value("${app.security.otp.max-entries:10000}") int maxEntries,
+                      @Value("${app.security.otp.max-attempts:5}") int maxAttempts) {
         this.ttlSeconds = Math.max(30, ttlSeconds);
         this.devCode = devCode == null ? "" : devCode.trim();
         this.maxEntries = Math.max(maxEntries, 1000);
+        this.maxAttempts = Math.max(1, maxAttempts);
     }
 
     public IssuedOtp issue(String email) {
@@ -43,6 +47,7 @@ public class OtpService {
         OtpEntry entry = new OtpEntry();
         entry.code = code;
         entry.expiresAt = Instant.now().plusSeconds(ttlSeconds);
+        entry.attempts = 0;
         store.put(normalize(email), entry);
         return new IssuedOtp(code, entry.expiresAt);
     }
@@ -60,8 +65,15 @@ public class OtpService {
         boolean ok = code.trim().equals(entry.code);
         if (ok) {
             store.remove(normalize(email));
+            return true;
         }
-        return ok;
+        entry.attempts += 1;
+        if (entry.attempts >= maxAttempts) {
+            store.remove(normalize(email));
+        } else {
+            store.put(normalize(email), entry);
+        }
+        return false;
     }
 
     public long getTtlSeconds() {

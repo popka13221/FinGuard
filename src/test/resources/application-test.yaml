@@ -26,6 +26,7 @@ app:
   security:
     otp:
       enabled: false
+      max-attempts: 3
     jwt:
       secret: Q29kZXhEZW1vVGVzdFNlY3JldEFuZEtleTEyMzQ1Njc4OTA=
       expiration-seconds: 3600
@@ -47,6 +48,9 @@ app:
         window-ms: 60000
       reset:
         limit: 100
+        window-ms: 60000
+      login-otp:
+        limit: 20
         window-ms: 60000
     lockout:
       max-attempts: 5

@@ -134,8 +134,8 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Вход завершен"),
             @ApiResponse(responseCode = "401", description = "Неверный или истекший OTP", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        AuthTokens tokens = authService.verifyOtp(request);
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request, HttpServletRequest httpRequest) {
+        AuthTokens tokens = authService.verifyOtp(request, httpRequest.getRemoteAddr());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())

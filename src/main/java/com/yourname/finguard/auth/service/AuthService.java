@@ -71,6 +71,8 @@ public class AuthService {
     private final int loginEmailLimit;
     private final long loginEmailWindowMs;
     private final boolean otpEnabled;
+    private final int loginOtpLimit;
+    private final long loginOtpWindowMs;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -92,6 +94,8 @@ public class AuthService {
                        @Value("${app.security.rate-limit.reset.window-ms:300000}") long resetWindowMs,
                        @Value("${app.security.rate-limit.login-email.limit:0}") int loginEmailLimit,
                        @Value("${app.security.rate-limit.login-email.window-ms:300000}") long loginEmailWindowMs,
+                       @Value("${app.security.rate-limit.login-otp.limit:5}") int loginOtpLimit,
+                       @Value("${app.security.rate-limit.login-otp.window-ms:300000}") long loginOtpWindowMs,
                        @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -114,6 +118,8 @@ public class AuthService {
         this.loginEmailLimit = loginEmailLimit;
         this.loginEmailWindowMs = loginEmailWindowMs;
         this.otpEnabled = otpEnabled;
+        this.loginOtpLimit = loginOtpLimit;
+        this.loginOtpWindowMs = loginOtpWindowMs;
     }
 
     @Transactional
@@ -374,11 +380,13 @@ public class AuthService {
         revokeUserSessions(user);
     }
 
-    public AuthTokens verifyOtp(OtpVerifyRequest request) {
+    public AuthTokens verifyOtp(OtpVerifyRequest request, String ip) {
         if (!otpEnabled) {
             throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "OTP is not enabled", HttpStatus.BAD_REQUEST);
         }
         String email = request.email().trim().toLowerCase();
+        enforceRateLimit("login-otp:email:" + email, loginOtpLimit, loginOtpWindowMs);
+        enforceRateLimit("login-otp:ip:" + safe(ip), loginOtpLimit, loginOtpWindowMs);
         boolean ok = otpService.verify(email, request.code());
         if (!ok) {
             throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED);

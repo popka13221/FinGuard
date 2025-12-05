@@ -38,9 +38,12 @@ import org.springframework.test.web.servlet.MvcResult;
         "app.security.otp.enabled=true",
         "app.security.otp.dev-code=654321",
         "app.security.otp.ttl-seconds=300",
+        "app.security.otp.max-attempts=3",
         "app.security.rate-limit.auth.limit=10",
         "app.security.rate-limit.login-email.limit=10",
-        "app.security.rate-limit.login-email.window-ms=60000"
+        "app.security.rate-limit.login-email.window-ms=60000",
+        "app.security.rate-limit.login-otp.limit=5",
+        "app.security.rate-limit.login-otp.window-ms=60000"
 })
 class OtpAuthIntegrationTest {
 
@@ -114,6 +117,12 @@ class OtpAuthIntegrationTest {
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email)).andExpect(status().isAccepted());
 
+        for (int i = 0; i < 2; i++) {
+            postJson("/api/auth/login/otp", """
+                    {"email":"%s","code":"000000"}
+                    """.formatted(email)).andExpect(status().isUnauthorized());
+        }
+        // третья попытка тоже неверная и должна инвалировать код
         MvcResult res = postJson("/api/auth/login/otp", """
                 {"email":"%s","code":"000000"}
                 """.formatted(email))
@@ -121,6 +130,15 @@ class OtpAuthIntegrationTest {
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100001");
+
+        // даже правильный код после превышения попыток не сработает
+        MvcResult finalAttempt = postJson("/api/auth/login/otp", """
+                {"email":"%s","code":"654321"}
+                """.formatted(email))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+        JsonNode finalError = objectMapper.readTree(finalAttempt.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(finalError.get("code").asText()).isEqualTo("100001");
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {

@@ -54,6 +54,7 @@ app:
       enabled: ${OTP_ENABLED:true}
       dev-code: ${OTP_DEV_CODE:654321}
       ttl-seconds: ${OTP_TTL_SECONDS:300}
+      max-attempts: ${OTP_MAX_ATTEMPTS:5}
     cors:
       allowed-origins: ${ALLOWED_ORIGINS:}
     rate-limit:
@@ -69,6 +70,9 @@ app:
       reset:
         limit: ${RATE_LIMIT_RESET_LIMIT:5}
         window-ms: ${RATE_LIMIT_RESET_WINDOW_MS:300000}
+      login-otp:
+        limit: ${RATE_LIMIT_LOGIN_OTP_LIMIT:5}
+        window-ms: ${RATE_LIMIT_LOGIN_OTP_WINDOW_MS:300000}
     tokens:
       reset-dev-code: ${RESET_DEV_CODE:123456}
       reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}
