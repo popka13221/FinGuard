@@ -46,6 +46,18 @@
         <div class="helper-row">
           <a class="text-link" href="/app/forgot.html">Забыли пароль?</a>
         </div>
+
+        <div id="otpSection" class="otp-block" style="display:none; margin-top: 8px;">
+          <div class="field" style="margin-bottom: 8px;">
+            <label>Код из письма</label>
+            <input id="otpCode" value="" placeholder="123456" autocomplete="one-time-code" aria-label="Код из письма">
+            <div id="otpError" class="error-text" style="display:none;"></div>
+          </div>
+          <div class="actions" style="margin-top: 4px;">
+            <button type="button" class="secondary" id="btn-otp">Войти</button>
+          </div>
+        </div>
+
         <div id="errorBox" class="alert" role="alert" aria-live="polite" style="display:none;">Ошибка</div>
         <div class="actions">
           <button type="button" class="secondary" id="btn-login">Войти</button>

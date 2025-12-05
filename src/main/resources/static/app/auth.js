@@ -12,6 +12,10 @@
     regCurrency: '#regCurrency',
     emailError: '#emailError',
     passwordError: '#passwordError',
+    otpSection: '#otpSection',
+    otpCode: '#otpCode',
+    otpError: '#otpError',
+    otpButton: '#btn-otp',
     regEmailError: '#regEmailError',
     regPasswordError: '#regPasswordError',
     fullNameError: '#fullNameError',
@@ -44,7 +48,7 @@
 
   function clearFieldErrors() {
     const inputs = ['loginEmail', 'loginPassword', 'regEmail', 'regPassword', 'regFullName', 'regCurrency'];
-    const errors = ['emailError', 'passwordError', 'regEmailError', 'regPasswordError', 'fullNameError', 'currencyError'];
+    const errors = ['emailError', 'passwordError', 'otpError', 'regEmailError', 'regPasswordError', 'fullNameError', 'currencyError'];
     inputs.forEach(key => {
       const el = document.querySelector(selectors[key]);
       if (el) el.classList.remove('error');
@@ -104,6 +108,7 @@
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
+    hideOtpSection();
     clearFieldErrors();
     showError('');
     showError('', selectors.errorBoxRegister);
@@ -267,6 +272,50 @@
 
   let submitting = false;
 
+  function showOtpSection(expiresInSeconds) {
+    const otpSection = document.querySelector(selectors.otpSection);
+    const otpInput = document.querySelector(selectors.otpCode);
+    const otpError = document.querySelector(selectors.otpError);
+    const loginBtn = document.querySelector(selectors.loginButton);
+    if (otpSection) otpSection.style.display = 'grid';
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
+    if (otpInput) otpInput.value = '';
+  }
+
+  function hideOtpSection() {
+    const otpSection = document.querySelector(selectors.otpSection);
+    const otpError = document.querySelector(selectors.otpError);
+    const otpInput = document.querySelector(selectors.otpCode);
+    const loginBtn = document.querySelector(selectors.loginButton);
+    if (otpSection) otpSection.style.display = 'none';
+    if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
+    if (otpInput) otpInput.value = '';
+    if (loginBtn) loginBtn.style.display = 'inline-block';
+  }
+
+  async function submitOtp(email) {
+    const codeInput = document.querySelector(selectors.otpCode);
+    const otpError = document.querySelector(selectors.otpError);
+    if (!codeInput) return;
+    const code = (codeInput.value || '').trim();
+    if (!code) {
+      if (otpError) { otpError.textContent = 'Введите код из письма'; otpError.style.display = 'block'; }
+      return;
+    }
+    submitting = true;
+    setSubmitting(true);
+    const result = await Api.call('/api/auth/login/otp', 'POST', { email, code }, false);
+    submitting = false;
+    setSubmitting(false);
+    if (result.ok && result.data && result.data.token) {
+      Api.setEmail(email);
+      window.location.href = '/app/dashboard.html';
+    } else {
+      if (otpError) { otpError.textContent = 'Код неверный или истек. Попробуйте снова.'; otpError.style.display = 'block'; }
+    }
+  }
+
   async function login() {
     if (submitting) return;
     const validation = validateLogin();
@@ -276,6 +325,12 @@
     const result = await Api.call('/api/auth/login', 'POST', validation.payload, false);
     submitting = false;
     setSubmitting(false);
+    if (result.status === 202 && result.data && result.data.otpRequired) {
+      submitting = false;
+      setSubmitting(false);
+      showOtpSection(result.data.expiresInSeconds);
+      return;
+    }
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(validation.payload.email);
       window.location.href = '/app/dashboard.html';
@@ -309,7 +364,7 @@
   }
 
   function setSubmitting(state) {
-    const buttons = [selectors.loginButton, selectors.registerButton].map((sel) => document.querySelector(sel));
+    const buttons = [selectors.loginButton, selectors.registerButton, selectors.otpButton].map((sel) => document.querySelector(sel));
     buttons.forEach((btn) => {
       if (btn) btn.disabled = state;
     });
@@ -320,6 +375,8 @@
     if (loginBtn) loginBtn.addEventListener('click', login);
     const registerBtn = document.querySelector(selectors.registerButton);
     if (registerBtn) registerBtn.addEventListener('click', register);
+    const otpBtn = document.querySelector(selectors.otpButton);
+    if (otpBtn) otpBtn.addEventListener('click', () => submitOtp((value(selectors.loginEmail) || '').trim().toLowerCase()));
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
