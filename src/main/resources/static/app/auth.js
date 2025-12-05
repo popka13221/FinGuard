@@ -120,7 +120,12 @@
       hideOtpSection();
     }
     clearFieldErrors();
-    showError('');
+    const remaining = remainingLoginCooldownSeconds();
+    if (remaining > 0) {
+      showError(`Слишком много попыток. Подождите ${remaining} сек.`);
+    } else {
+      showError('');
+    }
     showError('', selectors.errorBoxRegister);
     if (form === 'register') {
       loginForm.style.display = 'none';
@@ -197,6 +202,10 @@
         break;
       case '100004':
         showFieldError('password', 'Аккаунт временно заблокирован. Попробуйте позже.');
+        break;
+      case '429001':
+        const left = remainingLoginCooldownSeconds() || 60;
+        showError(`Слишком много попыток. Подождите ${left} сек.`);
         break;
       case '400002':
         showFieldError('email', 'Некорректный email');
@@ -285,6 +294,7 @@
   let otpEmail = '';
   let otpCooldownUntil = 0;
   let otpCodeValue = '';
+  let loginCooldownUntil = 0;
 
   function loadOtpState() {
     try {
@@ -310,6 +320,22 @@
       cooldownUntil: otpCooldownUntil,
       codeValue: otpCodeValue
     }));
+  }
+
+  function loadLoginCooldown() {
+    const raw = localStorage.getItem('login_cooldown_until') || '0';
+    loginCooldownUntil = Number(raw) || 0;
+  }
+
+  function saveLoginCooldown(until) {
+    loginCooldownUntil = until;
+    localStorage.setItem('login_cooldown_until', String(until));
+  }
+
+  function remainingLoginCooldownSeconds() {
+    const now = Date.now();
+    if (loginCooldownUntil <= now) return 0;
+    return Math.ceil((loginCooldownUntil - now) / 1000);
   }
 
   function showOtpSection() {
@@ -370,6 +396,11 @@
     if (submitting) return;
     const validation = validateLogin();
     if (!validation.valid) return;
+    const cooldownLeft = remainingLoginCooldownSeconds();
+    if (cooldownLeft > 0) {
+      showError(`Слишком много попыток. Подождите ${cooldownLeft} сек.`);
+      return;
+    }
     const now = Date.now();
     if (otpPending && validation.payload.email === otpEmail && now < otpCooldownUntil) {
       const otpError = document.querySelector(selectors.otpError);
@@ -382,6 +413,13 @@
     const result = await Api.call('/api/auth/login', 'POST', validation.payload, false);
     submitting = false;
     setSubmitting(false);
+    if (result.status === 429) {
+      const until = Date.now() + 60000;
+      saveLoginCooldown(until);
+      const left = remainingLoginCooldownSeconds();
+      showError(`Слишком много попыток. Подождите ${left} сек.`);
+      return;
+    }
     if (result.status === 202 && result.data && result.data.otpRequired) {
       otpPending = true;
       otpEmail = validation.payload.email;
@@ -460,6 +498,7 @@
     }
     clearPasswords();
     bindAuthActions();
+    loadLoginCooldown();
     switchForm('login');
   });
 })();

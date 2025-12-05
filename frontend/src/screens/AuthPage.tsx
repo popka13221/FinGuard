@@ -131,7 +131,7 @@ const AuthPage: React.FC = () => {
       <div className="container" style={{ maxWidth: 580 }}>
         <header className="card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div>
-            <h2 style={{ margin: 0 }}>FinGuard</h2>
+            <h2 style={{ margin: 0 }}>Smart Wallet</h2>
           </div>
           <div className="actions">
             <div className="pill">Secure Login</div>

@@ -40,7 +40,7 @@ const DashboardPage: React.FC = () => {
       <div className="container">
         <header className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
           <div>
-            <h2 style={{ margin: 0 }}>FinGuard</h2>
+            <h2 style={{ margin: 0 }}>Smart Wallet</h2>
             <div className="muted">Ваш финансовый дашборд</div>
           </div>
           <div className="actions">

@@ -153,7 +153,7 @@ const ForgotPage: React.FC = () => {
       <div className="container" style={{ maxWidth: 520 }}>
         <header className="card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div>
-            <h2 style={{ margin: 0 }}>FinGuard</h2>
+            <h2 style={{ margin: 0 }}>Smart Wallet</h2>
             <div className="muted">Восстановление доступа · Шаг 1</div>
           </div>
           <div className="actions">
