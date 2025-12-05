@@ -108,7 +108,17 @@
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
-    hideOtpSection();
+    // сохраняем состояние OTP при возврате на логин, скрываем только визуально при переходе на регистрацию
+    if (form === 'register') {
+      const otpSection = document.querySelector(selectors.otpSection);
+      if (otpSection) otpSection.style.display = 'none';
+      const loginBtn = document.querySelector(selectors.loginButton);
+      if (loginBtn) loginBtn.style.display = 'inline-block';
+    } else if (form === 'login' && otpPending) {
+      showOtpSection();
+    } else {
+      hideOtpSection();
+    }
     clearFieldErrors();
     showError('');
     showError('', selectors.errorBoxRegister);
@@ -271,8 +281,38 @@
   }
 
   let submitting = false;
+  let otpPending = false;
+  let otpEmail = '';
+  let otpCooldownUntil = 0;
+  let otpCodeValue = '';
 
-  function showOtpSection(expiresInSeconds) {
+  function loadOtpState() {
+    try {
+      const raw = localStorage.getItem('otp_state') || '';
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      otpPending = Boolean(parsed.pending);
+      otpEmail = parsed.email || '';
+      otpCooldownUntil = parsed.cooldownUntil || 0;
+      otpCodeValue = parsed.codeValue || '';
+    } catch (e) {
+      otpPending = false;
+      otpEmail = '';
+      otpCooldownUntil = 0;
+      otpCodeValue = '';
+    }
+  }
+
+  function saveOtpState() {
+    localStorage.setItem('otp_state', JSON.stringify({
+      pending: otpPending,
+      email: otpEmail,
+      cooldownUntil: otpCooldownUntil,
+      codeValue: otpCodeValue
+    }));
+  }
+
+  function showOtpSection() {
     const otpSection = document.querySelector(selectors.otpSection);
     const otpInput = document.querySelector(selectors.otpCode);
     const otpError = document.querySelector(selectors.otpError);
@@ -280,7 +320,9 @@
     if (otpSection) otpSection.style.display = 'grid';
     if (loginBtn) loginBtn.style.display = 'none';
     if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
-    if (otpInput) otpInput.value = '';
+    if (otpInput) otpInput.value = otpCodeValue || '';
+    otpPending = true;
+    saveOtpState();
   }
 
   function hideOtpSection() {
@@ -292,6 +334,11 @@
     if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
     if (otpInput) otpInput.value = '';
     if (loginBtn) loginBtn.style.display = 'inline-block';
+    otpPending = false;
+    otpEmail = '';
+    otpCodeValue = '';
+    otpCooldownUntil = 0;
+    saveOtpState();
   }
 
   async function submitOtp(email) {
@@ -299,6 +346,8 @@
     const otpError = document.querySelector(selectors.otpError);
     if (!codeInput) return;
     const code = (codeInput.value || '').trim();
+    otpCodeValue = code;
+    saveOtpState();
     if (!code) {
       if (otpError) { otpError.textContent = 'Введите код из письма'; otpError.style.display = 'block'; }
       return;
@@ -310,6 +359,7 @@
     setSubmitting(false);
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(email);
+      hideOtpSection();
       window.location.href = '/app/dashboard.html';
     } else {
       if (otpError) { otpError.textContent = 'Код неверный или истек. Попробуйте снова.'; otpError.style.display = 'block'; }
@@ -320,19 +370,30 @@
     if (submitting) return;
     const validation = validateLogin();
     if (!validation.valid) return;
+    const now = Date.now();
+    if (otpPending && validation.payload.email === otpEmail && now < otpCooldownUntil) {
+      const otpError = document.querySelector(selectors.otpError);
+      if (otpError) { otpError.textContent = 'Код уже отправлен. Подождите и введите его ниже.'; otpError.style.display = 'block'; }
+      showOtpSection();
+      return;
+    }
     submitting = true;
     setSubmitting(true);
     const result = await Api.call('/api/auth/login', 'POST', validation.payload, false);
     submitting = false;
     setSubmitting(false);
     if (result.status === 202 && result.data && result.data.otpRequired) {
-      submitting = false;
-      setSubmitting(false);
+      otpPending = true;
+      otpEmail = validation.payload.email;
+      otpCodeValue = '';
+      otpCooldownUntil = Date.now() + 60000;
+      saveOtpState();
       showOtpSection(result.data.expiresInSeconds);
       return;
     }
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(validation.payload.email);
+      hideOtpSection();
       window.location.href = '/app/dashboard.html';
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
@@ -390,6 +451,13 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     Theme.init(selectors.themeToggle);
+    loadOtpState();
+    const now = Date.now();
+    if (otpPending && otpEmail && now < otpCooldownUntil) {
+      showOtpSection();
+    } else {
+      hideOtpSection();
+    }
     clearPasswords();
     bindAuthActions();
     switchForm('login');
