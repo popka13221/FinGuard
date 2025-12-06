@@ -42,6 +42,6 @@ secrets.*
 *.local.*
 
 # Dumps/temp
-*.sql
 dump/
+dump/**/*.sql
 *.pid
