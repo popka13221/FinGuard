@@ -13,12 +13,14 @@ public class UserPrincipal implements UserDetails {
     private final String email;
     private final String passwordHash;
     private final Collection<? extends GrantedAuthority> authorities;
+    private final int tokenVersion;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        this.tokenVersion = user.getTokenVersion();
     }
 
     public Long getId() {
@@ -38,6 +40,10 @@ public class UserPrincipal implements UserDetails {
     @Override
     public String getUsername() {
         return email;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
     }
 
     @Override

@@ -6,6 +6,9 @@ import com.yourname.finguard.auth.model.UserTokenType;
 import com.yourname.finguard.auth.repository.UserTokenRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,31 +46,39 @@ public class UserTokenService {
         String tokenValue = generateToken(type);
         if (type == UserTokenType.RESET && !resetDevCode.isEmpty()) {
             // гарантируем уникальность фиксированного кода
-            userTokenRepository.deleteByToken(tokenValue);
+            userTokenRepository.deleteByTokenHash(hashToken(tokenValue));
             userTokenRepository.flush();
         }
         UserToken token = new UserToken();
         token.setUser(user);
-        token.setToken(tokenValue);
+        token.setTokenHash(hashToken(tokenValue));
         token.setType(type);
         token.setExpiresAt(Instant.now().plus(ttl));
         userTokenRepository.save(token);
         if (type == UserTokenType.RESET) {
             log.debug("Issued {} token for user={} exp={}", type, user.getEmail(), token.getExpiresAt());
         }
-        return token.getToken();
+        return tokenValue;
     }
 
     @Transactional(readOnly = true)
     public Optional<UserToken> findValid(String token, UserTokenType type) {
-        return userTokenRepository.findByTokenAndTypeAndUsedAtIsNullAndExpiresAtAfter(
-                token, type, Instant.now()
+        String hashed = hashToken(token);
+        if (hashed.isEmpty()) {
+            return Optional.empty();
+        }
+        return userTokenRepository.findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(
+                hashed, type, Instant.now()
         );
     }
 
     @Transactional(readOnly = true)
     public Optional<UserToken> findAny(String token, UserTokenType type) {
-        return userTokenRepository.findByTokenAndType(token, type);
+        String hashed = hashToken(token);
+        if (hashed.isEmpty()) {
+            return Optional.empty();
+        }
+        return userTokenRepository.findByTokenHashAndType(hashed, type);
     }
 
     @Transactional
@@ -108,5 +119,22 @@ public class UserTokenService {
             return resetDevCode;
         }
         return UUID.randomUUID().toString();
+    }
+
+    private String hashToken(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashed) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 }

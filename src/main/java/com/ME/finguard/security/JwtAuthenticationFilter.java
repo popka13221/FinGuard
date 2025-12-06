@@ -40,7 +40,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String jti = tokenProvider.getJti(jwt);
                 if (!tokenBlacklistService.isRevoked(jti)) {
                     String email = tokenProvider.getEmail(jwt);
+                    int tokenVersion = tokenProvider.getTokenVersion(jwt);
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    if (userDetails instanceof com.yourname.finguard.security.UserPrincipal principal
+                            && tokenVersion != principal.getTokenVersion()) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

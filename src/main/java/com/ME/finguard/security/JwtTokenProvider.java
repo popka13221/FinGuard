@@ -67,12 +67,12 @@ public class JwtTokenProvider implements InitializingBean {
         return refreshValiditySeconds;
     }
 
-    public String generateAccessToken(Long userId, String email) {
-        return buildToken(userId, email, validitySeconds, "access", null, null);
+    public String generateAccessToken(Long userId, String email, int tokenVersion) {
+        return buildToken(userId, email, validitySeconds, "access", null, null, tokenVersion);
     }
 
-    public String generateRefreshToken(Long userId, String email) {
-        return buildToken(userId, email, refreshValiditySeconds, "refresh", null, null);
+    public String generateRefreshToken(Long userId, String email, int tokenVersion) {
+        return buildToken(userId, email, refreshValiditySeconds, "refresh", null, null, tokenVersion);
     }
 
     public String generateResetSessionToken(Long userId, String email, String jti, long ttlSeconds, String ipHash, String userAgentHash) {
@@ -80,7 +80,7 @@ public class JwtTokenProvider implements InitializingBean {
                 "rsh", ipHash == null ? "" : ipHash,
                 "uah", userAgentHash == null ? "" : userAgentHash
         );
-        return buildToken(userId, email, ttlSeconds, "reset_session", jti, claims);
+        return buildToken(userId, email, ttlSeconds, "reset_session", jti, claims, 0);
     }
 
     public ResetSessionClaims parseResetSessionToken(String token) {
@@ -97,7 +97,7 @@ public class JwtTokenProvider implements InitializingBean {
         return new ResetSessionClaims(userId, email, jti, ipHash, uaHash, claims.getExpiration().toInstant());
     }
 
-    private String buildToken(Long userId, String email, long ttlSeconds, String type, String jti, Map<String, Object> extraClaims) {
+    private String buildToken(Long userId, String email, long ttlSeconds, String type, String jti, Map<String, Object> extraClaims, int tokenVersion) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(ttlSeconds);
         var builder = Jwts.builder()
@@ -107,6 +107,7 @@ public class JwtTokenProvider implements InitializingBean {
                 .setId(jti == null || jti.isBlank() ? UUID.randomUUID().toString() : jti)
                 .claim("uid", userId)
                 .claim("typ", type)
+                .claim("ver", tokenVersion)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(expiry));
         if (extraClaims != null) {
@@ -130,6 +131,21 @@ public class JwtTokenProvider implements InitializingBean {
 
     public Long getUserId(String token) {
         return getUserIdFromClaims(parseClaims(token));
+    }
+
+    public int getTokenVersion(String token) {
+        Object ver = parseClaims(token).get("ver");
+        if (ver instanceof Number n) {
+            return n.intValue();
+        }
+        if (ver != null) {
+            try {
+                return Integer.parseInt(ver.toString());
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     public String getJti(String token) {

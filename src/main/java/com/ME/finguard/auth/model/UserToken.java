@@ -24,8 +24,8 @@ public class UserToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+    @Column(nullable = false, unique = true, name = "token_hash", length = 128)
+    private String tokenHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -56,12 +56,12 @@ public class UserToken {
         this.user = user;
     }
 
-    public String getToken() {
-        return token;
+    public String getTokenHash() {
+        return tokenHash;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
     }
 
     public UserTokenType getType() {

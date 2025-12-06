@@ -40,6 +40,9 @@ public class User {
     @Column(nullable = false, name = "email_verified")
     private boolean emailVerified = false;
 
+    @Column(nullable = false, name = "token_version")
+    private int tokenVersion = 0;
+
     public Long getId() {
         return id;
     }
@@ -102,5 +105,13 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 }

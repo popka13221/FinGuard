@@ -237,6 +237,12 @@ public class AuthService {
         if (userId == null || email == null) {
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
         }
+        int tokenVersion = jwtTokenProvider.getTokenVersion(refreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", HttpStatus.UNAUTHORIZED));
+        if (tokenVersion != user.getTokenVersion()) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
+        }
         // revoke the old refresh token on rotation
         tokenBlacklistService.revoke(jti, jwtTokenProvider.getExpiry(refreshToken).toInstant());
         userSessionService.revoke(jti);
@@ -256,11 +262,12 @@ public class AuthService {
     }
 
     private AuthTokens issueTokens(Long userId, String email) {
-        String access = jwtTokenProvider.generateAccessToken(userId, email);
-        String refresh = jwtTokenProvider.generateRefreshToken(userId, email);
-        String jtiRefresh = jwtTokenProvider.getJti(refresh);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED));
+        int version = user.getTokenVersion();
+        String access = jwtTokenProvider.generateAccessToken(userId, email, version);
+        String refresh = jwtTokenProvider.generateRefreshToken(userId, email, version);
+        String jtiRefresh = jwtTokenProvider.getJti(refresh);
         userSessionService.register(user, jtiRefresh, jwtTokenProvider.getExpiry(refresh).toInstant());
         return new AuthTokens(access, refresh);
     }
@@ -287,18 +294,8 @@ public class AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
         userRepository.findByEmail(email).ifPresent(user -> {
-            Instant now = Instant.now();
-            Instant cutoff = now.minus(userTokenService.getResetCooldown());
-            UserToken latest = userTokenService.findLatestActiveReset(user)
-                    .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(cutoff))
-                    .orElse(null);
-            String tokenValue;
-            if (latest != null) {
-                tokenValue = latest.getToken();
-            } else {
-                userTokenService.invalidateActive(user, UserTokenType.RESET);
-                tokenValue = userTokenService.issue(user, UserTokenType.RESET);
-            }
+            userTokenService.invalidateActive(user, UserTokenType.RESET);
+            String tokenValue = userTokenService.issue(user, UserTokenType.RESET);
             mailService.sendResetEmail(user.getEmail(), tokenValue, userTokenService.getResetTtl());
             log.info("Reset requested for email={}", maskEmail(user.getEmail()));
         });
@@ -388,6 +385,7 @@ public class AuthService {
 
         User user = session.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
         passwordResetSessionService.consume(session);
         userTokenService.invalidateActive(user, UserTokenType.RESET);
