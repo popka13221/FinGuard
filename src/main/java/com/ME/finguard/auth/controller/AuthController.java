@@ -74,8 +74,8 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Некорректные данные или слабый пароль", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Email уже занят", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthTokens tokens = authService.register(request);
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        AuthTokens tokens = authService.register(request, httpRequest.getRemoteAddr());
         return ResponseEntity.status(201)
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())

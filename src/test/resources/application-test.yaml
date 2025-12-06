@@ -49,6 +49,12 @@ app:
       reset:
         limit: 100
         window-ms: 60000
+      register-ip:
+        limit: 1000
+        window-ms: 60000
+      register-email:
+        limit: 1000
+        window-ms: 60000
       login-otp:
         limit: 20
         window-ms: 60000

@@ -73,6 +73,10 @@ public class AuthService {
     private final boolean otpEnabled;
     private final int loginOtpLimit;
     private final long loginOtpWindowMs;
+    private final int registerIpLimit;
+    private final long registerIpWindowMs;
+    private final int registerEmailLimit;
+    private final long registerEmailWindowMs;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -96,6 +100,10 @@ public class AuthService {
                        @Value("${app.security.rate-limit.login-email.window-ms:300000}") long loginEmailWindowMs,
                        @Value("${app.security.rate-limit.login-otp.limit:5}") int loginOtpLimit,
                        @Value("${app.security.rate-limit.login-otp.window-ms:300000}") long loginOtpWindowMs,
+                       @Value("${app.security.rate-limit.register-ip.limit:10}") int registerIpLimit,
+                       @Value("${app.security.rate-limit.register-ip.window-ms:300000}") long registerIpWindowMs,
+                       @Value("${app.security.rate-limit.register-email.limit:5}") int registerEmailLimit,
+                       @Value("${app.security.rate-limit.register-email.window-ms:300000}") long registerEmailWindowMs,
                        @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -120,13 +128,19 @@ public class AuthService {
         this.otpEnabled = otpEnabled;
         this.loginOtpLimit = loginOtpLimit;
         this.loginOtpWindowMs = loginOtpWindowMs;
+        this.registerIpLimit = registerIpLimit;
+        this.registerIpWindowMs = registerIpWindowMs;
+        this.registerEmailLimit = registerEmailLimit;
+        this.registerEmailWindowMs = registerEmailWindowMs;
     }
 
     @Transactional
-    public AuthTokens register(RegisterRequest request) {
+    public AuthTokens register(RegisterRequest request, String ip) {
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
         String fullName = request.fullName() == null ? "" : request.fullName().trim();
         String baseCurrency = currencyService.normalize(request.baseCurrency());
+        enforceRateLimit("register:ip:" + safe(ip), registerIpLimit, registerIpWindowMs);
+        enforceRateLimit("register:email:" + email, registerEmailLimit, registerEmailWindowMs);
 
         if (fullName.isBlank()) {
             throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Full name is required", HttpStatus.BAD_REQUEST);
