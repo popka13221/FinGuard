@@ -176,9 +176,12 @@ const ResetPage: React.FC = () => {
     <div className="app">
       <div className="container" style={{ maxWidth: 520 }}>
         <header className="card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Smart Wallet</h2>
-            <div className="muted">Восстановление доступа · Шаг 2</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/app/assets/logo.svg" alt="Smart Wallet" style={{ height: 28, background: '#0f1115', borderRadius: 10, padding: 6 }} />
+            <div>
+              <h2 style={{ margin: 0 }}>Smart Wallet</h2>
+              <div className="muted">Восстановление доступа · Шаг 2</div>
+            </div>
           </div>
         </header>
 

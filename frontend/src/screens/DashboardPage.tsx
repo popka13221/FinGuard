@@ -39,9 +39,12 @@ const DashboardPage: React.FC = () => {
     <div className="app">
       <div className="container">
         <header className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Smart Wallet</h2>
-            <div className="muted">Ваш финансовый дашборд</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/app/assets/logo.svg" alt="Smart Wallet" style={{ height: 28, background: '#0f1115', borderRadius: 10, padding: 6 }} />
+            <div>
+              <h2 style={{ margin: 0 }}>Smart Wallet</h2>
+              <div className="muted">Ваш финансовый дашборд</div>
+            </div>
           </div>
           <div className="actions">
             <div className="pill">Dashboard</div>
