@@ -47,6 +47,8 @@ public class SecurityConfig {
                         "/api/auth/refresh",
                         "/api/auth/logout",
                         "/api/currencies",
+                        "/favicon.ico",
+                        "/favicon.svg",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",

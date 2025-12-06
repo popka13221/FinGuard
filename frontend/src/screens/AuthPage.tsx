@@ -131,7 +131,7 @@ const AuthPage: React.FC = () => {
       <div className="container" style={{ maxWidth: 580 }}>
         <header className="card" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src="/app/assets/logo.svg" alt="Smart Wallet" style={{ height: 28, background: '#0f1115', borderRadius: 10, padding: 6 }} />
+            <img src="/app/assets/logo.svg" alt="Smart Wallet" style={{ height: 48 }} />
             <h2 style={{ margin: 0 }}>Smart Wallet</h2>
           </div>
           <div className="actions" style={{ gap: 8 }}>
