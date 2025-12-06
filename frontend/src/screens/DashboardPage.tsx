@@ -40,7 +40,7 @@ const DashboardPage: React.FC = () => {
       <div className="container">
         <header className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src="/app/assets/logo.svg" alt="Smart Wallet" style={{ height: 48 }} />
+            <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style={{ height: 48 }} />
             <div>
               <h2 style={{ margin: 0 }}>Smart Wallet</h2>
               <div className="muted">Ваш финансовый дашборд</div>

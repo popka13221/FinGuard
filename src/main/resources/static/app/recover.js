@@ -151,9 +151,11 @@
     if (cooldownRemaining <= 0) {
       btn.disabled = false;
       localStorage.removeItem(storageKeys.until);
+      localStorage.removeItem(storageKeys.stage);
       updateCooldownLabel();
       return;
     }
+    localStorage.setItem(storageKeys.stage, 'sent');
     const untilTs = Date.now() + cooldownRemaining * 1000;
     localStorage.setItem(storageKeys.until, String(untilTs));
     btn.disabled = true;
@@ -167,6 +169,7 @@
         btn.disabled = false;
         cooldownRemaining = 0;
         localStorage.removeItem(storageKeys.until);
+        localStorage.removeItem(storageKeys.stage);
       }
       updateCooldownLabel();
     }, 1000);
@@ -414,16 +417,19 @@
       const emailInput = qs(selectors.forgotEmail);
       if (emailInput) emailInput.value = savedEmail;
     }
-    if (savedStage === 'sent') {
-      showTokenInput();
-    }
+    let left = 0;
     if (savedUntil) {
-      const left = Math.max(Math.floor((Number(savedUntil) - Date.now()) / 1000), 0);
+      left = Math.max(Math.floor((Number(savedUntil) - Date.now()) / 1000), 0);
       if (left > 0) {
         startCooldown(left);
       } else {
         localStorage.removeItem(storageKeys.until);
       }
+    }
+    if (savedStage === 'sent' && left > 0) {
+      showTokenInput();
+    } else {
+      localStorage.removeItem(storageKeys.stage);
     }
   }
 
