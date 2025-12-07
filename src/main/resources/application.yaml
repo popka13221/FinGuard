@@ -40,6 +40,7 @@ app:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:no-reply@finguard.local}
     reset-subject: ${MAIL_RESET_SUBJECT:Сброс пароля FinGuard}
+    verify-subject: ${MAIL_VERIFY_SUBJECT:Подтверждение email FinGuard}
     otp-subject: ${MAIL_OTP_SUBJECT:Код входа FinGuard}
   security:
     jwt:
@@ -80,6 +81,7 @@ app:
         limit: ${RATE_LIMIT_LOGIN_OTP_LIMIT:5}
         window-ms: ${RATE_LIMIT_LOGIN_OTP_WINDOW_MS:300000}
     tokens:
+      verify-dev-code: ${VERIFY_DEV_CODE:123456}
       reset-dev-code: ${RESET_DEV_CODE:123456}
       reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}
       reset-session-ttl-minutes: ${RESET_SESSION_TTL_MINUTES:15}

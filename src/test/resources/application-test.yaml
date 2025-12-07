@@ -23,6 +23,7 @@ app:
     base-url: http://localhost:8080
   mail:
     enabled: false
+    verify-subject: Подтверждение email FinGuard
   security:
     otp:
       enabled: false
@@ -66,6 +67,7 @@ app:
     cors:
       allowed-origins:
     tokens:
+      verify-dev-code: 123456
       reset-dev-code: 123456
       reset-cooldown-seconds: 60
       reset-session-ttl-minutes: 15

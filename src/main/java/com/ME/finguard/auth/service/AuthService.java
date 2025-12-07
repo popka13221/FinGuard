@@ -165,8 +165,8 @@ public class AuthService {
         user.setRole(Role.USER);
         user.setEmailVerified(false);
         User saved = userRepository.save(user);
-        // issue verification token (логируем/отправляем вне текущего слоя)
-        userTokenService.issue(saved, UserTokenType.VERIFY);
+        String verifyToken = userTokenService.issue(saved, UserTokenType.VERIFY);
+        mailService.sendVerifyEmail(saved.getEmail(), verifyToken, userTokenService.getVerifyTtl());
         return issueTokens(saved.getId(), saved.getEmail());
     }
 
@@ -191,8 +191,8 @@ public class AuthService {
                         .getId();
             }
             loginAttemptService.recordSuccess(email);
-            AuthTokens tokens = issueTokens(userId, email);
             if (!otpEnabled) {
+                AuthTokens tokens = issueTokens(userId, email);
                 return new LoginOutcome(tokens, false, 0);
             }
             OtpService.IssuedOtp issued = otpService.issue(email);
@@ -276,19 +276,19 @@ public class AuthService {
         String email = request.email().trim().toLowerCase();
         userRepository.findByEmail(email).ifPresent(user -> {
             if (!user.isEmailVerified()) {
-                userTokenService.issue(user, UserTokenType.VERIFY);
+                String token = userTokenService.issue(user, UserTokenType.VERIFY);
+                mailService.sendVerifyEmail(user.getEmail(), token, userTokenService.getVerifyTtl());
             }
         });
     }
 
     public void verify(VerifyRequest request) {
-        userTokenService.findValid(request.token(), UserTokenType.VERIFY)
-                .ifPresent(token -> {
-                    User user = token.getUser();
-                    user.setEmailVerified(true);
-                    userRepository.save(user);
-                    userTokenService.markUsed(token);
-                });
+        UserToken token = userTokenService.findValid(request.token(), UserTokenType.VERIFY)
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
+        User user = token.getUser();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        userTokenService.markUsed(token);
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {

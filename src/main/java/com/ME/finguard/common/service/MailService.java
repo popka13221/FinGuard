@@ -23,6 +23,7 @@ public class MailService {
     private final boolean enabled;
     private final String from;
     private final String resetSubject;
+    private final String verifySubject;
     private final String otpSubject;
     private final String frontendBaseUrl;
     private final String devResetCode;
@@ -35,6 +36,7 @@ public class MailService {
     public MailService(@Value("${app.mail.enabled:false}") boolean enabled,
                        @Value("${app.mail.from:no-reply@finguard.local}") String from,
                        @Value("${app.mail.reset-subject:Сброс пароля FinGuard}") String resetSubject,
+                       @Value("${app.mail.verify-subject:Подтверждение email FinGuard}") String verifySubject,
                        @Value("${app.mail.otp-subject:Код входа FinGuard}") String otpSubject,
                        @Value("${app.frontend.base-url:http://localhost:8080}") String frontendBaseUrl,
                        @Value("${app.security.tokens.reset-dev-code:123456}") String devResetCode,
@@ -42,6 +44,7 @@ public class MailService {
         this.enabled = enabled;
         this.from = from;
         this.resetSubject = resetSubject;
+        this.verifySubject = verifySubject;
         this.otpSubject = otpSubject;
         this.frontendBaseUrl = trimTrailingSlash(frontendBaseUrl);
         this.devResetCode = devResetCode == null ? "" : devResetCode.trim();
@@ -114,6 +117,42 @@ public class MailService {
             mailSender.send(mail);
         } catch (Exception e) {
             log.warn("Failed to send OTP email to {}", maskEmail(to), e);
+        }
+    }
+
+    public void sendVerifyEmail(String to, String token, Duration ttl) {
+        if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
+            return;
+        }
+        String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
+        String body = """
+                Привет!
+
+                Подтвердите ваш email для FinGuard.
+                Код: %s
+                Ссылка: %s
+                Код действует примерно %s минут.
+
+                Если запрос сделали не вы — игнорируйте письмо.
+                """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+
+        MailMessage message = new MailMessage(to, verifySubject, body, Instant.now());
+        outbox.add(message);
+
+        if (!enabled || mailSender == null) {
+            log.info("Mail disabled, would send verify email to {} with token {}", maskEmail(to), token);
+            return;
+        }
+
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(from);
+            mail.setTo(to);
+            mail.setSubject(verifySubject);
+            mail.setText(body);
+            mailSender.send(mail);
+        } catch (Exception e) {
+            log.warn("Failed to send verify email to {}", maskEmail(to), e);
         }
     }
 

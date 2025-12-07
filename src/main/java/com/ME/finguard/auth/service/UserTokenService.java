@@ -25,17 +25,20 @@ public class UserTokenService {
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;
     private final Duration resetTtl;
+    private final String verifyDevCode;
     private final String resetDevCode;
     private final Duration resetCooldown;
 
     public UserTokenService(UserTokenRepository userTokenRepository,
                             @Value("${app.security.tokens.verify-ttl-minutes:1440}") long verifyTtlMinutes,
                             @Value("${app.security.tokens.reset-ttl-minutes:60}") long resetTtlMinutes,
+                            @Value("${app.security.tokens.verify-dev-code:}") String verifyDevCode,
                             @Value("${app.security.tokens.reset-dev-code:123456}") String resetDevCode,
                             @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
         this.userTokenRepository = userTokenRepository;
         this.verifyTtl = Duration.ofMinutes(Math.max(verifyTtlMinutes, 1));
         this.resetTtl = Duration.ofMinutes(Math.max(resetTtlMinutes, 1));
+        this.verifyDevCode = verifyDevCode == null ? "" : verifyDevCode.trim();
         this.resetDevCode = resetDevCode == null ? "" : resetDevCode.trim();
         this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
     }
@@ -44,7 +47,8 @@ public class UserTokenService {
     public String issue(User user, UserTokenType type) {
         Duration ttl = type == UserTokenType.VERIFY ? verifyTtl : resetTtl;
         String tokenValue = generateToken(type);
-        if (type == UserTokenType.RESET && !resetDevCode.isEmpty()) {
+        if ((type == UserTokenType.RESET && !resetDevCode.isEmpty())
+                || (type == UserTokenType.VERIFY && !verifyDevCode.isEmpty())) {
             // гарантируем уникальность фиксированного кода
             userTokenRepository.deleteByTokenHash(hashToken(tokenValue));
             userTokenRepository.flush();
@@ -91,6 +95,10 @@ public class UserTokenService {
         return resetTtl;
     }
 
+    public Duration getVerifyTtl() {
+        return verifyTtl;
+    }
+
     public Duration getResetCooldown() {
         return resetCooldown;
     }
@@ -115,6 +123,9 @@ public class UserTokenService {
     }
 
     private String generateToken(UserTokenType type) {
+        if (type == UserTokenType.VERIFY && !verifyDevCode.isEmpty()) {
+            return verifyDevCode;
+        }
         if (type == UserTokenType.RESET && !resetDevCode.isEmpty()) {
             return resetDevCode;
         }
