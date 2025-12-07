@@ -35,12 +35,13 @@
     return el ? el.value : '';
   }
 
+  const errorHideTimers = {};
+
   async function resendOtp() {
     if (submitting) return;
-    const remaining = remainingLoginCooldownSeconds();
+    const remaining = remainingOtpCooldownSeconds();
     if (remaining > 0) {
-      const formatter = formatCooldownMessage(loginCooldownCode || '429002');
-      showError(formatter(remaining));
+      startOtpCooldownTimer();
       return;
     }
     const email = (value(selectors.loginEmail) || '').trim().toLowerCase();
@@ -55,14 +56,24 @@
   }
 
   function showError(msg, boxSelector) {
-    const box = document.querySelector(boxSelector || selectors.errorBox);
+    const key = boxSelector || selectors.errorBox;
+    const box = document.querySelector(key);
     if (!box) return;
+    if (errorHideTimers[key]) {
+      clearTimeout(errorHideTimers[key]);
+      delete errorHideTimers[key];
+    }
     if (!msg) {
       box.style.display = 'none';
       box.textContent = '';
     } else {
       box.style.display = 'block';
       box.textContent = msg;
+      errorHideTimers[key] = window.setTimeout(() => {
+        box.style.display = 'none';
+        box.textContent = '';
+        delete errorHideTimers[key];
+      }, 5000);
     }
   }
 
@@ -229,10 +240,7 @@
         showError(`Слишком много попыток. Подождите ${left} сек.`);
         break;
       case '429002':
-        {
-          const leftOtp = remainingLoginCooldownSeconds() || 60;
-          showError(`Код уже отправлен. Проверьте почту. Новый можно запросить через ${leftOtp} сек.`);
-        }
+        showError('');
         break;
       case '400002':
         showFieldError('email', 'Некорректный email');
@@ -324,6 +332,7 @@
   let loginCooldownUntil = 0;
   let loginCooldownCode = '';
   let loginCooldownTimer = null;
+  let otpCooldownTimer = null;
 
   function loadOtpState() {
     try {
@@ -384,14 +393,66 @@
 
   function formatCooldownMessage(code) {
     return (sec) => {
-      if (code === '429002') {
-        return `Код уже отправлен. Проверьте почту. Новый можно запросить через ${sec} сек.`;
-      }
       return `Слишком много попыток. Подождите ${sec} сек.`;
     };
   }
 
+  function remainingOtpCooldownSeconds() {
+    const now = Date.now();
+    if (otpCooldownUntil <= now) {
+      if (otpCooldownUntil !== 0) {
+        otpCooldownUntil = 0;
+        saveOtpState();
+      } else {
+        otpCooldownUntil = 0;
+      }
+      return 0;
+    }
+    return Math.max(1, Math.ceil((otpCooldownUntil - now) / 1000));
+  }
+
+  function updateOtpResendButton() {
+    const btn = document.querySelector(selectors.otpResendButton);
+    if (!btn) return;
+    const remaining = remainingOtpCooldownSeconds();
+    const baseText = 'Отправить новый код';
+    if (remaining > 0) {
+      btn.disabled = true;
+      btn.textContent = `${baseText} (${remaining} сек.)`;
+    } else {
+      btn.disabled = submitting;
+      btn.textContent = baseText;
+    }
+  }
+
+  function startOtpCooldownTimer() {
+    updateOtpResendButton();
+    if (otpCooldownTimer) {
+      clearInterval(otpCooldownTimer);
+      otpCooldownTimer = null;
+    }
+    const left = remainingOtpCooldownSeconds();
+    if (left > 0) {
+      otpCooldownTimer = setInterval(() => {
+        const remaining = remainingOtpCooldownSeconds();
+        updateOtpResendButton();
+        if (remaining <= 0 && otpCooldownTimer) {
+          clearInterval(otpCooldownTimer);
+          otpCooldownTimer = null;
+        }
+      }, 1000);
+    }
+  }
+
   function startLoginCooldownTimer(formatter) {
+    if (loginCooldownCode === '429002') {
+      if (loginCooldownTimer) {
+        clearInterval(loginCooldownTimer);
+        loginCooldownTimer = null;
+      }
+      showError('');
+      return;
+    }
     const format = typeof formatter === 'function'
       ? formatter
       : formatCooldownMessage(loginCooldownCode);
@@ -429,6 +490,7 @@
     if (otpInput) otpInput.value = otpCodeValue || '';
     otpPending = true;
     saveOtpState();
+    startOtpCooldownTimer();
   }
 
   function hideOtpSection() {
@@ -445,6 +507,7 @@
     otpCodeValue = '';
     otpCooldownUntil = 0;
     saveOtpState();
+    startOtpCooldownTimer();
   }
 
   async function submitOtp(email) {
@@ -475,6 +538,7 @@
       showError(msg);
       if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
       showOtpSection();
+      startOtpCooldownTimer();
       return;
     }
     if (result.ok && result.data && result.data.token) {
@@ -505,9 +569,8 @@
     clearLoginCooldown();
     const now = Date.now();
     if (otpPending && validation.payload.email === otpEmail && now < otpCooldownUntil) {
-      const otpError = document.querySelector(selectors.otpError);
-      if (otpError) { otpError.textContent = 'Код уже отправлен. Подождите и введите его ниже.'; otpError.style.display = 'block'; }
       showOtpSection();
+      startOtpCooldownTimer();
       return;
     }
     submitting = true;
@@ -527,9 +590,12 @@
         otpCooldownUntil = until;
         otpCodeValue = otpCodeValue || '';
         saveOtpState();
+        const otpError = document.querySelector(selectors.otpError);
+        if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
         showOtpSection();
-        const msg = result.data && result.data.message ? result.data.message : formatter(retry);
-        showError(msg);
+        showError('');
+        startOtpCooldownTimer();
+        return;
       } else {
         // не OTP-кулдаун — убираем секцию кода
         otpPending = false;
@@ -551,6 +617,7 @@
       otpCooldownUntil = Date.now() + 60000;
       saveOtpState();
       showOtpSection(result.data.expiresInSeconds);
+      startOtpCooldownTimer();
       return;
     }
     if (result.ok && result.data && result.data.token) {
@@ -589,8 +656,14 @@
   function setSubmitting(state) {
     const buttons = [selectors.loginButton, selectors.registerButton, selectors.otpButton, selectors.otpResendButton].map((sel) => document.querySelector(sel));
     buttons.forEach((btn) => {
-      if (btn) btn.disabled = state;
+      if (!btn) return;
+      if (btn.matches(selectors.otpResendButton)) {
+        btn.disabled = state || remainingOtpCooldownSeconds() > 0;
+      } else {
+        btn.disabled = state;
+      }
     });
+    if (!state) updateOtpResendButton();
   }
 
   function bindAuthActions() {
@@ -616,6 +689,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     Theme.init(selectors.themeToggle);
     loadOtpState();
+    loadLoginCooldown();
     const now = Date.now();
     if (otpPending && otpEmail && now < otpCooldownUntil) {
       showOtpSection();
@@ -638,7 +712,6 @@
     }
     clearPasswords();
     bindAuthActions();
-    loadLoginCooldown();
     if (loginCooldownCode === '429002') {
         clearLoginCooldown();
         showError('');
@@ -647,6 +720,7 @@
     if (remaining === 0) {
       showError('');
     }
+    startOtpCooldownTimer();
     startLoginCooldownTimer();
     switchForm('login');
   });

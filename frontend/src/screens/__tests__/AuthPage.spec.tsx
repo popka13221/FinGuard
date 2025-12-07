@@ -100,4 +100,52 @@ describe('AuthPage OTP flow', () => {
     expect(screen.getAllByText(/Код неверный или истек/i).length).toBeGreaterThan(0);
     expect(setHref).not.toHaveBeenCalled();
   });
+
+  it('does not block login on weak (but non-empty) password and redirects after success', async () => {
+    mockedAuth.AuthApi.login.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { token: 'access' },
+    });
+
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Пароль/i), { target: { value: 'weak' } });
+    fireEvent.click(screen.getByRole('button', { name: /Войти/i }));
+
+    await waitFor(() => expect(mockedAuth.AuthApi.login).toHaveBeenCalledWith({ email: 'user@example.com', password: 'weak' }));
+    expect(setHref).toHaveBeenCalledWith('/dashboard');
+    expect(sessionStorage.getItem('spa_email')).toBe('user@example.com');
+  });
+
+  it('keeps OTP submit disabled without code and shows a single inline error on failure', async () => {
+    mockedAuth.AuthApi.login.mockResolvedValue({
+      ok: true,
+      status: 202,
+      data: { otpRequired: true, expiresInSeconds: 120 },
+    });
+    mockedAuth.AuthApi.verifyOtp.mockResolvedValue({
+      ok: false,
+      status: 401,
+      data: { code: '100001' },
+    });
+
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Пароль/i), { target: { value: 'StrongPass1!' } });
+    fireEvent.click(screen.getByRole('button', { name: /Войти/i }));
+
+    const otpButton = await screen.findByRole('button', { name: /Подтвердить код/i });
+    expect(otpButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '000000' } });
+    expect(otpButton).not.toBeDisabled();
+    fireEvent.click(otpButton);
+
+    await waitFor(() => expect(mockedAuth.AuthApi.verifyOtp).toHaveBeenCalled());
+    expect(screen.getByText(/Код неверный или истек/i)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });

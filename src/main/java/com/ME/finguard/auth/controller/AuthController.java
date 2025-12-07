@@ -159,7 +159,7 @@ public class AuthController {
             long retrySec = (long) Math.ceil(retryMs / 1000.0);
             return ResponseEntity.status(429)
                     .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(retrySec, 1)))
-                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", Math.max(retrySec, 1)));
+                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Слишком много запросов. Попробуйте позже.", Math.max(retrySec, 1)));
         }
         authService.forgotPassword(request);
         return ResponseEntity.ok(Map.of("message", "If this email exists, we've sent a reset code."));

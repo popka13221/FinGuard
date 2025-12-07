@@ -74,6 +74,7 @@ const AuthPage: React.FC = () => {
   const submit = async () => {
     if (isSubmitting) return;
     setFormError('');
+    setOtpError('');
     if (mode === 'register' && (isLoadingCurrencies || currencyError || currencies.length === 0)) {
       setFormError(currencyError || 'Валюты загружаются. Подождите и попробуйте снова.');
       return;
@@ -103,8 +104,11 @@ const AuthPage: React.FC = () => {
       ApiClient.setEmail(payload.email);
       window.location.href = '/dashboard';
     } else {
-      const code = res.data && res.data.code ? res.data.code : '----';
-      applyErrorCode(code, '');
+      const data = res.data as any;
+      const code = data && data.code ? data.code : '----';
+      const message = data && data.message ? data.message : undefined;
+      const retryAfterSeconds = data && typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : undefined;
+      applyErrorCode(code, message, retryAfterSeconds);
     }
   };
 
@@ -191,18 +195,18 @@ const AuthPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {(errors.form || otpError) && (
+                {errors.form && (
                   <div className="alert" role="alert" aria-live="polite">
-                    {errors.form || otpError}
+                    {errors.form}
                   </div>
                 )}
                 <div className="actions">
                   {!otpStep ? (
-                    <Button variant="secondary" onClick={submit} disabled={isSubmitting}>
+                    <Button variant="secondary" onClick={submit} disabled={isSubmitting || !values.email.trim() || !values.password}>
                       Войти
                     </Button>
                   ) : (
-                    <Button variant="secondary" onClick={submitOtp} disabled={isSubmitting}>
+                    <Button variant="secondary" onClick={submitOtp} disabled={isSubmitting || !otpCode.trim()}>
                       Подтвердить код
                     </Button>
                   )}

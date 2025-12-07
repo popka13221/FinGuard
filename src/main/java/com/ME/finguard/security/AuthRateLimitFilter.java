@@ -49,7 +49,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             if (!res.allowed()) {
                 log.warn("Rate limit exceeded for ip={}, path={}", request.getRemoteAddr(), path);
                 long retryAfter = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
-                ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", retryAfter);
+                ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Слишком много запросов. Попробуйте позже.", retryAfter);
                 response.setStatus(429);
                 response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfter));
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
