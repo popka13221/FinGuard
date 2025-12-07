@@ -1,4 +1,4 @@
 package com.yourname.finguard.common.dto;
 
-public record ApiError(String code, String message) {
+public record ApiError(String code, String message, Long retryAfterSeconds) {
 }

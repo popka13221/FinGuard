@@ -3,6 +3,7 @@ package com.yourname.finguard.security;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -35,13 +36,23 @@ public class RateLimiterService {
     }
 
     public boolean allow(String key, int customLimit, long customWindowMs) {
+        return check(key, customLimit, customWindowMs).allowed();
+    }
+
+    public Result check(String key) {
+        return check(key, limit, windowMs);
+    }
+
+    public Result check(String key, int customLimit, long customWindowMs) {
         if (customLimit <= 0 || customWindowMs <= 0) {
-            return true;
+            return new Result(true, 0);
         }
         long now = System.currentTimeMillis();
         AtomicBoolean allowed = new AtomicBoolean(true);
+        AtomicLong retryAfter = new AtomicLong(0);
         buckets.compute(key, (k, bucket) -> {
-            if (bucket == null || now - bucket.windowStartMs >= bucketWindowMs(bucket, customWindowMs)) {
+            long effectiveWindow = bucketWindowMs(bucket, customWindowMs);
+            if (bucket == null || now - bucket.windowStartMs >= effectiveWindow) {
                 Bucket fresh = new Bucket();
                 fresh.windowStartMs = now;
                 fresh.count = 1;
@@ -50,6 +61,8 @@ public class RateLimiterService {
             }
             if (bucket.count >= customLimit) {
                 allowed.set(false);
+                long until = bucket.windowStartMs + effectiveWindow;
+                retryAfter.set(Math.max(0, until - now));
                 return bucket;
             }
             bucket.count += 1;
@@ -58,7 +71,7 @@ public class RateLimiterService {
         });
         evictExpired(now);
         evictIfNeeded();
-        return allowed.get();
+        return new Result(allowed.get(), retryAfter.get());
     }
 
     public void reset() {
@@ -95,5 +108,8 @@ public class RateLimiterService {
                 .limit(Math.max(0, size - maxEntries))
                 .map(Map.Entry::getKey)
                 .forEach(buckets::remove);
+    }
+
+    public record Result(boolean allowed, long retryAfterMs) {
     }
 }

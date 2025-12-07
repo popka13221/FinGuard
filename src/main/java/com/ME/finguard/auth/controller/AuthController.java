@@ -152,10 +152,14 @@ public class AuthController {
         String email = request.email().trim().toLowerCase();
         String ipKey = "forgot:ip:" + httpRequest.getRemoteAddr();
         String emailKey = "forgot:email:" + email;
-        if (!rateLimiterService.allow(ipKey, forgotLimit, forgotWindowMs)
-                || !rateLimiterService.allow(emailKey, forgotLimit, forgotWindowMs)) {
+        RateLimiterService.Result ipRes = rateLimiterService.check(ipKey, forgotLimit, forgotWindowMs);
+        RateLimiterService.Result emailRes = rateLimiterService.check(emailKey, forgotLimit, forgotWindowMs);
+        if (!ipRes.allowed() || !emailRes.allowed()) {
+            long retryMs = Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs());
+            long retrySec = (long) Math.ceil(retryMs / 1000.0);
             return ResponseEntity.status(429)
-                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later."));
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(retrySec, 1)))
+                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", Math.max(retrySec, 1)));
         }
         authService.forgotPassword(request);
         return ResponseEntity.ok(Map.of("message", "If this email exists, we've sent a reset code."));
@@ -185,7 +189,7 @@ public class AuthController {
     public ResponseEntity<?> refresh(HttpServletRequest request) {
         String refresh = readCookie(request, "FG_REFRESH");
         if (!StringUtils.hasText(refresh)) {
-            return ResponseEntity.status(401).body(new ApiError(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token"));
+            return ResponseEntity.status(401).body(new ApiError(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", null));
         }
         AuthTokens tokens = authService.refresh(refresh);
         return ResponseEntity.ok()

@@ -170,7 +170,7 @@ class OtpAuthIntegrationTest {
                 .andExpect(status().isTooManyRequests())
                 .andReturn();
         JsonNode err = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
-        assertThat(err.get("code").asText()).isEqualTo("429001");
+        assertThat(err.get("code").asText()).isEqualTo("429002");
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {

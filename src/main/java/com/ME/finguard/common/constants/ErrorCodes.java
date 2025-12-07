@@ -15,6 +15,7 @@ public final class ErrorCodes {
     public static final String VALIDATION_PASSWORD = "400003";
     public static final String BAD_REQUEST = "400000";
     public static final String RATE_LIMIT = "429001";
+    public static final String OTP_ALREADY_SENT = "429002";
 
     public static final String INTERNAL_ERROR = "900000";
 }

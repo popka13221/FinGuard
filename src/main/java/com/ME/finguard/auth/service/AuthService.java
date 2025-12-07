@@ -206,7 +206,17 @@ public class AuthService {
             if (existing != null) {
                 issued = existing;
             } else {
-                enforceRateLimit("login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
+                RateLimiterService.Result issueLimit = rateLimiterService.check(
+                        "login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
+                if (!issueLimit.allowed()) {
+                    long retry = Math.max(1, Math.round(Math.ceil(issueLimit.retryAfterMs() / 1000.0)));
+                    throw new ApiException(
+                            ErrorCodes.OTP_ALREADY_SENT,
+                            "OTP code already sent. Please check your email and try again later.",
+                            HttpStatus.TOO_MANY_REQUESTS,
+                            retry
+                    );
+                }
                 issued = otpService.issue(email);
                 mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
             }
@@ -423,12 +433,14 @@ public class AuthService {
     }
 
     private void enforceResetConfirmLimit(String key, User userToInvalidate) {
-        if (!rateLimiterService.allow(key, resetConfirmLimit, resetConfirmWindowMs)) {
+        RateLimiterService.Result res = rateLimiterService.check(key, resetConfirmLimit, resetConfirmWindowMs);
+        if (!res.allowed()) {
             if (userToInvalidate != null) {
                 userTokenService.invalidateActive(userToInvalidate, UserTokenType.RESET);
                 passwordResetSessionService.invalidateForUser(userToInvalidate);
             }
-            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Too many attempts. Request a new code.", HttpStatus.TOO_MANY_REQUESTS);
+            long retry = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Too many attempts. Request a new code.", HttpStatus.TOO_MANY_REQUESTS, retry);
         }
     }
 
@@ -441,8 +453,10 @@ public class AuthService {
     }
 
     private void enforceRateLimit(String key, int limit, long windowMs) {
-        if (!rateLimiterService.allow(key, limit, windowMs)) {
-            throw new ApiException(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
+        RateLimiterService.Result res = rateLimiterService.check(key, limit, windowMs);
+        if (!res.allowed()) {
+            long retry = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
+            throw new ApiException(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", HttpStatus.TOO_MANY_REQUESTS, retry);
         }
     }
 

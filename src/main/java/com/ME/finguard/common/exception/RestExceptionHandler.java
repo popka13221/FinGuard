@@ -16,14 +16,16 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiError> handleApiException(ApiException ex) {
-        return ResponseEntity
-                .status(ex.getStatus())
-                .body(new ApiError(ex.getCode(), ex.getMessage()));
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(ex.getStatus());
+        if (ex.getRetryAfterSeconds() != null) {
+            builder.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
+        }
+        return builder.body(new ApiError(ex.getCode(), ex.getMessage(), ex.getRetryAfterSeconds()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(new ApiError(ErrorCodes.BAD_REQUEST, ex.getMessage()));
+        return ResponseEntity.badRequest().body(new ApiError(ErrorCodes.BAD_REQUEST, ex.getMessage(), null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -37,18 +39,18 @@ public class RestExceptionHandler {
             if ("email".equalsIgnoreCase(field)) code = ErrorCodes.VALIDATION_EMAIL;
             if ("password".equalsIgnoreCase(field)) code = ErrorCodes.VALIDATION_PASSWORD;
         }
-        return ResponseEntity.badRequest().body(new ApiError(code, message));
+        return ResponseEntity.badRequest().body(new ApiError(code, message, null));
     }
 
     @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
     public ResponseEntity<ApiError> handleAuth(AuthenticationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiError(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid email or password"));
+                .body(new ApiError(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid email or password", null));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneral(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiError(ErrorCodes.INTERNAL_ERROR, "Internal error"));
+                .body(new ApiError(ErrorCodes.INTERNAL_ERROR, "Internal error", null));
     }
 }

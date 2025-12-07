@@ -207,6 +207,12 @@
         const left = remainingLoginCooldownSeconds() || 60;
         showError(`Слишком много попыток. Подождите ${left} сек.`);
         break;
+      case '429002':
+        {
+          const leftOtp = remainingLoginCooldownSeconds() || 60;
+          showError(`Код уже отправлен. Проверьте почту. Новый можно запросить через ${leftOtp} сек.`);
+        }
+        break;
       case '400002':
         showFieldError('email', 'Некорректный email');
         break;
@@ -295,6 +301,7 @@
   let otpCooldownUntil = 0;
   let otpCodeValue = '';
   let loginCooldownUntil = 0;
+  let loginCooldownTimer = null;
 
   function loadOtpState() {
     try {
@@ -336,6 +343,33 @@
     const now = Date.now();
     if (loginCooldownUntil <= now) return 0;
     return Math.ceil((loginCooldownUntil - now) / 1000);
+  }
+
+  function startLoginCooldownTimer(formatter) {
+    const format = typeof formatter === 'function'
+      ? formatter
+      : (sec) => `Слишком много попыток. Подождите ${sec} сек.`;
+    if (loginCooldownTimer) {
+      clearInterval(loginCooldownTimer);
+      loginCooldownTimer = null;
+    }
+    const tick = () => {
+      const remaining = remainingLoginCooldownSeconds();
+      if (remaining > 0) {
+        showError(format(remaining));
+      } else {
+        showError('');
+        saveLoginCooldown(0);
+        if (loginCooldownTimer) {
+          clearInterval(loginCooldownTimer);
+          loginCooldownTimer = null;
+        }
+      }
+    };
+    tick();
+    if (remainingLoginCooldownSeconds() > 0) {
+      loginCooldownTimer = setInterval(tick, 1000);
+    }
   }
 
   function showOtpSection() {
@@ -414,10 +448,16 @@
     submitting = false;
     setSubmitting(false);
     if (result.status === 429) {
-      const until = Date.now() + 60000;
+      const retry = result.data && result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
+      const until = Date.now() + retry * 1000;
       saveLoginCooldown(until);
-      const left = remainingLoginCooldownSeconds();
-      showError(`Слишком много попыток. Подождите ${left} сек.`);
+      const formatter = (sec) => {
+        if (result.data && result.data.code === '429002') {
+          return `Код уже отправлен. Проверьте почту. Новый можно запросить через ${sec} сек.`;
+        }
+        return `Слишком много попыток. Подождите ${sec} сек.`;
+      };
+      startLoginCooldownTimer(formatter);
       return;
     }
     if (result.status === 202 && result.data && result.data.otpRequired) {
@@ -499,6 +539,7 @@
     clearPasswords();
     bindAuthActions();
     loadLoginCooldown();
+    startLoginCooldownTimer();
     switchForm('login');
   });
 })();

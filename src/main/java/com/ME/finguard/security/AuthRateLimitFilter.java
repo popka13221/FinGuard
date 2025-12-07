@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -44,10 +45,13 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         if (PROTECTED_PATHS.contains(path)) {
             String key = request.getRemoteAddr() + ":" + path;
-            if (!rateLimiterService.allow(key)) {
+            RateLimiterService.Result res = rateLimiterService.check(key);
+            if (!res.allowed()) {
                 log.warn("Rate limit exceeded for ip={}, path={}", request.getRemoteAddr(), path);
-                ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.");
+                long retryAfter = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
+                ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Try again later.", retryAfter);
                 response.setStatus(429);
+                response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfter));
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 response.getWriter().write(objectMapper.writeValueAsString(error));
                 return;
