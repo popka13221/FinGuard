@@ -79,7 +79,7 @@ app:
         window-ms: ${RATE_LIMIT_REGISTER_EMAIL_WINDOW_MS:300000}
       login-otp:
         limit: ${RATE_LIMIT_LOGIN_OTP_LIMIT:5}
-        window-ms: ${RATE_LIMIT_LOGIN_OTP_WINDOW_MS:300000}
+        window-ms: ${RATE_LIMIT_LOGIN_OTP_WINDOW_MS:60000}
       login-otp-issue:
         limit: ${RATE_LIMIT_LOGIN_OTP_ISSUE_LIMIT:1}
         window-ms: ${RATE_LIMIT_LOGIN_OTP_ISSUE_WINDOW_MS:60000}

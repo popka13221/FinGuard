@@ -16,6 +16,7 @@
     otpCode: '#otpCode',
     otpError: '#otpError',
     otpButton: '#btn-otp',
+    otpResendButton: '#btn-otp-resend',
     regEmailError: '#regEmailError',
     regPasswordError: '#regPasswordError',
     fullNameError: '#fullNameError',
@@ -32,6 +33,25 @@
   function value(id) {
     const el = document.querySelector(id);
     return el ? el.value : '';
+  }
+
+  async function resendOtp() {
+    if (submitting) return;
+    const remaining = remainingLoginCooldownSeconds();
+    if (remaining > 0) {
+      const formatter = formatCooldownMessage(loginCooldownCode || '429002');
+      showError(formatter(remaining));
+      return;
+    }
+    const email = (value(selectors.loginEmail) || '').trim().toLowerCase();
+    const password = (value(selectors.loginPassword) || '').trim();
+    if (!email || !password) {
+      showError('Введите email и пароль, чтобы отправить новый код.');
+      showFieldError('email', email ? '' : 'Введите email');
+      showFieldError('password', password ? '' : 'Введите пароль');
+      return;
+    }
+    await login();
   }
 
   function showError(msg, boxSelector) {
@@ -122,7 +142,8 @@
     clearFieldErrors();
     const remaining = remainingLoginCooldownSeconds();
     if (remaining > 0) {
-      showError(`Слишком много попыток. Подождите ${remaining} сек.`);
+      const formatter = formatCooldownMessage(loginCooldownCode);
+      showError(formatter(remaining));
     } else {
       showError('');
     }
@@ -301,6 +322,7 @@
   let otpCooldownUntil = 0;
   let otpCodeValue = '';
   let loginCooldownUntil = 0;
+  let loginCooldownCode = '';
   let loginCooldownTimer = null;
 
   function loadOtpState() {
@@ -332,23 +354,47 @@
   function loadLoginCooldown() {
     const raw = localStorage.getItem('login_cooldown_until') || '0';
     loginCooldownUntil = Number(raw) || 0;
+    loginCooldownCode = localStorage.getItem('login_cooldown_code') || '';
   }
 
-  function saveLoginCooldown(until) {
+  function saveLoginCooldown(until, code) {
     loginCooldownUntil = until;
     localStorage.setItem('login_cooldown_until', String(until));
+    if (code) {
+      loginCooldownCode = code;
+      localStorage.setItem('login_cooldown_code', code);
+    }
+  }
+
+  function clearLoginCooldown() {
+    loginCooldownUntil = 0;
+    loginCooldownCode = '';
+    localStorage.removeItem('login_cooldown_until');
+    localStorage.removeItem('login_cooldown_code');
   }
 
   function remainingLoginCooldownSeconds() {
     const now = Date.now();
-    if (loginCooldownUntil <= now) return 0;
+    if (loginCooldownUntil <= now) {
+      clearLoginCooldown();
+      return 0;
+    }
     return Math.ceil((loginCooldownUntil - now) / 1000);
+  }
+
+  function formatCooldownMessage(code) {
+    return (sec) => {
+      if (code === '429002') {
+        return `Код уже отправлен. Проверьте почту. Новый можно запросить через ${sec} сек.`;
+      }
+      return `Слишком много попыток. Подождите ${sec} сек.`;
+    };
   }
 
   function startLoginCooldownTimer(formatter) {
     const format = typeof formatter === 'function'
       ? formatter
-      : (sec) => `Слишком много попыток. Подождите ${sec} сек.`;
+      : formatCooldownMessage(loginCooldownCode);
     if (loginCooldownTimer) {
       clearInterval(loginCooldownTimer);
       loginCooldownTimer = null;
@@ -417,6 +463,20 @@
     const result = await Api.call('/api/auth/login/otp', 'POST', { email, code }, false);
     submitting = false;
     setSubmitting(false);
+    if (result.status === 429) {
+      const retry = result.data && result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
+      otpCooldownUntil = Date.now() + retry * 1000;
+      otpPending = true;
+      otpEmail = email;
+      saveOtpState();
+      const msg = (result.data && result.data.message)
+        ? result.data.message
+        : `Слишком много попыток. Попробуйте через ${retry} сек.`;
+      showError(msg);
+      if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
+      showOtpSection();
+      return;
+    }
     if (result.ok && result.data && result.data.token) {
       Api.setEmail(email);
       hideOtpSection();
@@ -430,11 +490,19 @@
     if (submitting) return;
     const validation = validateLogin();
     if (!validation.valid) return;
-    const cooldownLeft = remainingLoginCooldownSeconds();
+    let cooldownLeft = remainingLoginCooldownSeconds();
+    if (cooldownLeft > 0 && loginCooldownCode === '429002') {
+      // не блокируем запрос для уже отправленного кода: сервер сам решит, а мы позволим ввести код
+      clearLoginCooldown();
+      cooldownLeft = 0;
+    }
     if (cooldownLeft > 0) {
-      showError(`Слишком много попыток. Подождите ${cooldownLeft} сек.`);
+      const formatter = formatCooldownMessage(loginCooldownCode);
+      showError(formatter(cooldownLeft));
+      startLoginCooldownTimer(formatter);
       return;
     }
+    clearLoginCooldown();
     const now = Date.now();
     if (otpPending && validation.payload.email === otpEmail && now < otpCooldownUntil) {
       const otpError = document.querySelector(selectors.otpError);
@@ -449,14 +517,30 @@
     setSubmitting(false);
     if (result.status === 429) {
       const retry = result.data && result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
+      const code = result.data && result.data.code ? result.data.code : '429001';
       const until = Date.now() + retry * 1000;
-      saveLoginCooldown(until);
-      const formatter = (sec) => {
-        if (result.data && result.data.code === '429002') {
-          return `Код уже отправлен. Проверьте почту. Новый можно запросить через ${sec} сек.`;
-        }
-        return `Слишком много попыток. Подождите ${sec} сек.`;
-      };
+      saveLoginCooldown(until, code);
+      const formatter = formatCooldownMessage(code);
+      if (code === '429002') {
+        otpPending = true;
+        otpEmail = validation.payload.email;
+        otpCooldownUntil = until;
+        otpCodeValue = otpCodeValue || '';
+        saveOtpState();
+        showOtpSection();
+        const msg = result.data && result.data.message ? result.data.message : formatter(retry);
+        showError(msg);
+      } else {
+        // не OTP-кулдаун — убираем секцию кода
+        otpPending = false;
+        otpCooldownUntil = 0;
+        otpEmail = '';
+        otpCodeValue = '';
+        saveOtpState();
+        hideOtpSection();
+        const msg = result.data && result.data.message ? result.data.message : formatter(retry);
+        showError(msg);
+      }
       startLoginCooldownTimer(formatter);
       return;
     }
@@ -503,7 +587,7 @@
   }
 
   function setSubmitting(state) {
-    const buttons = [selectors.loginButton, selectors.registerButton, selectors.otpButton].map((sel) => document.querySelector(sel));
+    const buttons = [selectors.loginButton, selectors.registerButton, selectors.otpButton, selectors.otpResendButton].map((sel) => document.querySelector(sel));
     buttons.forEach((btn) => {
       if (btn) btn.disabled = state;
     });
@@ -516,6 +600,8 @@
     if (registerBtn) registerBtn.addEventListener('click', register);
     const otpBtn = document.querySelector(selectors.otpButton);
     if (otpBtn) otpBtn.addEventListener('click', () => submitOtp((value(selectors.loginEmail) || '').trim().toLowerCase()));
+    const otpResendBtn = document.querySelector(selectors.otpResendButton);
+    if (otpResendBtn) otpResendBtn.addEventListener('click', resendOtp);
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
@@ -536,9 +622,31 @@
     } else {
       hideOtpSection();
     }
+    if (loginCooldownCode !== '429002' && otpPending) {
+      hideOtpSection();
+      otpPending = false;
+      otpEmail = '';
+      otpCooldownUntil = 0;
+      otpCodeValue = '';
+      saveOtpState();
+    }
+    if (!otpPending && loginCooldownCode === '429002') {
+      otpPending = true;
+      otpEmail = value(selectors.loginEmail).trim().toLowerCase() || otpEmail;
+      showOtpSection();
+      saveOtpState();
+    }
     clearPasswords();
     bindAuthActions();
     loadLoginCooldown();
+    if (loginCooldownCode === '429002') {
+        clearLoginCooldown();
+        showError('');
+    }
+    const remaining = remainingLoginCooldownSeconds();
+    if (remaining === 0) {
+      showError('');
+    }
     startLoginCooldownTimer();
     switchForm('login');
   });
