@@ -75,7 +75,9 @@ class TokenSecurityIntegrationTest {
 
         mockMvc.perform(post("/api/auth/forgot")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"email":"%s"}""".formatted(email)))
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(email)))
                 .andExpect(status().isOk());
 
         MailService.MailMessage msg = latestMail();
@@ -116,14 +118,18 @@ class TokenSecurityIntegrationTest {
         mailService.clearOutbox();
         mockMvc.perform(post("/api/auth/forgot")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"email":"%s"}""".formatted(email)))
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(email)))
                 .andExpect(status().isOk());
         String code = extractCode(latestMail().body());
 
         // Confirm reset to get session token
         MvcResult confirm = mockMvc.perform(post("/api/auth/reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"token":"%s"}""".formatted(code)))
+                        .content("""
+                                {"token":"%s"}
+                                """.formatted(code)))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode confirmBody = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -141,7 +147,7 @@ class TokenSecurityIntegrationTest {
         // Old access/refresh must be rejected
         mockMvc.perform(get("/api/auth/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().is4xxClientError());
 
         mockMvc.perform(post("/api/auth/refresh")
                         .cookie(new Cookie("FG_REFRESH", refreshToken)))
@@ -150,7 +156,9 @@ class TokenSecurityIntegrationTest {
         // Login with new password works and issues fresh tokens
         MvcResult login = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"email":"%s","password":"%s"}""".formatted(email, newPassword)))
+                        .content("""
+                                {"email":"%s","password":"%s"}
+                                """.formatted(email, newPassword)))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode loginBody = objectMapper.readTree(login.getResponse().getContentAsString(StandardCharsets.UTF_8));

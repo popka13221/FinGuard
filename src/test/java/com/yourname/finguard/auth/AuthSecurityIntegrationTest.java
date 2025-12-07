@@ -277,25 +277,31 @@ class AuthSecurityIntegrationTest {
         postJson("/api/auth/verify/request", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
 
+        User user = userRepository.findByEmail(email).orElseThrow();
+        Long userId = user.getId();
+        String rawToken = userTokenService.issue(user, UserTokenType.VERIFY);
         UserToken token = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.VERIFY)
+                .filter(t -> t.getType() == UserTokenType.VERIFY && t.getUser().getId().equals(userId))
                 .findFirst()
                 .orElseThrow();
 
         postJson("/api/auth/verify", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(rawToken))
                 .andExpect(status().isOk());
 
-        User user = userRepository.findByEmail(email).orElseThrow();
-        assertThat(user.isEmailVerified()).isTrue();
-        UserToken used = userTokenRepository.findById(token.getId()).orElseThrow();
+        User refreshed = userRepository.findByEmail(email).orElseThrow();
+        assertThat(refreshed.isEmailVerified()).isTrue();
+        UserToken used = userTokenRepository.findAll().stream()
+                .filter(t -> hashToken(rawToken).equals(t.getTokenHash()))
+                .findFirst()
+                .orElseThrow();
         assertThat(used.getUsedAt()).isNotNull();
 
         // Reuse token is a no-op and stays verified
         postJson("/api/auth/verify", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(rawToken))
                 .andExpect(status().isOk());
         assertThat(userRepository.findByEmail(email).orElseThrow().isEmailVerified()).isTrue();
     }
@@ -314,7 +320,8 @@ class AuthSecurityIntegrationTest {
         assertThat(Duration.between(token.getCreatedAt(), token.getExpiresAt()).getSeconds()).isGreaterThan(0);
         List<com.yourname.finguard.auth.model.UserSession> sessionsBefore = userSessionRepository.findByUserId(token.getUser().getId());
         assertThat(sessionsBefore).isNotEmpty();
-        String resetSessionToken = confirmResetSession(token);
+        String resetCode = extractCode(latestMail().body());
+        String resetSessionToken = confirmResetSession(resetCode);
         String resetJti = jwtTokenProvider.getJti(resetSessionToken);
         String resetTokenHash = passwordResetSessionService.hashToken(resetJti);
         PasswordResetSession resetSession = passwordResetSessionRepository.findByTokenHash(resetTokenHash).orElseThrow();
@@ -370,7 +377,6 @@ class AuthSecurityIntegrationTest {
         MailService.MailMessage message = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
         assertThat(message.to()).isEqualTo(email);
         assertThat(message.subject()).contains("Сброс пароля");
-        assertThat(message.body()).contains(token.getToken());
         assertThat(message.body()).contains("123456");
         assertThat(message.body()).contains("/app/reset.html");
     }
@@ -386,10 +392,12 @@ class AuthSecurityIntegrationTest {
                     .andExpect(status().isOk());
         }
 
-        var resetTokens = userTokenRepository.findByType(UserTokenType.RESET);
+        var resetTokens = userTokenRepository.findAll().stream()
+                .filter(t -> t.getType() == UserTokenType.RESET)
+                .toList();
         assertThat(resetTokens).hasSize(1);
         UserToken token = resetTokens.get(0);
-        assertThat(token.getToken()).isEqualTo("123456");
+        assertThat(token.getTokenHash()).isEqualTo(hashToken("123456"));
 
         assertThat(mailService.getOutbox()).hasSize(3);
         MailService.MailMessage last = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
@@ -403,7 +411,7 @@ class AuthSecurityIntegrationTest {
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         UserToken token = latestResetToken();
-        String resetSessionToken = confirmResetSession(token);
+        String resetSessionToken = confirmResetSession(latestResetCode());
 
         MvcResult res = postJson("/api/auth/reset", """
                 {"resetSessionToken":"%s","password":"password1"}
@@ -438,7 +446,7 @@ class AuthSecurityIntegrationTest {
 
         MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()), "10.0.0.1", "TestUA/1.0")
+                """.formatted(latestResetCode()), "10.0.0.1", "TestUA/1.0")
                 .andExpect(status().isOk())
                 .andReturn();
         String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
@@ -460,7 +468,7 @@ class AuthSecurityIntegrationTest {
 
         MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()), "10.0.0.1", "TestUA/1.0")
+                """.formatted(latestResetCode()), "10.0.0.1", "TestUA/1.0")
                 .andExpect(status().isOk())
                 .andReturn();
         String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
@@ -487,11 +495,9 @@ class AuthSecurityIntegrationTest {
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
 
-        UserToken token = latestResetToken();
-
         MvcResult okRes = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(latestResetCode()))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode okBody = objectMapper.readTree(okRes.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -514,25 +520,22 @@ class AuthSecurityIntegrationTest {
         for (int i = 0; i < 3; i++) {
             postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                     .andExpect(status().isOk());
-            UserToken token = latestResetToken();
             postJsonFromIp("/api/auth/reset/confirm", """
                     {"token":"%s"}
-                    """.formatted(token.getToken()), "127.0.0." + (10 + i))
+                    """.formatted(latestResetCode()), "127.0.0." + (10 + i))
                     .andExpect(status().isOk());
         }
 
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
-        UserToken token = latestResetToken();
-
         MvcResult limited = postJsonFromIp("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()), "127.0.0.50")
+                """.formatted(latestResetCode()), "127.0.0.50")
                 .andExpect(status().isTooManyRequests())
                 .andReturn();
         JsonNode error = objectMapper.readTree(limited.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100005");
-        assertThat(userTokenService.findValid(token.getToken(), UserTokenType.RESET)).isEmpty();
+        assertThat(userTokenService.findValid(latestResetCode(), UserTokenType.RESET)).isEmpty();
     }
 
     @Test
@@ -665,14 +668,15 @@ class AuthSecurityIntegrationTest {
 
         UserToken token = new UserToken();
         token.setUser(user);
-        token.setToken(UUID.randomUUID().toString());
+        String rawToken = UUID.randomUUID().toString();
+        token.setTokenHash(hashToken(rawToken));
         token.setType(UserTokenType.VERIFY);
         token.setExpiresAt(Instant.now().minusSeconds(60));
         userTokenRepository.save(token);
 
         postJson("/api/auth/verify", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(rawToken))
                 .andExpect(status().isOk());
 
         User fresh = userRepository.findByEmail(email).orElseThrow();
@@ -687,14 +691,15 @@ class AuthSecurityIntegrationTest {
         User user = userRepository.findByEmail(email).orElseThrow();
         UserToken token = new UserToken();
         token.setUser(user);
-        token.setToken(UUID.randomUUID().toString());
+        String rawToken = UUID.randomUUID().toString();
+        token.setTokenHash(hashToken(rawToken));
         token.setType(UserTokenType.RESET);
         token.setExpiresAt(Instant.now().minusSeconds(60));
         userTokenRepository.save(token);
 
         MvcResult res = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(rawToken))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -763,14 +768,62 @@ class AuthSecurityIntegrationTest {
                 .orElseThrow();
     }
 
-    private String confirmResetSession(UserToken token) throws Exception {
+    private String confirmResetSession(String rawToken) throws Exception {
         MvcResult res = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
-                """.formatted(token.getToken()))
+                """.formatted(rawToken))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode node = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         return node.get("resetSessionToken").asText();
+    }
+
+    private String latestResetCode() {
+        MailService.MailMessage last = latestMail();
+        return last == null ? "" : extractCode(last.body());
+    }
+
+    private MailService.MailMessage latestMail() {
+        List<MailService.MailMessage> outbox = mailService.getOutbox();
+        return outbox.isEmpty() ? null : outbox.get(outbox.size() - 1);
+    }
+
+    private String extractCode(String body) {
+        String[] lines = body.split("\\r?\\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.matches("^[0-9a-fA-F-]{6,}$")) {
+                return line;
+            }
+            if (line.toLowerCase().startsWith("код для ввода") || line.toLowerCase().startsWith("код:")) {
+                String[] parts = line.split(":");
+                if (parts.length > 1) {
+                    return parts[1].trim();
+                }
+            }
+        }
+        for (String line : lines) {
+            for (String part : line.split("\\s+")) {
+                if (part.matches("^[0-9a-fA-F-]{6,}$")) {
+                    return part.trim();
+                }
+            }
+        }
+        return "";
+    }
+
+    private String hashToken(String value) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashed) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {
