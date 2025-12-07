@@ -49,7 +49,21 @@ public class OtpService {
         entry.expiresAt = Instant.now().plusSeconds(ttlSeconds);
         entry.attempts = 0;
         store.put(normalize(email), entry);
-        return new IssuedOtp(code, entry.expiresAt);
+        return new IssuedOtp(code, entry.expiresAt, true);
+    }
+
+    public IssuedOtp getActive(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalArgumentException("Email required for OTP");
+        }
+        purgeExpired();
+        String key = normalize(email);
+        OtpEntry existing = store.get(key);
+        Instant now = Instant.now();
+        if (existing != null && existing.expiresAt != null && existing.expiresAt.isAfter(now)) {
+            return new IssuedOtp(existing.code, existing.expiresAt, false);
+        }
+        return null;
     }
 
     public boolean verify(String email, String code) {
@@ -109,6 +123,6 @@ public class OtpService {
         return email.trim().toLowerCase();
     }
 
-    public record IssuedOtp(String code, Instant expiresAt) {
+    public record IssuedOtp(String code, Instant expiresAt, boolean newlyCreated) {
     }
 }

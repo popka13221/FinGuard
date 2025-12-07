@@ -59,6 +59,9 @@ app:
       login-otp:
         limit: 20
         window-ms: 60000
+      login-otp-issue:
+        limit: 2
+        window-ms: 60000
     lockout:
       max-attempts: 5
       lock-minutes: 15

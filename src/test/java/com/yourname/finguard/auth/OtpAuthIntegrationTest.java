@@ -43,7 +43,9 @@ import org.springframework.test.web.servlet.MvcResult;
         "app.security.rate-limit.login-email.limit=10",
         "app.security.rate-limit.login-email.window-ms=60000",
         "app.security.rate-limit.login-otp.limit=5",
-        "app.security.rate-limit.login-otp.window-ms=60000"
+        "app.security.rate-limit.login-otp.window-ms=60000",
+        "app.security.rate-limit.login-otp-issue.limit=1",
+        "app.security.rate-limit.login-otp-issue.window-ms=60000"
 })
 class OtpAuthIntegrationTest {
 
@@ -117,6 +119,12 @@ class OtpAuthIntegrationTest {
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email)).andExpect(status().isAccepted());
 
+        // repeated login while OTP живой не шлёт новый код
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isAccepted());
+        assertThat(mailService.getOutbox()).hasSize(1);
+
         for (int i = 0; i < 2; i++) {
             postJson("/api/auth/login/otp", """
                     {"email":"%s","code":"000000"}
@@ -139,6 +147,30 @@ class OtpAuthIntegrationTest {
                 .andReturn();
         JsonNode finalError = objectMapper.readTree(finalAttempt.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(finalError.get("code").asText()).isEqualTo("100001");
+    }
+
+    @Test
+    void repeatedLoginTooSoonIsRateLimited() throws Exception {
+        String email = "otp-limit@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        mailService.clearOutbox();
+
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email)).andExpect(status().isAccepted());
+        // consume code successfully
+        postJson("/api/auth/login/otp", """
+                {"email":"%s","code":"654321"}
+                """.formatted(email)).andExpect(status().isOk());
+
+        // immediate second login should hit OTP issue rate limit
+        MvcResult res = postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isTooManyRequests())
+                .andReturn();
+        JsonNode err = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(err.get("code").asText()).isEqualTo("429001");
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {

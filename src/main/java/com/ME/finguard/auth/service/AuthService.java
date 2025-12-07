@@ -73,6 +73,8 @@ public class AuthService {
     private final boolean otpEnabled;
     private final int loginOtpLimit;
     private final long loginOtpWindowMs;
+    private final int loginOtpIssueLimit;
+    private final long loginOtpIssueWindowMs;
     private final int registerIpLimit;
     private final long registerIpWindowMs;
     private final int registerEmailLimit;
@@ -100,6 +102,8 @@ public class AuthService {
                        @Value("${app.security.rate-limit.login-email.window-ms:300000}") long loginEmailWindowMs,
                        @Value("${app.security.rate-limit.login-otp.limit:5}") int loginOtpLimit,
                        @Value("${app.security.rate-limit.login-otp.window-ms:300000}") long loginOtpWindowMs,
+                       @Value("${app.security.rate-limit.login-otp-issue.limit:1}") int loginOtpIssueLimit,
+                       @Value("${app.security.rate-limit.login-otp-issue.window-ms:60000}") long loginOtpIssueWindowMs,
                        @Value("${app.security.rate-limit.register-ip.limit:10}") int registerIpLimit,
                        @Value("${app.security.rate-limit.register-ip.window-ms:300000}") long registerIpWindowMs,
                        @Value("${app.security.rate-limit.register-email.limit:5}") int registerEmailLimit,
@@ -128,6 +132,8 @@ public class AuthService {
         this.otpEnabled = otpEnabled;
         this.loginOtpLimit = loginOtpLimit;
         this.loginOtpWindowMs = loginOtpWindowMs;
+        this.loginOtpIssueLimit = loginOtpIssueLimit;
+        this.loginOtpIssueWindowMs = loginOtpIssueWindowMs;
         this.registerIpLimit = registerIpLimit;
         this.registerIpWindowMs = registerIpWindowMs;
         this.registerEmailLimit = registerEmailLimit;
@@ -195,9 +201,17 @@ public class AuthService {
                 AuthTokens tokens = issueTokens(userId, email);
                 return new LoginOutcome(tokens, false, 0);
             }
-            OtpService.IssuedOtp issued = otpService.issue(email);
-            mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
-            return new LoginOutcome(null, true, Duration.between(Instant.now(), issued.expiresAt()).getSeconds());
+            OtpService.IssuedOtp existing = otpService.getActive(email);
+            OtpService.IssuedOtp issued;
+            if (existing != null) {
+                issued = existing;
+            } else {
+                enforceRateLimit("login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
+                issued = otpService.issue(email);
+                mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
+            }
+            long ttlSeconds = Duration.between(Instant.now(), issued.expiresAt()).getSeconds();
+            return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(email);
             log.warn("Login failed for email={}", email);

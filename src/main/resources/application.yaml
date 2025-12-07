@@ -80,6 +80,9 @@ app:
       login-otp:
         limit: ${RATE_LIMIT_LOGIN_OTP_LIMIT:5}
         window-ms: ${RATE_LIMIT_LOGIN_OTP_WINDOW_MS:300000}
+      login-otp-issue:
+        limit: ${RATE_LIMIT_LOGIN_OTP_ISSUE_LIMIT:1}
+        window-ms: ${RATE_LIMIT_LOGIN_OTP_ISSUE_WINDOW_MS:60000}
     tokens:
       verify-dev-code: ${VERIFY_DEV_CODE:123456}
       reset-dev-code: ${RESET_DEV_CODE:123456}
