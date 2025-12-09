@@ -78,6 +78,7 @@ public class AuthService {
     private final long registerIpWindowMs;
     private final int registerEmailLimit;
     private final long registerEmailWindowMs;
+    private final boolean requireEmailVerified;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -107,6 +108,7 @@ public class AuthService {
                        @Value("${app.security.rate-limit.register-ip.window-ms:300000}") long registerIpWindowMs,
                        @Value("${app.security.rate-limit.register-email.limit:5}") int registerEmailLimit,
                        @Value("${app.security.rate-limit.register-email.window-ms:300000}") long registerEmailWindowMs,
+                       @Value("${app.security.auth.require-email-verified:false}") boolean requireEmailVerified,
                        @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -128,6 +130,7 @@ public class AuthService {
         this.resetWindowMs = resetWindowMs;
         this.loginEmailLimit = loginEmailLimit;
         this.loginEmailWindowMs = loginEmailWindowMs;
+        this.requireEmailVerified = requireEmailVerified;
         this.otpEnabled = otpEnabled;
         this.loginOtpLimit = loginOtpLimit;
         this.loginOtpWindowMs = loginOtpWindowMs;
@@ -197,7 +200,7 @@ public class AuthService {
             }
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
-            if (!user.isEmailVerified()) {
+            if (requireEmailVerified && !user.isEmailVerified()) {
                 throw new ApiException(
                         ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
                         "Email is not verified. Please check your email for the verification code.",
@@ -440,7 +443,7 @@ public class AuthService {
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED));
-        if (!user.isEmailVerified()) {
+        if (requireEmailVerified && !user.isEmailVerified()) {
             throw new ApiException(
                     ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
                     "Email is not verified. Please check your email for the verification code.",

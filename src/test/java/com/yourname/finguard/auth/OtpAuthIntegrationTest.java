@@ -45,7 +45,8 @@ import org.springframework.test.web.servlet.MvcResult;
         "app.security.rate-limit.login-otp.limit=5",
         "app.security.rate-limit.login-otp.window-ms=60000",
         "app.security.rate-limit.login-otp-issue.limit=1",
-        "app.security.rate-limit.login-otp-issue.window-ms=60000"
+        "app.security.rate-limit.login-otp-issue.window-ms=60000",
+        "app.security.auth.require-email-verified=true"
 })
 class OtpAuthIntegrationTest {
 

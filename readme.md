@@ -37,14 +37,17 @@
    - Health: `http://localhost:8080/health` или `/actuator/health`
 
 ## Auth-флоу
-- Регистрация/вход: токены `FG_AUTH` и `FG_REFRESH` в httpOnly cookie; фронт хранит лишь email в `sessionStorage`.
+- Регистрация/вход: токены `FG_AUTH` и `FG_REFRESH` в httpOnly cookie (по умолчанию `secure=true`, SameSite настраивается через `app.security.jwt.cookie-samesite`); фронт хранит лишь email в `sessionStorage`.
+- Вход может требовать подтверждённый email (`app.security.auth.require-email-verified`, по умолчанию выключено; при включении неверифицированные получают 403, код `100006`).
 - Refresh: `POST /api/auth/refresh`
-- Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify`
+- Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify` (dev-коды поддерживаются, но на проде выключайте/переопределяйте)
 - Восстановление пароля (двухшаговый, без прямой смены по коду):
   1) `POST /api/auth/forgot` — письмо/код.
   2) `POST /api/auth/reset/confirm` — принимает код, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
   3) `POST /api/auth/reset` — принимает `resetSessionToken` + новый пароль, инвалидация всех refresh-сессий.
+- OTP (опционально): после успешного пароля выдаётся challenge 202; лимиты на выдачу по email+IP, повторный вход в окне действия возвращает 202 без пересылки кода.
 - CORS: задайте `ALLOWED_ORIGINS` для SPA на другом домене, включено `credentials: true`.
+- Rate limit: фильтр по IP (`AuthRateLimitFilter`), доп. лимиты по email/IP в сервисе; за прокси включите `app.security.trust-proxy-headers=true` для чтения `X-Forwarded-For`.
 
 ## Frontend
 - Статический клиент (русский): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`; вкладки «Вход/Регистрация», формы для восстановления пароля, дашборд с проверкой health.
