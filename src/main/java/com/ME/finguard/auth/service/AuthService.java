@@ -201,23 +201,21 @@ public class AuthService {
                 AuthTokens tokens = issueTokens(userId, email);
                 return new LoginOutcome(tokens, false, 0);
             }
+            RateLimiterService.Result issueLimit = rateLimiterService.check(
+                    "login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
             OtpService.IssuedOtp existing = otpService.getActive(email);
             OtpService.IssuedOtp issued;
-            if (existing != null) {
-                issued = existing;
-            } else {
-                RateLimiterService.Result issueLimit = rateLimiterService.check(
-                        "login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
-                if (!issueLimit.allowed()) {
-                    long retry = Math.max(1, Math.round(Math.ceil(issueLimit.retryAfterMs() / 1000.0)));
-                    throw new ApiException(
-                            ErrorCodes.OTP_ALREADY_SENT,
-                            "OTP code already sent. Please check your email and try again later.",
-                            HttpStatus.TOO_MANY_REQUESTS,
-                            retry
-                    );
-                }
-                issued = otpService.issue(email);
+            if (!issueLimit.allowed()) {
+                long retry = Math.max(1, Math.round(Math.ceil(issueLimit.retryAfterMs() / 1000.0)));
+                throw new ApiException(
+                        ErrorCodes.OTP_ALREADY_SENT,
+                        "OTP code already sent. Please check your email and try again later.",
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        retry
+                );
+            }
+            issued = existing != null ? existing : otpService.issue(email);
+            if (existing == null) {
                 mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
             }
             long ttlSeconds = Duration.between(Instant.now(), issued.expiresAt()).getSeconds();
