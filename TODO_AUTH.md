@@ -1,7 +1,9 @@
-# TODO — Auth/Reset Flow
 
-- Миграции: привести схему к текущей модели (`user_tokens.token_hash`, `users.token_version`) через новую Flyway-версию; убедиться, что старый столбец `token` больше не используется, индексы обновлены.
-- Secrets/dev-коды: убрать дефолтные значения для JWT/OTP/reset, включить `require-env-secret` вне локалки и требовать передавать коды через окружение; по умолчанию dev-коды должны быть пустыми.
-- OTP логин: не выдавать/не регистрировать refresh сессии до подтверждения OTP; чистить незавершённые OTP-попытки/лишние сессии, чтобы не вычищались валидные refresh токены.
-- Email verification: отправка письма при регистрации/запросе, понятный ответ 400/404 при невалидном токене, минимальный UI (ввод кода/клик по ссылке); продумать, нужно ли требовать `email_verified` для входа/чувствительных действий.
-- Rate limits/cooldown: включить ненулевой лимит на `/api/auth/login` по email, задействовать `resetCooldown` на `/forgot` (per email/IP), проверить лимиты на OTP-verify.
+
+## Новые задачи (порядок выполнения)
+- [x] Cookies: включено `app.security.jwt.cookie-secure` (дефолт true) для FG_AUTH/FG_REFRESH, добавлена настройка SameSite (`app.security.jwt.cookie-samesite`).
+- [x] Email verified: логин/OTP блокируются, если `email_verified=false`, с понятной ошибкой.
+- [x] OTP выдача: добавлен IP-лимит на `login-otp-issue`; при активном OTP возвращается 202 с TTL вместо немой 429; 429 с `OTP_ALREADY_SENT` остаётся при попытке выдать новый код сверх лимитов.
+- [x] Rate limit за прокси: `ClientIpResolver` учитывает `X-Forwarded-For`/`X-Real-IP` при `app.security.trust-proxy-headers=true` и используется в фильтре/контроллере.
+- [x] In-memory состояние: добавлены предупреждения о сбросе состояния при рестарте для TokenBlacklistService/RateLimiterService/LoginAttemptService/OtpService.
+- [x] Reset session context: хэш ip/user-agent в reset-сессиях переведён на SHA-256.

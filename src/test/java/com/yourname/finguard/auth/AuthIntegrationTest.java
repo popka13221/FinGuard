@@ -53,6 +53,14 @@ class AuthIntegrationTest {
         JsonNode regNode = objectMapper.readTree(registerResponse);
         assertThat(regNode.get("token").asText()).isNotBlank();
 
+        // confirm email via dev-code to allow login
+        mockMvc.perform(post("/api/auth/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"123456"}
+                                """))
+                .andExpect(status().isOk());
+
         String loginPayload = """
                 {
                   "email": "%s",

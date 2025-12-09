@@ -1,12 +1,17 @@
 package com.yourname.finguard.security;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class TokenBlacklistService {
+
+    private static final Logger log = LoggerFactory.getLogger(TokenBlacklistService.class);
 
     private static final class Revoked {
         Instant expiresAt;
@@ -40,5 +45,10 @@ public class TokenBlacklistService {
 
     public void clearAll() {
         revoked.clear();
+    }
+
+    @PostConstruct
+    void warnInMemory() {
+        log.warn("TokenBlacklistService is using in-memory storage; revoked tokens are lost on restart.");
     }
 }

@@ -62,12 +62,14 @@ import org.springframework.test.web.servlet.ResultActions;
         "app.security.rate-limit.auth.window-ms=5000",
         "app.security.rate-limit.forgot.limit=5",
         "app.security.rate-limit.forgot.window-ms=60000",
+        "app.security.tokens.reset-cooldown-seconds=0",
         "app.security.rate-limit.reset-confirm.limit=3",
         "app.security.rate-limit.reset-confirm.window-ms=60000",
         "app.security.rate-limit.reset.limit=3",
         "app.security.rate-limit.reset.window-ms=60000",
         "app.security.rate-limit.login-email.limit=3",
         "app.security.rate-limit.login-email.window-ms=60000",
+        "app.security.trust-proxy-headers=true",
         "app.security.lockout.max-attempts=2",
         "app.security.lockout.lock-minutes=60",
         "app.security.sessions.max-per-user=2",
@@ -196,6 +198,26 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void loginRequiresVerifiedEmail() throws Exception {
+        String email = "unverified@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+
+        MvcResult blocked = postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isForbidden())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(blocked.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100006");
+
+        markVerified(email);
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void lockoutBlocksAfterMaxAttempts() throws Exception {
         String email = "lock@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
@@ -236,6 +258,20 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void rateLimitUsesForwardedForWhenTrusted() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            postJsonWithForwarded("/api/auth/refresh", "{}", "10.0.0.1")
+                    .andExpect(status().isUnauthorized());
+        }
+        postJsonWithForwarded("/api/auth/refresh", "{}", "10.0.0.1")
+                .andExpect(status().isTooManyRequests());
+
+        // Different forwarded IP should have its own bucket
+        postJsonWithForwarded("/api/auth/refresh", "{}", "10.0.0.2")
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void refreshRotationRevokesOldTokens() throws Exception {
         String email = "refresh@" + UUID.randomUUID() + ".com";
         MvcResult reg = registerUser(email, "StrongPass1!");
@@ -258,7 +294,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void logoutRevokesAccessAndRefresh() throws Exception {
         String email = "logout@" + UUID.randomUUID() + ".com";
-        MvcResult reg = registerUser(email, "StrongPass1!");
+        MvcResult reg = registerVerifiedUser(email, "StrongPass1!");
         String access = accessToken(reg);
         Map<String, String> cookies = cookies(reg);
 
@@ -309,7 +345,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void resetFlowChangesPasswordAndInvalidatesToken() throws Exception {
         String email = "reset@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         assertThat(userTokenService.getResetTtl().toMinutes()).isGreaterThan(0);
 
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
@@ -485,7 +521,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void resetAllowsSoftContextMismatchWhenUserAgentMatches() throws Exception {
         String email = "soft-context@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         UserToken token = latestResetToken();
@@ -507,7 +543,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void resetRejectsWhenIpAndUserAgentChange() throws Exception {
         String email = "context-reject@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         UserToken token = latestResetToken();
@@ -561,7 +597,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void resetConfirmRateLimitRequiresNewCode() throws Exception {
         String email = "confirm-rl@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
 
         for (int i = 0; i < 3; i++) {
             postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
@@ -587,7 +623,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void forgotRateLimitBlocksTooManyRequests() throws Exception {
         String email = "rl-forgot@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
 
         for (int i = 0; i < 5; i++) {
             postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
@@ -600,7 +636,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void multipleSessionsPruneOldRefreshTokens() throws Exception {
         String email = "sessions@" + UUID.randomUUID() + ".com";
-        MvcResult login1 = registerUser(email, "StrongPass1!");
+        MvcResult login1 = registerVerifiedUser(email, "StrongPass1!");
         Map<String, String> c1 = cookies(login1);
 
         // Second login (new session)
@@ -648,7 +684,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void refreshEndpointRejectsAccessTokenInCookie() throws Exception {
         String email = "acc-refresh@" + UUID.randomUUID() + ".com";
-        MvcResult reg = registerUser(email, "StrongPass1!");
+        MvcResult reg = registerVerifiedUser(email, "StrongPass1!");
         String access = cookies(reg).get("FG_AUTH");
         postJsonWithCookie("/api/auth/refresh", "{}", access)
                 .andExpect(status().isUnauthorized());
@@ -657,7 +693,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void logoutRemovesSessionsAndBlocksRefresh() throws Exception {
         String email = "logout-session@" + UUID.randomUUID() + ".com";
-        MvcResult reg = registerUser(email, "StrongPass1!");
+        MvcResult reg = registerVerifiedUser(email, "StrongPass1!");
         Map<String, String> cookieMap = cookies(reg);
         assertThat(userSessionRepository.count()).isEqualTo(1);
 
@@ -671,7 +707,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void logoutBlacklistsAccessToken() throws Exception {
         String email = "logout-access@" + UUID.randomUUID() + ".com";
-        MvcResult reg = registerUser(email, "StrongPass1!");
+        MvcResult reg = registerVerifiedUser(email, "StrongPass1!");
         Map<String, String> cookieMap = cookies(reg);
         String access = accessToken(reg);
 
@@ -787,7 +823,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void loginPerEmailRateLimitBlocksEvenWithSuccess() throws Exception {
         String email = "login-rl@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
 
         postJson("/api/auth/login", """
                 {"email":"%s","password":"StrongPass1!"}
@@ -812,6 +848,13 @@ class AuthSecurityIntegrationTest {
                 .filter(t -> t.getType() == UserTokenType.RESET && t.getUsedAt() == null)
                 .max(Comparator.comparing(UserToken::getCreatedAt))
                 .orElseThrow();
+    }
+
+    private void markVerified(String email) {
+        userRepository.findByEmail(email).ifPresent(u -> {
+            u.setEmailVerified(true);
+            userRepository.save(u);
+        });
     }
 
     private String confirmResetSession(String rawToken) throws Exception {
@@ -879,6 +922,12 @@ class AuthSecurityIntegrationTest {
         return postJson("/api/auth/register", payload).andExpect(status().isCreated()).andReturn();
     }
 
+    private MvcResult registerVerifiedUser(String email, String password) throws Exception {
+        MvcResult res = registerUser(email, password);
+        markVerified(email);
+        return res;
+    }
+
     private MvcResult login(String email, String password) throws Exception {
         String payload = """
                 {"email":"%s","password":"%s"}
@@ -932,6 +981,13 @@ class AuthSecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload)
                         .cookie(new Cookie("FG_REFRESH", cookieValue)));
+    }
+
+    private ResultActions postJsonWithForwarded(String url, String payload, String forwardedIp) throws Exception {
+        return mockMvc.perform(post(url)
+                        .header("X-Forwarded-For", forwardedIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload));
     }
 
     private String accessToken(MvcResult result) throws Exception {

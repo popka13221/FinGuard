@@ -150,6 +150,32 @@ class OtpAuthIntegrationTest {
     }
 
     @Test
+    void otpIssueIsRateLimitedPerIp() throws Exception {
+        String email = "otp-ip@" + UUID.randomUUID() + ".com";
+        registerUser(email, "StrongPass1!");
+        mailService.clearOutbox();
+
+        // First login issues OTP
+        postJsonFromIp("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email), "10.0.0.1").andExpect(status().isAccepted());
+        postJsonFromIp("/api/auth/login/otp", """
+                {"email":"%s","code":"654321"}
+                """.formatted(email), "10.0.0.1").andExpect(status().isOk());
+
+        // Second login immediately from same IP should hit issue limit (email+ip buckets)
+        MvcResult limited = postJsonFromIp("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email), "10.0.0.1")
+                .andExpect(status().isTooManyRequests())
+                .andReturn();
+        JsonNode err = objectMapper.readTree(limited.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(err.get("code").asText()).isEqualTo("429002");
+        // No extra emails sent
+        assertThat(mailService.getOutbox()).hasSize(1);
+    }
+
+    @Test
     void repeatedLoginTooSoonIsRateLimited() throws Exception {
         String email = "otp-limit@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
@@ -163,7 +189,7 @@ class OtpAuthIntegrationTest {
                 {"email":"%s","code":"654321"}
                 """.formatted(email)).andExpect(status().isOk());
 
-        // immediate second login should hit OTP issue rate limit
+        // immediate second login should be blocked by issue rate limit
         MvcResult res = postJson("/api/auth/login", """
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email))
@@ -171,17 +197,34 @@ class OtpAuthIntegrationTest {
                 .andReturn();
         JsonNode err = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(err.get("code").asText()).isEqualTo("429002");
+        assertThat(err.get("retryAfterSeconds").asLong()).isGreaterThan(0);
+        assertThat(mailService.getOutbox()).hasSize(1);
     }
 
     private MvcResult registerUser(String email, String password) throws Exception {
         String payload = """
                 {"email":"%s","password":"%s","fullName":"User","baseCurrency":"USD"}
                 """.formatted(email, password);
-        return postJson("/api/auth/register", payload).andExpect(status().isCreated()).andReturn();
+        MvcResult res = postJson("/api/auth/register", payload).andExpect(status().isCreated()).andReturn();
+        userRepository.findByEmail(email).ifPresent(u -> {
+            u.setEmailVerified(true);
+            userRepository.save(u);
+        });
+        return res;
     }
 
     private org.springframework.test.web.servlet.ResultActions postJson(String url, String payload) throws Exception {
         return mockMvc.perform(post(url)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions postJsonFromIp(String url, String payload, String ip) throws Exception {
+        return mockMvc.perform(post(url)
+                        .with(request -> {
+                            request.setRemoteAddr(ip);
+                            return request;
+                        })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload));
     }

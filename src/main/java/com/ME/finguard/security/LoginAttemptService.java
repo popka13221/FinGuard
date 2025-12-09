@@ -1,12 +1,14 @@
 package com.yourname.finguard.security;
 
-import java.time.Instant;
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class LoginAttemptService {
@@ -16,6 +18,7 @@ public class LoginAttemptService {
         Instant lockUntil;
     }
 
+    private static final Logger log = LoggerFactory.getLogger(LoginAttemptService.class);
     private final Map<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
     private final int maxAttempts;
     private final Duration lockDuration;
@@ -26,6 +29,11 @@ public class LoginAttemptService {
     ) {
         this.maxAttempts = maxAttempts;
         this.lockDuration = Duration.ofMinutes(lockMinutes);
+    }
+
+    @PostConstruct
+    void warnInMemory() {
+        log.warn("LoginAttemptService is using in-memory storage; lockout state resets on application restart.");
     }
 
     public boolean isLocked(String email) {

@@ -9,6 +9,7 @@ public final class ErrorCodes {
     public static final String AUTH_WEAK_PASSWORD = "100003";
     public static final String AUTH_LOCKED = "100004";
     public static final String AUTH_REFRESH_INVALID = "100005";
+    public static final String AUTH_EMAIL_NOT_VERIFIED = "100006";
 
     public static final String VALIDATION_GENERIC = "400001";
     public static final String VALIDATION_EMAIL = "400002";

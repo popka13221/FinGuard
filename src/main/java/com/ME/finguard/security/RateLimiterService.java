@@ -1,14 +1,19 @@
 package com.yourname.finguard.security;
 
+import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class RateLimiterService {
+
+    private static final Logger log = LoggerFactory.getLogger(RateLimiterService.class);
 
     private static final class Bucket {
         long windowStartMs;
@@ -29,6 +34,11 @@ public class RateLimiterService {
         this.limit = limit;
         this.windowMs = windowMs;
         this.maxEntries = maxEntries <= 0 ? 1000 : maxEntries;
+    }
+
+    @PostConstruct
+    void warnInMemory() {
+        log.warn("RateLimiterService is using in-memory storage; limits reset on application restart. Consider an external store.");
     }
 
     public boolean allow(String key) {

@@ -18,6 +18,7 @@ import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.dto.ApiError;
 import com.yourname.finguard.security.RateLimiterService;
 import com.yourname.finguard.security.JwtTokenProvider;
+import com.yourname.finguard.security.ClientIpResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,8 +49,10 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final boolean cookieSecure;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ClientIpResolver clientIpResolver;
+    private final boolean cookieSecure;
+    private final String cookieSameSite;
     private final RateLimiterService rateLimiterService;
     private final UserTokenService userTokenService;
     private final int forgotLimit;
@@ -59,12 +62,16 @@ public class AuthController {
                           JwtTokenProvider jwtTokenProvider,
                           RateLimiterService rateLimiterService,
                           UserTokenService userTokenService,
-                          @Value("${app.security.jwt.cookie-secure:false}") boolean cookieSecure,
+                          ClientIpResolver clientIpResolver,
+                          @Value("${app.security.jwt.cookie-secure:true}") boolean cookieSecure,
+                          @Value("${app.security.jwt.cookie-samesite:Lax}") String cookieSameSite,
                           @Value("${app.security.rate-limit.forgot.limit:5}") int forgotLimit,
                           @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs) {
         this.authService = authService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.clientIpResolver = clientIpResolver;
         this.cookieSecure = cookieSecure;
+        this.cookieSameSite = (cookieSameSite == null || cookieSameSite.isBlank()) ? "Lax" : cookieSameSite;
         this.rateLimiterService = rateLimiterService;
         this.userTokenService = userTokenService;
         this.forgotLimit = forgotLimit;
@@ -79,7 +86,8 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "Email уже занят", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
-        AuthTokens tokens = authService.register(request, httpRequest.getRemoteAddr());
+        String ip = clientIpResolver.resolve(httpRequest);
+        AuthTokens tokens = authService.register(request, ip);
         return ResponseEntity.status(201)
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
@@ -94,8 +102,9 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Неверные учетные данные", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "429", description = "Аккаунт временно заблокирован", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        AuthService.LoginOutcome outcome = authService.login(request);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = clientIpResolver.resolve(httpRequest);
+        AuthService.LoginOutcome outcome = authService.login(request, ip);
         if (outcome.otpRequired()) {
             return ResponseEntity.accepted()
                     .body(new OtpChallengeResponse(true, outcome.otpExpiresInSeconds()));
@@ -139,7 +148,8 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Неверный или истекший OTP", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request, HttpServletRequest httpRequest) {
-        AuthTokens tokens = authService.verifyOtp(request, httpRequest.getRemoteAddr());
+        String ip = clientIpResolver.resolve(httpRequest);
+        AuthTokens tokens = authService.verifyOtp(request, ip);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
@@ -154,13 +164,14 @@ public class AuthController {
     })
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
         String email = request.email().trim().toLowerCase();
-        String ipKey = "forgot:ip:" + httpRequest.getRemoteAddr();
+        String ip = clientIpResolver.resolve(httpRequest);
+        String ipKey = "forgot:ip:" + ip;
         String emailKey = "forgot:email:" + email;
         RateLimiterService.Result ipRes = rateLimiterService.check(ipKey, forgotLimit, forgotWindowMs);
         RateLimiterService.Result emailRes = rateLimiterService.check(emailKey, forgotLimit, forgotWindowMs);
         long cooldownMs = userTokenService.getResetCooldown().toMillis();
         RateLimiterService.Result cooldownIpRes = cooldownMs > 0
-                ? rateLimiterService.check("forgot:cooldown:ip:" + httpRequest.getRemoteAddr(), 1, cooldownMs)
+                ? rateLimiterService.check("forgot:cooldown:ip:" + ip, 1, cooldownMs)
                 : new RateLimiterService.Result(true, 0);
         RateLimiterService.Result cooldownEmailRes = cooldownMs > 0
                 ? rateLimiterService.check("forgot:cooldown:email:" + email, 1, cooldownMs)
@@ -182,14 +193,16 @@ public class AuthController {
     @PostMapping({"/reset/confirm", "/reset/check"})
     @Operation(summary = "Подтверждение кода сброса", description = "Принимает код из письма, возвращает resetSessionToken с TTL")
     public ResponseEntity<ResetSessionResponse> confirmReset(@Valid @RequestBody ValidateResetTokenRequest request, HttpServletRequest httpRequest) {
-        ResetSessionResponse response = authService.confirmResetToken(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        String ip = clientIpResolver.resolve(httpRequest);
+        ResetSessionResponse response = authService.confirmResetToken(request, ip, httpRequest.getHeader("User-Agent"));
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reset")
     @Operation(summary = "Смена пароля по resetSessionToken", description = "Принимает resetSessionToken и новый пароль. Инвалидирует refresh-сессии пользователя.")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest httpRequest) {
-        authService.resetPassword(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        String ip = clientIpResolver.resolve(httpRequest);
+        authService.resetPassword(request, ip, httpRequest.getHeader("User-Agent"));
         return ResponseEntity.ok().build();
     }
 
@@ -239,7 +252,7 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(Duration.ofSeconds(maxAge))
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
     }
 
@@ -250,7 +263,7 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(Duration.ofSeconds(maxAge))
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
     }
 
@@ -260,7 +273,7 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
     }
 
@@ -270,7 +283,7 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .build();
     }
 

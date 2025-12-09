@@ -32,11 +32,13 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimiterService rateLimiterService;
     private final ObjectMapper objectMapper;
+    private final ClientIpResolver clientIpResolver;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthRateLimitFilter.class);
 
-    public AuthRateLimitFilter(RateLimiterService rateLimiterService, ObjectMapper objectMapper) {
+    public AuthRateLimitFilter(RateLimiterService rateLimiterService, ObjectMapper objectMapper, ClientIpResolver clientIpResolver) {
         this.rateLimiterService = rateLimiterService;
         this.objectMapper = objectMapper;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -44,10 +46,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String path = request.getRequestURI();
         if (PROTECTED_PATHS.contains(path)) {
-            String key = request.getRemoteAddr() + ":" + path;
+            String ip = clientIpResolver.resolve(request);
+            String key = ip + ":" + path;
             RateLimiterService.Result res = rateLimiterService.check(key);
             if (!res.allowed()) {
-                log.warn("Rate limit exceeded for ip={}, path={}", request.getRemoteAddr(), path);
+                log.warn("Rate limit exceeded for ip={}, path={}", ip, path);
                 long retryAfter = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
                 ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Слишком много запросов. Попробуйте позже.", retryAfter);
                 response.setStatus(429);

@@ -39,7 +39,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.security.otp.enabled=false",
-        "app.security.tokens.reset-dev-code=123456"
+        "app.security.tokens.reset-dev-code=123456",
+        "app.security.tokens.reset-cooldown-seconds=0"
 })
 class TokenSecurityIntegrationTest {
 
@@ -166,13 +167,18 @@ class TokenSecurityIntegrationTest {
     }
 
     private MvcResult register(String email, String password) throws Exception {
-        return mockMvc.perform(post("/api/auth/register")
+        MvcResult res = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"%s","password":"%s","fullName":"User","baseCurrency":"USD"}
                                 """.formatted(email, password)))
                 .andExpect(status().isCreated())
                 .andReturn();
+        userRepository.findByEmail(email).ifPresent(u -> {
+            u.setEmailVerified(true);
+            userRepository.save(u);
+        });
+        return res;
     }
 
     private MailService.MailMessage latestMail() {

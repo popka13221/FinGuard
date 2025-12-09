@@ -1,5 +1,6 @@
 package com.yourname.finguard.security;
 
+import jakarta.annotation.PostConstruct;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Map;
@@ -7,11 +8,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OtpService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Logger log = LoggerFactory.getLogger(OtpService.class);
 
     private static final class OtpEntry {
         String code;
@@ -33,6 +37,11 @@ public class OtpService {
         this.devCode = devCode == null ? "" : devCode.trim();
         this.maxEntries = Math.max(maxEntries, 1000);
         this.maxAttempts = Math.max(1, maxAttempts);
+    }
+
+    @PostConstruct
+    void warnInMemory() {
+        log.warn("OtpService is using in-memory storage; active OTPs will reset on application restart.");
     }
 
     public IssuedOtp issue(String email) {

@@ -1,6 +1,5 @@
 package com.yourname.finguard.auth.service;
 
-import com.yourname.finguard.auth.dto.AuthResponse;
 import com.yourname.finguard.auth.dto.AuthTokens;
 import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.LoginRequest;
@@ -173,10 +172,10 @@ public class AuthService {
         User saved = userRepository.save(user);
         String verifyToken = userTokenService.issue(saved, UserTokenType.VERIFY);
         mailService.sendVerifyEmail(saved.getEmail(), verifyToken, userTokenService.getVerifyTtl());
-        return issueTokens(saved.getId(), saved.getEmail());
+        return issueTokens(saved);
     }
 
-    public LoginOutcome login(LoginRequest request) {
+    public LoginOutcome login(LoginRequest request, String ip) {
         String email = request.email().trim().toLowerCase();
         enforceRateLimit("login:email:" + email, loginEmailLimit, loginEmailWindowMs);
         if (loginAttemptService.isLocked(email)) {
@@ -196,17 +195,32 @@ public class AuthService {
                         .orElseThrow(() -> new IllegalStateException("User not found after authentication"))
                         .getId();
             }
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
+            if (!user.isEmailVerified()) {
+                throw new ApiException(
+                        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+                        "Email is not verified. Please check your email for the verification code.",
+                        HttpStatus.FORBIDDEN
+                );
+            }
             loginAttemptService.recordSuccess(email);
             if (!otpEnabled) {
-                AuthTokens tokens = issueTokens(userId, email);
+                AuthTokens tokens = issueTokens(user);
                 return new LoginOutcome(tokens, false, 0);
             }
-            RateLimiterService.Result issueLimit = rateLimiterService.check(
-                    "login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
             OtpService.IssuedOtp existing = otpService.getActive(email);
-            OtpService.IssuedOtp issued;
-            if (!issueLimit.allowed()) {
-                long retry = Math.max(1, Math.round(Math.ceil(issueLimit.retryAfterMs() / 1000.0)));
+            if (existing != null) {
+                long ttlSeconds = Duration.between(Instant.now(), existing.expiresAt()).getSeconds();
+                return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
+            }
+            RateLimiterService.Result issueEmailLimit = rateLimiterService.check(
+                    "login-otp-issue:email:" + email, loginOtpIssueLimit, loginOtpIssueWindowMs);
+            RateLimiterService.Result issueIpLimit = rateLimiterService.check(
+                    "login-otp-issue:ip:" + safe(ip), loginOtpIssueLimit, loginOtpIssueWindowMs);
+            if (!issueEmailLimit.allowed() || !issueIpLimit.allowed()) {
+                long retryMs = Math.max(issueEmailLimit.retryAfterMs(), issueIpLimit.retryAfterMs());
+                long retry = Math.max(1, Math.round(Math.ceil(retryMs / 1000.0)));
                 throw new ApiException(
                         ErrorCodes.OTP_ALREADY_SENT,
                         "OTP code already sent. Please check your email and try again later.",
@@ -214,10 +228,8 @@ public class AuthService {
                         retry
                 );
             }
-            issued = existing != null ? existing : otpService.issue(email);
-            if (existing == null) {
-                mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
-            }
+            OtpService.IssuedOtp issued = otpService.issue(email);
+            mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
             long ttlSeconds = Duration.between(Instant.now(), issued.expiresAt()).getSeconds();
             return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
         } catch (AuthenticationException ex) {
@@ -268,7 +280,7 @@ public class AuthService {
         // revoke the old refresh token on rotation
         tokenBlacklistService.revoke(jti, jwtTokenProvider.getExpiry(refreshToken).toInstant());
         userSessionService.revoke(jti);
-        return issueTokens(userId, email);
+        return issueTokens(user);
     }
 
     public void revokeToken(String token) {
@@ -283,12 +295,13 @@ public class AuthService {
         }
     }
 
-    private AuthTokens issueTokens(Long userId, String email) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED));
+    private AuthTokens issueTokens(User user) {
+        if (user == null || user.getId() == null) {
+            throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED);
+        }
         int version = user.getTokenVersion();
-        String access = jwtTokenProvider.generateAccessToken(userId, email, version);
-        String refresh = jwtTokenProvider.generateRefreshToken(userId, email, version);
+        String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), version);
+        String refresh = jwtTokenProvider.generateRefreshToken(user.getId(), user.getEmail(), version);
         String jtiRefresh = jwtTokenProvider.getJti(refresh);
         userSessionService.register(user, jtiRefresh, jwtTokenProvider.getExpiry(refresh).toInstant());
         return new AuthTokens(access, refresh);
@@ -427,7 +440,14 @@ public class AuthService {
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED));
-        return issueTokens(user.getId(), email);
+        if (!user.isEmailVerified()) {
+            throw new ApiException(
+                    ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+                    "Email is not verified. Please check your email for the verification code.",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+        return issueTokens(user);
     }
 
     private void enforceResetConfirmLimit(String key, User userToInvalidate) {
