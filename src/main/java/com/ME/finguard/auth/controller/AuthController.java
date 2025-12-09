@@ -13,6 +13,7 @@ import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.dto.OtpVerifyRequest;
 import com.yourname.finguard.auth.dto.OtpChallengeResponse;
 import com.yourname.finguard.auth.service.AuthService;
+import com.yourname.finguard.auth.service.UserTokenService;
 import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.dto.ApiError;
 import com.yourname.finguard.security.RateLimiterService;
@@ -50,12 +51,14 @@ public class AuthController {
     private final boolean cookieSecure;
     private final JwtTokenProvider jwtTokenProvider;
     private final RateLimiterService rateLimiterService;
+    private final UserTokenService userTokenService;
     private final int forgotLimit;
     private final long forgotWindowMs;
 
     public AuthController(AuthService authService,
                           JwtTokenProvider jwtTokenProvider,
                           RateLimiterService rateLimiterService,
+                          UserTokenService userTokenService,
                           @Value("${app.security.jwt.cookie-secure:false}") boolean cookieSecure,
                           @Value("${app.security.rate-limit.forgot.limit:5}") int forgotLimit,
                           @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs) {
@@ -63,6 +66,7 @@ public class AuthController {
         this.jwtTokenProvider = jwtTokenProvider;
         this.cookieSecure = cookieSecure;
         this.rateLimiterService = rateLimiterService;
+        this.userTokenService = userTokenService;
         this.forgotLimit = forgotLimit;
         this.forgotWindowMs = forgotWindowMs;
     }
@@ -154,8 +158,18 @@ public class AuthController {
         String emailKey = "forgot:email:" + email;
         RateLimiterService.Result ipRes = rateLimiterService.check(ipKey, forgotLimit, forgotWindowMs);
         RateLimiterService.Result emailRes = rateLimiterService.check(emailKey, forgotLimit, forgotWindowMs);
-        if (!ipRes.allowed() || !emailRes.allowed()) {
-            long retryMs = Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs());
+        long cooldownMs = userTokenService.getResetCooldown().toMillis();
+        RateLimiterService.Result cooldownIpRes = cooldownMs > 0
+                ? rateLimiterService.check("forgot:cooldown:ip:" + httpRequest.getRemoteAddr(), 1, cooldownMs)
+                : new RateLimiterService.Result(true, 0);
+        RateLimiterService.Result cooldownEmailRes = cooldownMs > 0
+                ? rateLimiterService.check("forgot:cooldown:email:" + email, 1, cooldownMs)
+                : new RateLimiterService.Result(true, 0);
+        if (!ipRes.allowed() || !emailRes.allowed() || !cooldownIpRes.allowed() || !cooldownEmailRes.allowed()) {
+            long retryMs = Math.max(
+                    Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs()),
+                    Math.max(cooldownIpRes.retryAfterMs(), cooldownEmailRes.retryAfterMs())
+            );
             long retrySec = (long) Math.ceil(retryMs / 1000.0);
             return ResponseEntity.status(429)
                     .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(retrySec, 1)))

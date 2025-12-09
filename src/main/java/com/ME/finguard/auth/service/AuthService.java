@@ -98,7 +98,7 @@ public class AuthService {
                        @Value("${app.security.rate-limit.reset-confirm.window-ms:300000}") long resetConfirmWindowMs,
                        @Value("${app.security.rate-limit.reset.limit:5}") int resetLimit,
                        @Value("${app.security.rate-limit.reset.window-ms:300000}") long resetWindowMs,
-                       @Value("${app.security.rate-limit.login-email.limit:0}") int loginEmailLimit,
+                       @Value("${app.security.rate-limit.login-email.limit:5}") int loginEmailLimit,
                        @Value("${app.security.rate-limit.login-email.window-ms:300000}") long loginEmailWindowMs,
                        @Value("${app.security.rate-limit.login-otp.limit:5}") int loginOtpLimit,
                        @Value("${app.security.rate-limit.login-otp.window-ms:300000}") long loginOtpWindowMs,
