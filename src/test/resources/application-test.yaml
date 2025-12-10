@@ -25,6 +25,8 @@ app:
     enabled: false
     verify-subject: Подтверждение email FinGuard
   security:
+    csrf:
+      enabled: false
     otp:
       enabled: false
       max-attempts: 3

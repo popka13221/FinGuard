@@ -4,6 +4,7 @@ target/
 *.log
 .DS_Store
 .env
+.env.local
 # local docs/notes
 TODO.md
 docs/TODO_SPA.md
@@ -40,6 +41,8 @@ frontend/.turbo/
 *.der
 secrets.*
 *.local.*
+config/secrets.yaml
+config/secrets.properties
 
 # Dumps/temp
 dump/

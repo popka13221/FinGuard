@@ -42,6 +42,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.Map;
+import org.springframework.security.web.csrf.CsrfToken;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -222,7 +223,7 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
-                .body(new AuthResponse(tokens.accessToken()));
+                .body(new AuthResponse("ok"));
     }
 
     @PostMapping("/logout")
@@ -243,6 +244,12 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, expireAccessCookie().toString())
                 .header(HttpHeaders.SET_COOKIE, expireRefreshCookie().toString())
                 .build();
+    }
+
+    @GetMapping("/csrf")
+    @Operation(summary = "CSRF токен", description = "Возвращает CSRF токен и устанавливает cookie XSRF-TOKEN")
+    public ResponseEntity<Map<String, String>> csrf(CsrfToken token) {
+        return ResponseEntity.ok(Map.of("token", token.getToken()));
     }
 
     private ResponseCookie buildAccessCookie(String token) {

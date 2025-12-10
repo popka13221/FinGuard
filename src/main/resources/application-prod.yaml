@@ -1,0 +1,10 @@
+spring:
+  config:
+    import: optional:file:config/secrets.properties,optional:file:config/secrets.yaml
+
+app:
+  security:
+    jwt:
+      require-env-secret: true
+      cookie-secure: true
+      cookie-samesite: Strict

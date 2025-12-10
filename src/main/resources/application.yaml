@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:config/secrets.properties,optional:file:config/secrets.yaml
   application:
     name: finguard
   datasource:
@@ -43,6 +45,8 @@ app:
     verify-subject: ${MAIL_VERIFY_SUBJECT:Подтверждение email FinGuard}
     otp-subject: ${MAIL_OTP_SUBJECT:Код входа FinGuard}
   security:
+    csrf:
+      enabled: ${CSRF_ENABLED:true}
     jwt:
       secret: ${JWT_SECRET:Q29kZXhEZW1vMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
       expiration-seconds: ${JWT_EXPIRATION:3600}
@@ -51,14 +55,17 @@ app:
       audience: ${JWT_AUDIENCE:finguard-app}
       require-env-secret: ${JWT_REQUIRE_ENV_SECRET:false}
       cookie-secure: ${JWT_COOKIE_SECURE:false}
+      cookie-samesite: ${JWT_COOKIE_SAMESITE:Lax}
     otp:
       enabled: ${OTP_ENABLED:true}
       dev-code: ${OTP_DEV_CODE:654321}
       ttl-seconds: ${OTP_TTL_SECONDS:300}
       max-attempts: ${OTP_MAX_ATTEMPTS:5}
+      max-entries: ${OTP_MAX_ENTRIES:10000}
     cors:
       allowed-origins: ${ALLOWED_ORIGINS:}
     rate-limit:
+      max-entries: ${RATE_LIMIT_MAX_ENTRIES:10000}
       auth:
         limit: ${RATE_LIMIT_AUTH_LIMIT:30}
         window-ms: ${RATE_LIMIT_AUTH_WINDOW_MS:60000}
