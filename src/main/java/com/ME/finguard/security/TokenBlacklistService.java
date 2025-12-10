@@ -31,7 +31,7 @@ public class TokenBlacklistService {
         revokedTokenRepository.deleteExpired(Instant.now());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public boolean isRevoked(String jti) {
         if (jti == null || jti.isBlank()) {
             return false;

@@ -36,7 +36,15 @@ public class SecurityConfig {
         if (csrfEnabled) {
             http.csrf(csrf -> csrf
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringRequestMatchers("/health", "/actuator/**")
+                    .ignoringRequestMatchers(
+                            "/health",
+                            "/actuator/**",
+                            "/api/auth/**",
+                            "/api/currencies",
+                            "/app/**",
+                            "/playground/**",
+                            "/"
+                    )
             );
         } else {
             http.csrf(csrf -> csrf.disable());
