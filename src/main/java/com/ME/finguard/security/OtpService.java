@@ -75,6 +75,15 @@ public class OtpService {
         if (!StringUtils.hasText(email) || !StringUtils.hasText(code)) {
             return false;
         }
+        // Allow dev-code override for local/testing flows
+        if (StringUtils.hasText(devCode) && devCode.equals(code.trim())) {
+            OtpCode existing = otpCodeRepository.findByEmail(normalize(email)).orElse(null);
+            if (existing != null) {
+                otpCodeRepository.delete(existing);
+            }
+            log.warn("OTP dev-code used for email={}", normalize(email));
+            return true;
+        }
         OtpCode entry = otpCodeRepository.findByEmail(normalize(email)).orElse(null);
         if (entry == null || entry.getExpiresAt() == null || entry.getExpiresAt().isBefore(Instant.now())) {
             if (entry != null) {

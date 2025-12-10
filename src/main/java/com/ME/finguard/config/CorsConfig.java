@@ -17,18 +17,29 @@ public class CorsConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.security.cors.allowed-origins:}") List<String> allowedOrigins
+            @Value("${app.security.cors.allowed-origins:}") String allowedOriginsRaw
     ) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            config.setAllowedOrigins(allowedOrigins);
-        }
+        List<String> allowedOrigins = parseOrigins(allowedOriginsRaw);
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        log.info("CORS allowed origins: {}", allowedOrigins);
+        log.info("CORS allowed origins (parsed): {}", allowedOrigins);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private List<String> parseOrigins(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        // Support YAML list rendered as comma-separated and trim spaces
+        return List.of(raw.split(","))
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }
