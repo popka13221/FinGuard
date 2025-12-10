@@ -48,6 +48,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if (PROTECTED_PATHS.contains(path)) {
             String ip = clientIpResolver.resolve(request);
             String key = ip + ":" + path;
+            log.debug("RateLimit check path={}, ip={}", path, ip);
             RateLimiterService.Result res = rateLimiterService.check(key);
             if (!res.allowed()) {
                 log.warn("Rate limit exceeded for ip={}, path={}", ip, path);

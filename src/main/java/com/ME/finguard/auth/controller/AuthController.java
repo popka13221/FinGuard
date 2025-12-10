@@ -105,6 +105,8 @@ public class AuthController {
     })
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
+        org.slf4j.LoggerFactory.getLogger(AuthController.class)
+                .info("AuthController login start email={}, ip={}", request.email(), ip);
         AuthService.LoginOutcome outcome = authService.login(request, ip);
         if (outcome.otpRequired()) {
             return ResponseEntity.accepted()
