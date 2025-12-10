@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class RateLimiterService {
     private final long windowMs;
     private final int maxEntries;
 
+    @Autowired
     public RateLimiterService(
             RateLimitBucketRepository rateLimitBucketRepository,
             @Value("${app.security.rate-limit.auth.limit:30}") int limit,

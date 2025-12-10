@@ -44,4 +44,12 @@ public class TokenBlacklistService {
     public void clearExpired() {
         revokedTokenRepository.deleteExpired(Instant.now());
     }
+
+    /**
+     * Test/maintenance helper: clears all revoked entries.
+     */
+    @Transactional
+    public void clearAll() {
+        revokedTokenRepository.deleteAll();
+    }
 }

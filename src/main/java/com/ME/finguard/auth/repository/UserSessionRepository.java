@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
 
@@ -14,6 +15,7 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
 
     @Modifying
     @Query("delete from UserSession s where s.expiresAt < ?1")
+    @Transactional
     void deleteExpired(Instant now);
 
     List<UserSession> findTop10ByUserIdOrderByCreatedAtAsc(Long userId);

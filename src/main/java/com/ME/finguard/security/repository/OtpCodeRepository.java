@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface OtpCodeRepository extends JpaRepository<OtpCode, String> {
 
@@ -14,6 +15,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, String> {
 
     @Modifying
     @Query("delete from OtpCode c where c.expiresAt < ?1")
+    @Transactional
     void deleteExpired(Instant now);
 
     List<OtpCode> findTop50ByOrderByCreatedAtAsc();

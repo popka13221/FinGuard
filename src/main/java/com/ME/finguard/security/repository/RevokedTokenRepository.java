@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface RevokedTokenRepository extends JpaRepository<RevokedToken, String> {
 
@@ -15,5 +16,6 @@ public interface RevokedTokenRepository extends JpaRepository<RevokedToken, Stri
 
     @Modifying
     @Query("delete from RevokedToken t where t.expiresAt < ?1")
+    @Transactional
     void deleteExpired(Instant now);
 }
