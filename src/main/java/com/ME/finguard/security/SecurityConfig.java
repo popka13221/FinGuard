@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
 @Configuration
 @EnableMethodSecurity
@@ -21,13 +23,18 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
+    private final AccessDeniedHandler accessDeniedHandler;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
     private final boolean csrfEnabled;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
+                          AppAccessDeniedHandler appAccessDeniedHandler,
                           @Value("${app.security.csrf.enabled:true}") boolean csrfEnabled) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
+        this.accessDeniedHandler = appAccessDeniedHandler;
+        this.authenticationEntryPoint = appAccessDeniedHandler;
         this.csrfEnabled = csrfEnabled;
     }
 
@@ -74,14 +81,29 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                                "/playground",
-                                "/playground/**",
-                                "/app/**",
-                                "/index.html",
+                        "/playground",
+                        "/playground/**",
+                        "/app/login.html",
+                        "/app/forgot.html",
+                        "/app/reset.html",
+                        "/app/verify.html",
+                        "/app/auth.js",
+                        "/app/recover.js",
+                        "/app/verify.js",
+                        "/app/api.js",
+                        "/app/theme.js",
+                        "/app/styles.css",
+                        "/app/forbidden.html",
+                        "/app/assets/**",
+                        "/index.html",
                         "/"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

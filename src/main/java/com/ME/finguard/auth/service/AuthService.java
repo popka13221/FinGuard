@@ -147,6 +147,7 @@ public class AuthService {
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
         String fullName = request.fullName() == null ? "" : request.fullName().trim();
         String baseCurrency = currencyService.normalize(request.baseCurrency());
+        log.info("Register attempt email={}, ip={}", email, safe(ip));
         enforceRateLimit("register:ip:" + safe(ip), registerIpLimit, registerIpWindowMs);
         enforceRateLimit("register:email:" + email, registerEmailLimit, registerEmailWindowMs);
 
@@ -180,6 +181,7 @@ public class AuthService {
 
     public LoginOutcome login(LoginRequest request, String ip) {
         String email = request.email().trim().toLowerCase();
+        log.info("Login attempt email={}, ip={}, otpEnabled={}, requireEmailVerified={}", email, safe(ip), otpEnabled, requireEmailVerified);
         enforceRateLimit("login:email:" + email, loginEmailLimit, loginEmailWindowMs);
         if (loginAttemptService.isLocked(email)) {
             log.warn("Login blocked due to lockout for email={}", email);
@@ -201,6 +203,7 @@ public class AuthService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
             if (requireEmailVerified && !user.isEmailVerified()) {
+                log.warn("Login blocked: email not verified email={}", email);
                 throw new ApiException(
                         ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
                         "Email is not verified. Please check your email for the verification code.",
@@ -210,11 +213,13 @@ public class AuthService {
             loginAttemptService.recordSuccess(email);
             if (!otpEnabled) {
                 AuthTokens tokens = issueTokens(user);
+                log.info("Login success email={}, userId={}, otpRequired=false", email, user.getId());
                 return new LoginOutcome(tokens, false, 0);
             }
             OtpService.IssuedOtp existing = otpService.getActive(email);
             if (existing != null) {
                 long ttlSeconds = Duration.between(Instant.now(), existing.expiresAt()).getSeconds();
+                log.info("OTP already issued for email={}, ttlSec={}", email, ttlSeconds);
                 return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
             }
             RateLimiterService.Result issueEmailLimit = rateLimiterService.check(
@@ -224,6 +229,7 @@ public class AuthService {
             if (!issueEmailLimit.allowed() || !issueIpLimit.allowed()) {
                 long retryMs = Math.max(issueEmailLimit.retryAfterMs(), issueIpLimit.retryAfterMs());
                 long retry = Math.max(1, Math.round(Math.ceil(retryMs / 1000.0)));
+                log.warn("OTP issuance limited email={}, ip={}, retryAfterSec={}", email, safe(ip), retry);
                 throw new ApiException(
                         ErrorCodes.OTP_ALREADY_SENT,
                         "OTP code already sent. Please check your email and try again later.",
@@ -234,6 +240,7 @@ public class AuthService {
             OtpService.IssuedOtp issued = otpService.issue(email);
             mailService.sendOtpEmail(email, issued.code(), Duration.between(Instant.now(), issued.expiresAt()));
             long ttlSeconds = Duration.between(Instant.now(), issued.expiresAt()).getSeconds();
+            log.info("OTP issued email={}, expiresInSec={}", email, ttlSeconds);
             return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(email);
