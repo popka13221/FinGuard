@@ -46,13 +46,13 @@
     if (lb) lb.addEventListener('click', () => {
       Api.clearToken();
       Api.call('/api/auth/logout', 'POST', null, true);
-      window.location.href = '/app/login.html';
+      window.location.href = '/';
     });
     const cb = document.querySelector(selectors.clearTokenBtn);
     if (cb) cb.addEventListener('click', () => {
       Api.clearToken();
       Api.call('/api/auth/logout', 'POST', null, true);
-      window.location.href = '/app/login.html';
+      window.location.href = '/';
     });
   }
 
@@ -60,7 +60,7 @@
     Theme.init(selectors.themeToggle);
     Api.call('/api/auth/me', 'GET', null, true).then((res) => {
       if (!res.ok) {
-        window.location.href = '/app/login.html';
+        window.location.href = '/';
         return;
       }
       const emailLabel = document.querySelector(selectors.emailLabel);
