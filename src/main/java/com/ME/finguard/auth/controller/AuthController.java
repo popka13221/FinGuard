@@ -42,6 +42,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.Map;
+import org.springframework.lang.Nullable;
 import org.springframework.security.web.csrf.CsrfToken;
 
 @RestController
@@ -135,11 +136,14 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    @Operation(summary = "Подтверждение email", description = "Проверяет код верификации и помечает email подтвержденным")
+    @Operation(summary = "Подтверждение email", description = "Проверяет код верификации, помечает email подтвержденным и выдает токены")
     @ApiResponse(responseCode = "200", description = "Email подтвержден")
-    public ResponseEntity<Void> verify(@Valid @RequestBody VerifyRequest request) {
-        authService.verify(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<AuthResponse> verify(@Valid @RequestBody VerifyRequest request) {
+        AuthTokens tokens = authService.verify(request);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
+                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
+                .body(new AuthResponse(tokens.accessToken()));
     }
 
     @PostMapping("/login/otp")
@@ -248,8 +252,9 @@ public class AuthController {
 
     @GetMapping("/csrf")
     @Operation(summary = "CSRF токен", description = "Возвращает CSRF токен и устанавливает cookie XSRF-TOKEN")
-    public ResponseEntity<Map<String, String>> csrf(CsrfToken token) {
-        return ResponseEntity.ok(Map.of("token", token.getToken()));
+    public ResponseEntity<Map<String, String>> csrf(@Nullable CsrfToken token) {
+        String value = token == null ? "" : token.getToken();
+        return ResponseEntity.ok(Map.of("token", value));
     }
 
     private ResponseCookie buildAccessCookie(String token) {

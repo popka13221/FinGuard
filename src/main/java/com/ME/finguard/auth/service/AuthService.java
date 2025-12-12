@@ -108,7 +108,7 @@ public class AuthService {
                        @Value("${app.security.rate-limit.register-ip.window-ms:300000}") long registerIpWindowMs,
                        @Value("${app.security.rate-limit.register-email.limit:5}") int registerEmailLimit,
                        @Value("${app.security.rate-limit.register-email.window-ms:300000}") long registerEmailWindowMs,
-                       @Value("${app.security.auth.require-email-verified:false}") boolean requireEmailVerified,
+                       @Value("${app.security.auth.require-email-verified:true}") boolean requireEmailVerified,
                        @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -130,8 +130,6 @@ public class AuthService {
         this.resetWindowMs = resetWindowMs;
         this.loginEmailLimit = loginEmailLimit;
         this.loginEmailWindowMs = loginEmailWindowMs;
-        this.requireEmailVerified = requireEmailVerified;
-        this.otpEnabled = otpEnabled;
         this.loginOtpLimit = loginOtpLimit;
         this.loginOtpWindowMs = loginOtpWindowMs;
         this.loginOtpIssueLimit = loginOtpIssueLimit;
@@ -140,6 +138,8 @@ public class AuthService {
         this.registerIpWindowMs = registerIpWindowMs;
         this.registerEmailLimit = registerEmailLimit;
         this.registerEmailWindowMs = registerEmailWindowMs;
+        this.requireEmailVerified = requireEmailVerified;
+        this.otpEnabled = otpEnabled;
     }
 
     @Transactional
@@ -322,13 +322,14 @@ public class AuthService {
         });
     }
 
-    public void verify(VerifyRequest request) {
+    public AuthTokens verify(VerifyRequest request) {
         UserToken token = userTokenService.findValid(request.token(), UserTokenType.VERIFY)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
         User user = token.getUser();
         user.setEmailVerified(true);
         userRepository.save(user);
         userTokenService.markUsed(token);
+        return issueTokens(user);
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {

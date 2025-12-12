@@ -95,3 +95,5 @@ app:
       reset-dev-code: ${RESET_DEV_CODE:123456}
       reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}
       reset-session-ttl-minutes: ${RESET_SESSION_TTL_MINUTES:15}
+    auth:
+      require-email-verified: ${APP_SECURITY_AUTH_REQUIRE_EMAIL_VERIFIED:true}

@@ -100,6 +100,23 @@
         </div>
       </div>
 
+      <div class="form" id="verifySection" style="display:none; margin-top: 12px; background: var(--panel-strong); padding: 12px; border-radius: 12px; border: 1px dashed var(--border);">
+        <div class="badge">Подтверждение email</div>
+        <div class="muted" id="verifyHint" style="margin-top: 6px;">Мы отправили код на ваш email. Введите его, чтобы завершить регистрацию.</div>
+        <div class="field" style="margin-top: 10px;">
+          <label>Код из письма</label>
+          <div class="row-inline">
+            <input id="verifyCode" placeholder="123456" autocomplete="one-time-code" aria-label="Код подтверждения">
+            <button type="button" class="ghost" id="btn-verify-code">Подтвердить</button>
+          </div>
+          <div id="verifyCodeError" class="error-text" style="display:none;"></div>
+        </div>
+        <div class="actions" style="gap: 8px; margin-top: 8px;">
+          <button type="button" class="secondary" id="btn-verify-resend">Отправить код еще раз</button>
+          <div id="verifyStatus" class="alert" role="alert" aria-live="polite" style="display:none; margin: 0;"></div>
+        </div>
+      </div>
+
       <div class="muted" style="margin-top: 6px;">После входа или регистрации откроется дашборд.</div>
     </div>
   </div>

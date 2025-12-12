@@ -5,8 +5,8 @@ import com.yourname.finguard.security.repository.RateLimitBucketRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +17,7 @@ public class RateLimiterService {
 
     private final RateLimitBucketRepository rateLimitBucketRepository;
     private final Map<String, InMemoryBucket> inMemoryBuckets;
+    private final Map<String, Object> keyLocks;
     private final int limit;
     private final long windowMs;
     private final int maxEntries;
@@ -30,6 +31,7 @@ public class RateLimiterService {
     ) {
         this.rateLimitBucketRepository = rateLimitBucketRepository;
         this.inMemoryBuckets = rateLimitBucketRepository == null ? new ConcurrentHashMap<>() : null;
+        this.keyLocks = rateLimitBucketRepository == null ? null : new ConcurrentHashMap<>();
         this.limit = limit;
         this.windowMs = windowMs;
         this.maxEntries = maxEntries <= 0 ? 1000 : maxEntries;
@@ -60,38 +62,41 @@ public class RateLimiterService {
         if (customLimit <= 0 || customWindowMs <= 0) {
             return new Result(true, 0);
         }
-        long now = System.currentTimeMillis();
-        AtomicBoolean allowed = new AtomicBoolean(true);
-        RateLimitBucket bucket = rateLimitBucketRepository.findByBucketKey(key).orElse(null);
-        long effectiveWindow = bucket == null || bucket.getWindowMs() <= 0 ? customWindowMs : bucket.getWindowMs();
-        if (bucket == null || now - bucket.getWindowStartMs() >= effectiveWindow) {
-            RateLimitBucket fresh = bucket == null ? new RateLimitBucket() : bucket;
-            fresh.setBucketKey(key);
-            fresh.setWindowStartMs(now);
-            fresh.setWindowMs(customWindowMs);
-            fresh.setCount(1);
-            fresh.setUpdatedAt(Instant.now());
-            rateLimitBucketRepository.save(fresh);
+        Object lock = keyLocks.computeIfAbsent(key, k -> new Object());
+        synchronized (lock) {
+            long now = System.currentTimeMillis();
+            AtomicBoolean allowed = new AtomicBoolean(true);
+            RateLimitBucket bucket = rateLimitBucketRepository.findByBucketKey(key).orElse(null);
+            long effectiveWindow = bucket == null || bucket.getWindowMs() <= 0 ? customWindowMs : bucket.getWindowMs();
+            if (bucket == null || now - bucket.getWindowStartMs() >= effectiveWindow) {
+                RateLimitBucket fresh = bucket == null ? new RateLimitBucket() : bucket;
+                fresh.setBucketKey(key);
+                fresh.setWindowStartMs(now);
+                fresh.setWindowMs(customWindowMs);
+                fresh.setCount(1);
+                fresh.setUpdatedAt(Instant.now());
+                rateLimitBucketRepository.save(fresh);
+                evictExpired(now);
+                evictIfNeeded();
+                return new Result(true, 0);
+            }
+            if (bucket.getCount() >= customLimit) {
+                allowed.set(false);
+            } else {
+                bucket.setCount(bucket.getCount() + 1);
+                bucket.setWindowMs(customWindowMs);
+                bucket.setUpdatedAt(Instant.now());
+                rateLimitBucketRepository.save(bucket);
+            }
             evictExpired(now);
             evictIfNeeded();
-            return new Result(true, 0);
+            if (allowed.get()) {
+                return new Result(true, 0);
+            }
+            long until = bucket.getWindowStartMs() + effectiveWindow;
+            long retryAfter = Math.max(0, until - now);
+            return new Result(false, retryAfter);
         }
-        if (bucket.getCount() >= customLimit) {
-            allowed.set(false);
-        } else {
-            bucket.setCount(bucket.getCount() + 1);
-            bucket.setWindowMs(customWindowMs);
-            bucket.setUpdatedAt(Instant.now());
-            rateLimitBucketRepository.save(bucket);
-        }
-        evictExpired(now);
-        evictIfNeeded();
-        if (allowed.get()) {
-            return new Result(true, 0);
-        }
-        long until = bucket.getWindowStartMs() + effectiveWindow;
-        long retryAfter = Math.max(0, until - now);
-        return new Result(false, retryAfter);
     }
 
     @Transactional

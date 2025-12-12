@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class AppAccessDeniedHandler implements AccessDeniedHandler, AuthenticationEntryPoint {
 
     private static final String FORBIDDEN_PAGE = "/app/forbidden.html";
+    private static final String LOGIN_PAGE = "/app/login.html";
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
@@ -21,7 +22,7 @@ public class AppAccessDeniedHandler implements AccessDeniedHandler, Authenticati
         if (isApi(request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
         } else {
-            response.sendRedirect(FORBIDDEN_PAGE);
+            response.sendRedirect(LOGIN_PAGE);
         }
     }
 

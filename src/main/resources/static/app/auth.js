@@ -17,6 +17,13 @@
     otpError: '#otpError',
     otpButton: '#btn-otp',
     otpResendButton: '#btn-otp-resend',
+    verifySection: '#verifySection',
+    verifyCode: '#verifyCode',
+    verifyError: '#verifyCodeError',
+    verifyStatus: '#verifyStatus',
+    verifyHint: '#verifyHint',
+    verifyButton: '#btn-verify-code',
+    verifyResendButton: '#btn-verify-resend',
     regEmailError: '#regEmailError',
     regPasswordError: '#regPasswordError',
     fullNameError: '#fullNameError',
@@ -63,6 +70,7 @@
       clearTimeout(errorHideTimers[key]);
       delete errorHideTimers[key];
     }
+    box.classList.remove('success');
     if (!msg) {
       box.style.display = 'none';
       box.textContent = '';
@@ -248,6 +256,17 @@
       case '400003':
         showFieldError('password', 'Пароль не соответствует требованиям');
         break;
+      case '100006': {
+        const email = (value(selectors.loginEmail) || '').trim().toLowerCase();
+        const password = (value(selectors.loginPassword) || '').trim();
+        verifyPending = true;
+        verifyEmail = email;
+        verifyPassword = password;
+        showVerifySection('Email не подтвержден. Введите код из письма.');
+        showVerifyStatus('Мы отправили код на указанный email.', false);
+        Api.call('/api/auth/verify/request', 'POST', { email }, false);
+        break;
+      }
       default:
         showError(defaultMessage);
     }
@@ -333,6 +352,11 @@
   let loginCooldownCode = '';
   let loginCooldownTimer = null;
   let otpCooldownTimer = null;
+  let verifyPending = false;
+  let verifyEmail = '';
+  let verifyPassword = '';
+  let verifyCooldownUntil = 0;
+  let verifyCooldownTimer = null;
 
   function loadOtpState() {
     try {
@@ -444,6 +468,95 @@
     }
   }
 
+  function showVerifySection(message) {
+    const section = document.querySelector(selectors.verifySection);
+    const hint = document.querySelector(selectors.verifyHint);
+    const error = document.querySelector(selectors.verifyError);
+    const status = document.querySelector(selectors.verifyStatus);
+    const registerBtn = document.querySelector(selectors.registerButton);
+    if (section) section.style.display = 'grid';
+    if (hint && message) hint.textContent = message;
+    if (error) { error.style.display = 'none'; error.textContent = ''; }
+    if (status) { status.style.display = 'none'; status.textContent = ''; status.classList.remove('success'); }
+    if (registerBtn) registerBtn.style.display = 'none';
+    startVerifyCooldownTimer();
+  }
+
+  function hideVerifySection() {
+    const section = document.querySelector(selectors.verifySection);
+    if (section) section.style.display = 'none';
+    verifyPending = false;
+    verifyEmail = '';
+    verifyPassword = '';
+    verifyCooldownUntil = 0;
+    updateVerifyResendButton();
+    const registerBtn = document.querySelector(selectors.registerButton);
+    if (registerBtn) registerBtn.style.display = '';
+  }
+
+  function showVerifyError(msg) {
+    const el = document.querySelector(selectors.verifyError);
+    if (!el) return;
+    el.style.display = msg ? 'block' : 'none';
+    el.textContent = msg || '';
+  }
+
+  function showVerifyStatus(msg, success) {
+    const el = document.querySelector(selectors.verifyStatus);
+    if (!el) return;
+    if (!msg) {
+      el.style.display = 'none';
+      el.textContent = '';
+      el.classList.remove('success');
+      return;
+    }
+    el.style.display = 'block';
+    el.textContent = msg;
+    el.classList.toggle('success', !!success);
+  }
+
+  function remainingVerifyCooldownSeconds() {
+    const now = Date.now();
+    if (verifyCooldownUntil <= now) {
+      verifyCooldownUntil = 0;
+      return 0;
+    }
+    return Math.max(1, Math.ceil((verifyCooldownUntil - now) / 1000));
+  }
+
+  function updateVerifyResendButton() {
+    const btn = document.querySelector(selectors.verifyResendButton);
+    if (!btn) return;
+    const remaining = remainingVerifyCooldownSeconds();
+    const baseText = 'Отправить код еще раз';
+    if (remaining > 0) {
+      btn.disabled = true;
+      btn.textContent = `${baseText} (${remaining} сек.)`;
+    } else {
+      btn.disabled = submitting;
+      btn.textContent = baseText;
+    }
+  }
+
+  function startVerifyCooldownTimer() {
+    updateVerifyResendButton();
+    if (verifyCooldownTimer) {
+      clearInterval(verifyCooldownTimer);
+      verifyCooldownTimer = null;
+    }
+    const left = remainingVerifyCooldownSeconds();
+    if (left > 0) {
+      verifyCooldownTimer = setInterval(() => {
+        const remaining = remainingVerifyCooldownSeconds();
+        updateVerifyResendButton();
+        if (remaining <= 0 && verifyCooldownTimer) {
+          clearInterval(verifyCooldownTimer);
+          verifyCooldownTimer = null;
+        }
+      }, 1000);
+    }
+  }
+
   function startLoginCooldownTimer(formatter) {
     if (loginCooldownCode === '429002') {
       if (loginCooldownTimer) {
@@ -550,6 +663,73 @@
     }
   }
 
+  async function submitVerifyCode() {
+    if (!verifyPending || !verifyEmail) {
+      showVerifyStatus('Для подтверждения повторите регистрацию или вход.', false);
+      return;
+    }
+    const codeInput = document.querySelector(selectors.verifyCode);
+    const code = (codeInput && codeInput.value || '').trim();
+    if (!code) {
+      showVerifyError('Введите код из письма');
+      return;
+    }
+    showVerifyError('');
+    const btn = document.querySelector(selectors.verifyButton);
+    if (btn) btn.disabled = true;
+    const res = await Api.call('/api/auth/verify', 'POST', { token: code }, false);
+    if (btn) btn.disabled = false;
+    if (res.ok) {
+      showVerifyStatus('Email подтвержден. Входим...', true);
+      // Если бек отдал токены и cookies, просто идем в дашборд
+      if (res.data && res.data.token) {
+        window.location.href = '/app/dashboard.html';
+        return;
+      }
+      // fallback: пробуем логин stored creds
+      if (verifyPassword && verifyEmail) {
+        const loginResp = await Api.call('/api/auth/login', 'POST', { email: verifyEmail, password: verifyPassword }, false);
+        if (loginResp.ok) {
+          window.location.href = '/app/dashboard.html';
+          return;
+        }
+      }
+      const me = await Api.call('/api/auth/me', 'GET', null, true);
+      if (me.ok) {
+        window.location.href = '/app/dashboard.html';
+      } else {
+        window.location.href = `/app/login.html?verified=1&email=${encodeURIComponent(verifyEmail)}`;
+      }
+      hideVerifySection();
+    } else {
+      const codeErr = res.data && res.data.code ? res.data.code : '';
+      if (codeErr === '100005') {
+        showVerifyStatus('Код недействителен или истек. Запросите новый.', false);
+      } else {
+        showVerifyStatus('Не удалось подтвердить код. Попробуйте снова.', false);
+      }
+    }
+  }
+
+  async function resendVerifyCode() {
+    if (!verifyEmail) {
+      showVerifyStatus('Введите email и повторите регистрацию или вход.', false);
+      return;
+    }
+    const btn = document.querySelector(selectors.verifyResendButton);
+    if (btn) btn.disabled = true;
+    const res = await Api.call('/api/auth/verify/request', 'POST', { email: verifyEmail }, false);
+    if (btn) btn.disabled = false;
+    if (res.ok) {
+      showVerifyStatus('Отправили новый код. Проверьте почту.', true);
+      const retry = res.data && res.data.retryAfterSeconds ? Number(res.data.retryAfterSeconds) : 60;
+      verifyCooldownUntil = Date.now() + retry * 1000;
+      startVerifyCooldownTimer();
+    } else {
+      showVerifyStatus('Не удалось отправить код. Попробуйте позже.', false);
+    }
+  }
+
   async function login() {
     if (submitting) return;
     const validation = validateLogin();
@@ -645,8 +825,17 @@
     submitting = false;
     setSubmitting(false);
     if (result.ok && result.data && result.data.token) {
-      Api.setEmail(validation.payload.email);
-      window.location.href = '/app/dashboard.html';
+      const email = validation.payload.email;
+      const password = validation.payload.password;
+      Api.setEmail(email);
+      await Api.call('/api/auth/verify/request', 'POST', { email }, false);
+      verifyCooldownUntil = Date.now() + 60000;
+      startVerifyCooldownTimer();
+      await Api.call('/api/auth/logout', 'POST', null, true);
+      verifyPending = true;
+      verifyEmail = email;
+      verifyPassword = password;
+      showVerifySection('Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.');
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
       handleErrorCode(code);
@@ -654,16 +843,28 @@
   }
 
   function setSubmitting(state) {
-    const buttons = [selectors.loginButton, selectors.registerButton, selectors.otpButton, selectors.otpResendButton].map((sel) => document.querySelector(sel));
+    const buttons = [
+      selectors.loginButton,
+      selectors.registerButton,
+      selectors.otpButton,
+      selectors.otpResendButton,
+      selectors.verifyButton,
+      selectors.verifyResendButton
+    ].map((sel) => document.querySelector(sel));
     buttons.forEach((btn) => {
       if (!btn) return;
       if (btn.matches(selectors.otpResendButton)) {
         btn.disabled = state || remainingOtpCooldownSeconds() > 0;
+      } else if (btn.matches(selectors.verifyResendButton)) {
+        btn.disabled = state || remainingVerifyCooldownSeconds() > 0;
       } else {
         btn.disabled = state;
       }
     });
-    if (!state) updateOtpResendButton();
+    if (!state) {
+      updateOtpResendButton();
+      updateVerifyResendButton();
+    }
   }
 
   function bindAuthActions() {
@@ -675,6 +876,10 @@
     if (otpBtn) otpBtn.addEventListener('click', () => submitOtp((value(selectors.loginEmail) || '').trim().toLowerCase()));
     const otpResendBtn = document.querySelector(selectors.otpResendButton);
     if (otpResendBtn) otpResendBtn.addEventListener('click', resendOtp);
+    const verifyBtn = document.querySelector(selectors.verifyButton);
+    if (verifyBtn) verifyBtn.addEventListener('click', submitVerifyCode);
+    const verifyResendBtn = document.querySelector(selectors.verifyResendButton);
+    if (verifyResendBtn) verifyResendBtn.addEventListener('click', resendVerifyCode);
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
@@ -723,5 +928,22 @@
     startOtpCooldownTimer();
     startLoginCooldownTimer();
     switchForm('login');
+
+    const params = new URLSearchParams(window.location.search);
+    const verified = params.get('verified');
+    const verifiedEmail = params.get('email') || '';
+    if (verifiedEmail) {
+      const emailInput = document.querySelector(selectors.loginEmail);
+      if (emailInput) emailInput.value = verifiedEmail;
+    }
+    if (verified === '1') {
+      const box = document.querySelector(selectors.errorBox);
+      if (box) {
+        box.classList.add('success');
+        box.style.display = 'block';
+        box.textContent = 'Email подтвержден. Теперь можно войти.';
+      }
+    }
+    startVerifyCooldownTimer();
   });
 })();

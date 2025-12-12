@@ -91,6 +91,8 @@
     if (btn) btn.disabled = false;
     if (res.ok) {
       setStatus('Email подтвержден. Теперь можно войти.', true);
+      const target = `/app/login.html?verified=1&email=${encodeURIComponent(emailVal)}`;
+      setTimeout(() => { window.location.href = target; }, 600);
     } else {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
