@@ -20,10 +20,6 @@ const Api = (() => {
     return '';
   }
 
-  function baseUrl() {
-    return window.location.origin.replace(/\/$/, '');
-  }
-
   function clearToken() {
     sessionStorage.removeItem(emailKey);
   }
@@ -48,7 +44,7 @@ const Api = (() => {
       headers['X-XSRF-TOKEN'] = csrfToken;
     }
 
-    const resp = await fetch(baseUrl() + path, {
+    const resp = await fetch(path, {
       method,
       headers,
       credentials: 'include',
