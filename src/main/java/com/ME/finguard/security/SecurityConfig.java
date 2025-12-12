@@ -45,12 +45,8 @@ public class SecurityConfig {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .ignoringRequestMatchers(
                             "/health",
-                            "/actuator/**",
-                            "/api/auth/**",
-                            "/api/currencies",
-                            "/app/**",
-                            "/playground/**",
-                            "/"
+                            "/actuator/health",
+                            "/actuator/health/**"
                     )
             );
         } else {
@@ -78,9 +74,6 @@ public class SecurityConfig {
                         "/api/currencies",
                         "/favicon.ico",
                         "/favicon.svg",
-                        "/swagger-ui.html",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
                         "/playground",
                         "/playground/**",
                         "/app/login.html",
@@ -98,7 +91,7 @@ public class SecurityConfig {
                         "/index.html",
                         "/"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
