@@ -46,7 +46,12 @@ public class SecurityConfig {
                     .ignoringRequestMatchers(
                             "/health",
                             "/actuator/health",
-                            "/actuator/health/**"
+                            "/actuator/health/**",
+                            "/api/auth/**",
+                            "/api/currencies",
+                            "/app/**",
+                            "/playground/**",
+                            "/"
                     )
             );
         } else {
