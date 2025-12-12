@@ -6,6 +6,14 @@ cd "$ROOT_DIR"
 
 echo "==> FinGuard local runner"
 
+# Load .env if present
+if [ -f ".env" ]; then
+  echo "-> Loading .env"
+  set -a
+  source ".env"
+  set +a
+fi
+
 # Start Postgres via Docker if available
 if command -v docker >/dev/null 2>&1 && command -v docker compose >/dev/null 2>&1; then
   echo "-> Starting Postgres with docker compose..."
