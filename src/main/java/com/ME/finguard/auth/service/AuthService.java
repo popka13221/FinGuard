@@ -143,7 +143,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthTokens register(RegisterRequest request, String ip) {
+    public RegistrationResult register(RegisterRequest request, String ip) {
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
         String fullName = request.fullName() == null ? "" : request.fullName().trim();
         String baseCurrency = currencyService.normalize(request.baseCurrency());
@@ -175,7 +175,11 @@ public class AuthService {
         User saved = userRepository.save(user);
         String verifyToken = userTokenService.issue(saved, UserTokenType.VERIFY);
         mailService.sendVerifyEmail(saved.getEmail(), verifyToken, userTokenService.getVerifyTtl());
-        return issueTokens(saved);
+        if (requireEmailVerified) {
+            return new RegistrationResult(null, true);
+        }
+        AuthTokens tokens = issueTokens(saved);
+        return new RegistrationResult(tokens, false);
     }
 
     public LoginOutcome login(LoginRequest request, String ip) {
@@ -282,6 +286,13 @@ public class AuthService {
         if (tokenVersion != user.getTokenVersion()) {
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
         }
+        if (requireEmailVerified && !user.isEmailVerified()) {
+            throw new ApiException(
+                    ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+                    "Email is not verified. Please check your email for the verification code.",
+                    HttpStatus.FORBIDDEN
+            );
+        }
         // revoke the old refresh token on rotation
         tokenBlacklistService.revoke(jti, jwtTokenProvider.getExpiry(refreshToken).toInstant());
         userSessionService.revoke(jti);
@@ -345,7 +356,8 @@ public class AuthService {
     public ResetSessionResponse confirmResetToken(ValidateResetTokenRequest request, String ip, String userAgent) {
         enforceResetConfirmLimit("reset-confirm:ip:" + safe(ip), null);
 
-        UserToken token = userTokenService.findAny(request.token(), UserTokenType.RESET)
+        String email = request.email() == null ? "" : request.email().trim().toLowerCase();
+        UserToken token = userTokenService.findAnyForEmail(email, request.token(), UserTokenType.RESET)
                 .orElseThrow(this::invalidResetCode);
         if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(Instant.now())) {
             userTokenService.markUsed(token);
@@ -501,5 +513,8 @@ public class AuthService {
     }
 
     public record LoginOutcome(AuthTokens tokens, boolean otpRequired, long otpExpiresInSeconds) {
+    }
+
+    public record RegistrationResult(AuthTokens tokens, boolean verificationRequired) {
     }
 }

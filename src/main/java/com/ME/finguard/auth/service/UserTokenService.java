@@ -21,25 +21,21 @@ import org.slf4j.LoggerFactory;
 public class UserTokenService {
 
     private static final Logger log = LoggerFactory.getLogger(UserTokenService.class);
+    // TODO remove fixed code before production; only for temporary simplified flow
+    private static final String FIXED_CODE = "654321";
 
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;
     private final Duration resetTtl;
-    private final String verifyDevCode;
-    private final String resetDevCode;
     private final Duration resetCooldown;
 
     public UserTokenService(UserTokenRepository userTokenRepository,
                             @Value("${app.security.tokens.verify-ttl-minutes:1440}") long verifyTtlMinutes,
                             @Value("${app.security.tokens.reset-ttl-minutes:60}") long resetTtlMinutes,
-                            @Value("${app.security.tokens.verify-dev-code:}") String verifyDevCode,
-                            @Value("${app.security.tokens.reset-dev-code:123456}") String resetDevCode,
                             @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
         this.userTokenRepository = userTokenRepository;
         this.verifyTtl = Duration.ofMinutes(Math.max(verifyTtlMinutes, 1));
         this.resetTtl = Duration.ofMinutes(Math.max(resetTtlMinutes, 1));
-        this.verifyDevCode = verifyDevCode == null ? "" : verifyDevCode.trim();
-        this.resetDevCode = resetDevCode == null ? "" : resetDevCode.trim();
         this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
     }
 
@@ -47,15 +43,13 @@ public class UserTokenService {
     public String issue(User user, UserTokenType type) {
         Duration ttl = type == UserTokenType.VERIFY ? verifyTtl : resetTtl;
         String tokenValue = generateToken(type);
-        if ((type == UserTokenType.RESET && !resetDevCode.isEmpty())
-                || (type == UserTokenType.VERIFY && !verifyDevCode.isEmpty())) {
-            // гарантируем уникальность фиксированного кода
-            userTokenRepository.deleteByTokenHash(hashToken(tokenValue));
-            userTokenRepository.flush();
-        }
+        String hashed = hashToken(tokenValue);
+        // уникальный фиксированный код требует очистки предыдущих записей
+        userTokenRepository.deleteByTokenHash(hashed);
+        userTokenRepository.flush();
         UserToken token = new UserToken();
         token.setUser(user);
-        token.setTokenHash(hashToken(tokenValue));
+        token.setTokenHash(hashed);
         token.setType(type);
         token.setExpiresAt(Instant.now().plus(ttl));
         userTokenRepository.save(token);
@@ -83,6 +77,13 @@ public class UserTokenService {
             return Optional.empty();
         }
         return userTokenRepository.findByTokenHashAndType(hashed, type);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserToken> findAnyForEmail(String email, String token, UserTokenType type) {
+        String normalizedEmail = normalizeEmail(email);
+        return findAny(token, type)
+                .filter(t -> t.getUser() != null && normalizedEmail.equals(normalizeEmail(t.getUser().getEmail())));
     }
 
     @Transactional
@@ -123,13 +124,7 @@ public class UserTokenService {
     }
 
     private String generateToken(UserTokenType type) {
-        if (type == UserTokenType.VERIFY && !verifyDevCode.isEmpty()) {
-            return verifyDevCode;
-        }
-        if (type == UserTokenType.RESET && !resetDevCode.isEmpty()) {
-            return resetDevCode;
-        }
-        return UUID.randomUUID().toString();
+        return FIXED_CODE;
     }
 
     private String hashToken(String value) {
@@ -147,5 +142,9 @@ public class UserTokenService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 unavailable", e);
         }
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
     }
 }

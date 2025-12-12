@@ -39,7 +39,6 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.security.otp.enabled=false",
-        "app.security.tokens.reset-dev-code=123456",
         "app.security.tokens.reset-cooldown-seconds=0"
 })
 class TokenSecurityIntegrationTest {
@@ -129,8 +128,8 @@ class TokenSecurityIntegrationTest {
         MvcResult confirm = mockMvc.perform(post("/api/auth/reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"token":"%s"}
-                                """.formatted(code)))
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, code)))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode confirmBody = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -178,7 +177,13 @@ class TokenSecurityIntegrationTest {
             u.setEmailVerified(true);
             userRepository.save(u);
         });
-        return res;
+        return mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"%s"}
+                                """.formatted(email, password)))
+                .andExpect(status().isOk())
+                .andReturn();
     }
 
     private MailService.MailMessage latestMail() {

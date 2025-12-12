@@ -12,6 +12,7 @@ import com.yourname.finguard.auth.dto.ForgotPasswordRequest;
 import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.dto.OtpVerifyRequest;
 import com.yourname.finguard.auth.dto.OtpChallengeResponse;
+import com.yourname.finguard.auth.dto.RegistrationResponse;
 import com.yourname.finguard.auth.service.AuthService;
 import com.yourname.finguard.auth.service.UserTokenService;
 import com.yourname.finguard.common.constants.ErrorCodes;
@@ -87,13 +88,22 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Некорректные данные или слабый пароль", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Email уже занят", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
-        AuthTokens tokens = authService.register(request, ip);
+        AuthService.RegistrationResult result = authService.register(request, ip);
+        AuthTokens tokens = result.tokens();
+        if (tokens != null && !result.verificationRequired()) {
+            return ResponseEntity.status(201)
+                    .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
+                    .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
+                    .body(new AuthResponse(tokens.accessToken()));
+        }
         return ResponseEntity.status(201)
-                .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
-                .body(new AuthResponse(tokens.accessToken()));
+                .body(new RegistrationResponse(
+                        result.verificationRequired(),
+                        "Мы отправили код 654321 на ваш email. Подтвердите адрес, чтобы закончить регистрацию. (TODO убрать фиксированный код)",
+                        null
+                ));
     }
 
     @PostMapping("/login")

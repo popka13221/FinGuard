@@ -71,6 +71,5 @@ app:
     cors:
       allowed-origins:
     tokens:
-      reset-dev-code: 123456
       reset-cooldown-seconds: 60
       reset-session-ttl-minutes: 15

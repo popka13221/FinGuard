@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yourname.finguard.common.service.MailService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,12 +27,16 @@ class AuthIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private MailService mailService;
 
     @Test
     @Transactional
     void registerAndLogin() throws Exception {
         String email = "demo@example.com";
         String password = "StrongPass1!";
+
+        mailService.clearOutbox();
 
         String registerPayload = """
                 {
@@ -51,14 +56,18 @@ class AuthIntegrationTest {
                 .getContentAsString();
 
         JsonNode regNode = objectMapper.readTree(registerResponse);
-        assertThat(regNode.get("token").asText()).isNotBlank();
+        assertThat(regNode.get("verificationRequired").asBoolean()).isTrue();
 
-        // confirm email via dev-code to allow login
+        // confirm email via code from mail
+        com.yourname.finguard.common.service.MailService.MailMessage msg = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
+        String verifyToken = extractCode(msg.body());
+        assertThat(verifyToken).isNotBlank();
+
         mockMvc.perform(post("/api/auth/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"token":"123456"}
-                                """))
+                                {"token":"%s"}
+                                """.formatted(verifyToken)))
                 .andExpect(status().isOk());
 
         String loginPayload = """
@@ -84,5 +93,14 @@ class AuthIntegrationTest {
     void healthIsPublic() throws Exception {
         mockMvc.perform(get("/health"))
                 .andExpect(status().isOk());
+    }
+
+    private String extractCode(String body) {
+        for (String part : body.split("\\s+")) {
+            if (part.matches("[A-Za-z0-9\\-]{6,}")) {
+                return part.trim();
+            }
+        }
+        return "";
     }
 }

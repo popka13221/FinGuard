@@ -212,6 +212,10 @@
     clearFieldErrors();
     const tokenVal = (val(selectors.forgotToken) || '').trim();
     const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
+    if (!emailVal || !emailRegex.test(emailVal)) {
+      showFieldError('fpEmail', 'Введите корректный email');
+      return;
+    }
     if (!tokenVal) {
       showFieldError('fpToken', 'Введите код из письма');
       return;
@@ -222,7 +226,7 @@
     }
     setAlert(selectors.forgotStatus, '');
     setSubmitting([selectors.forgotNext], true);
-    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal }, false);
+    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal, email: emailVal }, false);
     setSubmitting([selectors.forgotNext], false);
     if (res.ok) {
       tokenAttempts = 0;
@@ -265,7 +269,11 @@
       setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
       return;
     }
-    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal }, false);
+    if (!emailVal || !emailRegex.test(emailVal)) {
+      setAlert(selectors.resetStatus, 'Укажите email, на который пришел код.', 'error');
+      return;
+    }
+    const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal, email: emailVal }, false);
     if (!res.ok) {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
@@ -389,7 +397,8 @@
   function prefillFromQuery() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    const email = params.get('email');
+    const emailParam = params.get('email');
+    const email = (emailParam || val(selectors.forgotEmail) || '').trim().toLowerCase();
     const confirmed = params.get('confirmed');
     const storedToken = sessionStorage.getItem('reset_session_token') || '';
     const expiresRaw = sessionStorage.getItem('reset_session_expires');

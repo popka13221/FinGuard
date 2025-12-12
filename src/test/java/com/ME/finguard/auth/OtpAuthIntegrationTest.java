@@ -36,7 +36,6 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.security.otp.enabled=true",
-        "app.security.otp.dev-code=654321",
         "app.security.otp.ttl-seconds=300",
         "app.security.otp.max-attempts=3",
         "app.security.rate-limit.auth.limit=10",
@@ -98,11 +97,12 @@ class OtpAuthIntegrationTest {
         // OTP sent to mail
         assertThat(mailService.getOutbox()).isNotEmpty();
         MailService.MailMessage last = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
-        assertThat(last.body()).contains("654321");
+        String otp = extractCode(last.body());
+        assertThat(otp).isNotBlank();
 
         MvcResult step2 = postJson("/api/auth/login/otp", """
-                {"email":"%s","code":"654321"}
-                """.formatted(email))
+                {"email":"%s","code":"%s"}
+                """.formatted(email, otp))
                 .andExpect(status().isOk())
                 .andReturn();
         Map<String, String> cookies = cookies(step2);
@@ -125,6 +125,8 @@ class OtpAuthIntegrationTest {
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email)).andExpect(status().isAccepted());
         assertThat(mailService.getOutbox()).hasSize(1);
+        String otp = extractCode(mailService.getOutbox().get(0).body());
+        assertThat(otp).isNotBlank();
 
         for (int i = 0; i < 2; i++) {
             postJson("/api/auth/login/otp", """
@@ -142,8 +144,8 @@ class OtpAuthIntegrationTest {
 
         // даже правильный код после превышения попыток не сработает
         MvcResult finalAttempt = postJson("/api/auth/login/otp", """
-                {"email":"%s","code":"654321"}
-                """.formatted(email))
+                {"email":"%s","code":"%s"}
+                """.formatted(email, otp))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         JsonNode finalError = objectMapper.readTree(finalAttempt.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -160,9 +162,10 @@ class OtpAuthIntegrationTest {
         postJsonFromIp("/api/auth/login", """
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email), "10.0.0.1").andExpect(status().isAccepted());
+        String otp = extractCode(mailService.getOutbox().get(0).body());
         postJsonFromIp("/api/auth/login/otp", """
-                {"email":"%s","code":"654321"}
-                """.formatted(email), "10.0.0.1").andExpect(status().isOk());
+                {"email":"%s","code":"%s"}
+                """.formatted(email, otp), "10.0.0.1").andExpect(status().isOk());
 
         // Second login immediately from same IP should hit issue limit (email+ip buckets)
         MvcResult limited = postJsonFromIp("/api/auth/login", """
@@ -187,8 +190,8 @@ class OtpAuthIntegrationTest {
                 """.formatted(email)).andExpect(status().isAccepted());
         // consume code successfully
         postJson("/api/auth/login/otp", """
-                {"email":"%s","code":"654321"}
-                """.formatted(email)).andExpect(status().isOk());
+                {"email":"%s","code":"%s"}
+                """.formatted(email, extractCode(mailService.getOutbox().get(0).body()))).andExpect(status().isOk());
 
         // immediate second login should be blocked by issue rate limit
         MvcResult res = postJson("/api/auth/login", """
@@ -238,5 +241,14 @@ class OtpAuthIntegrationTest {
             }
         }
         return map;
+    }
+
+    private String extractCode(String body) {
+        for (String part : body.split("\\s+")) {
+            if (part.matches("\\d{6}")) {
+                return part.trim();
+            }
+        }
+        return "";
     }
 }

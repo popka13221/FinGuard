@@ -824,18 +824,18 @@
     const result = await Api.call('/api/auth/register', 'POST', validation.payload, false);
     submitting = false;
     setSubmitting(false);
-    if (result.ok && result.data && result.data.token) {
+    if (result.ok) {
       const email = validation.payload.email;
       const password = validation.payload.password;
       Api.setEmail(email);
       await Api.call('/api/auth/verify/request', 'POST', { email }, false);
       verifyCooldownUntil = Date.now() + 60000;
       startVerifyCooldownTimer();
-      await Api.call('/api/auth/logout', 'POST', null, true);
       verifyPending = true;
       verifyEmail = email;
       verifyPassword = password;
-      showVerifySection('Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.');
+      const hint = (result.data && result.data.message) || 'Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.';
+      showVerifySection(hint);
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
       handleErrorCode(code);

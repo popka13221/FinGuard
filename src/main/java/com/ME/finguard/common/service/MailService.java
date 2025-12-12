@@ -19,6 +19,8 @@ import org.springframework.util.StringUtils;
 public class MailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
+    // TODO remove fixed code before production; temporary simplified flow
+    private static final String FIXED_CODE = "654321";
 
     private final boolean enabled;
     private final String from;
@@ -26,7 +28,6 @@ public class MailService {
     private final String verifySubject;
     private final String otpSubject;
     private final String frontendBaseUrl;
-    private final String devResetCode;
     private final JavaMailSender mailSender;
     private final CopyOnWriteArrayList<MailMessage> outbox = new CopyOnWriteArrayList<>();
 
@@ -39,7 +40,6 @@ public class MailService {
                        @Value("${app.mail.verify-subject:Подтверждение email FinGuard}") String verifySubject,
                        @Value("${app.mail.otp-subject:Код входа FinGuard}") String otpSubject,
                        @Value("${app.frontend.base-url:http://localhost:8080}") String frontendBaseUrl,
-                       @Value("${app.security.tokens.reset-dev-code:123456}") String devResetCode,
                        @Autowired(required = false) JavaMailSender mailSender) {
         this.enabled = enabled;
         this.from = from;
@@ -47,7 +47,6 @@ public class MailService {
         this.verifySubject = verifySubject;
         this.otpSubject = otpSubject;
         this.frontendBaseUrl = trimTrailingSlash(frontendBaseUrl);
-        this.devResetCode = devResetCode == null ? "" : devResetCode.trim();
         this.mailSender = mailSender;
     }
 
@@ -55,8 +54,7 @@ public class MailService {
         if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
             return;
         }
-        String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
-        String code = devResetCode.isEmpty() ? token : devResetCode;
+        String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(FIXED_CODE) + "&email=" + urlEncode(to);
         String body = """
                 Привет!
 
@@ -66,13 +64,13 @@ public class MailService {
                 Код действует примерно %s минут. Он одноразовый.
 
                 Если запрос сделали не вы — просто игнорируйте письмо.
-                """.formatted(code, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+                """.formatted(FIXED_CODE, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, resetSubject, body, Instant.now());
         outbox.add(message);
 
         if (!enabled || mailSender == null) {
-            log.info("Mail disabled, would send reset email to {} with code {}", maskEmail(to), code);
+            log.info("Mail disabled, would send reset email to {} with code {}", maskEmail(to), FIXED_CODE);
             return;
         }
 
@@ -124,7 +122,7 @@ public class MailService {
         if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
             return;
         }
-        String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
+        String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(FIXED_CODE) + "&email=" + urlEncode(to);
         String body = """
                 Привет!
 
@@ -134,13 +132,13 @@ public class MailService {
                 Код действует примерно %s минут.
 
                 Если запрос сделали не вы — игнорируйте письмо.
-                """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+                """.formatted(FIXED_CODE, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, verifySubject, body, Instant.now());
         outbox.add(message);
 
         if (!enabled || mailSender == null) {
-            log.info("Mail disabled, would send verify email to {} with token {}", maskEmail(to), token);
+            log.info("Mail disabled, would send verify email to {} with token {}", maskEmail(to), FIXED_CODE);
             return;
         }
 

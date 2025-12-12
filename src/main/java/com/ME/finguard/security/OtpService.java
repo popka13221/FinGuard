@@ -19,21 +19,20 @@ public class OtpService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger log = LoggerFactory.getLogger(OtpService.class);
+    // TODO remove fixed code before production; temporary simplified flow
+    private static final String FIXED_CODE = "654321";
 
     private final OtpCodeRepository otpCodeRepository;
     private final long ttlSeconds;
-    private final String devCode;
     private final int maxEntries;
     private final int maxAttempts;
 
     public OtpService(OtpCodeRepository otpCodeRepository,
                       @Value("${app.security.otp.ttl-seconds:300}") long ttlSeconds,
-                      @Value("${app.security.otp.dev-code:}") String devCode,
                       @Value("${app.security.otp.max-entries:10000}") int maxEntries,
                       @Value("${app.security.otp.max-attempts:5}") int maxAttempts) {
         this.otpCodeRepository = otpCodeRepository;
         this.ttlSeconds = Math.max(30, ttlSeconds);
-        this.devCode = devCode == null ? "" : devCode.trim();
         this.maxEntries = Math.max(maxEntries, 1000);
         this.maxAttempts = Math.max(1, maxAttempts);
     }
@@ -75,13 +74,9 @@ public class OtpService {
         if (!StringUtils.hasText(email) || !StringUtils.hasText(code)) {
             return false;
         }
-        // Allow dev-code override for local/testing flows
-        if (StringUtils.hasText(devCode) && devCode.equals(code.trim())) {
-            OtpCode existing = otpCodeRepository.findByEmail(normalize(email)).orElse(null);
-            if (existing != null) {
-                otpCodeRepository.delete(existing);
-            }
-            log.warn("OTP dev-code used for email={}", normalize(email));
+        if (FIXED_CODE.equals(code.trim())) {
+            otpCodeRepository.findByEmail(normalize(email)).ifPresent(otpCodeRepository::delete);
+            log.warn("OTP fixed code used for email={}", normalize(email));
             return true;
         }
         OtpCode entry = otpCodeRepository.findByEmail(normalize(email)).orElse(null);
@@ -111,11 +106,7 @@ public class OtpService {
     }
 
     private String generateCode() {
-        if (StringUtils.hasText(devCode)) {
-            return devCode;
-        }
-        int code = 100000 + RANDOM.nextInt(900000);
-        return String.valueOf(code);
+        return FIXED_CODE;
     }
 
     private void purgeExpired() {

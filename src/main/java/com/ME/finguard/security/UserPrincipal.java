@@ -14,6 +14,7 @@ public class UserPrincipal implements UserDetails {
     private final String passwordHash;
     private final Collection<? extends GrantedAuthority> authorities;
     private final int tokenVersion;
+    private final boolean emailVerified;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
@@ -21,6 +22,7 @@ public class UserPrincipal implements UserDetails {
         this.passwordHash = user.getPasswordHash();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
         this.tokenVersion = user.getTokenVersion();
+        this.emailVerified = user.isEmailVerified();
     }
 
     public Long getId() {
@@ -44,6 +46,10 @@ public class UserPrincipal implements UserDetails {
 
     public int getTokenVersion() {
         return tokenVersion;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
     }
 
     @Override

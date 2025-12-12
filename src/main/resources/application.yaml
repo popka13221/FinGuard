@@ -48,17 +48,16 @@ app:
     csrf:
       enabled: ${CSRF_ENABLED:true}
     jwt:
-      secret: ${JWT_SECRET:Q29kZXhEZW1vMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
+      secret: ${JWT_SECRET:}
       expiration-seconds: ${JWT_EXPIRATION:3600}
       refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION:604800}
       issuer: ${JWT_ISSUER:finguard}
       audience: ${JWT_AUDIENCE:finguard-app}
-      require-env-secret: ${JWT_REQUIRE_ENV_SECRET:false}
+      require-env-secret: ${JWT_REQUIRE_ENV_SECRET:true}
       cookie-secure: ${JWT_COOKIE_SECURE:false}
       cookie-samesite: ${JWT_COOKIE_SAMESITE:Lax}
     otp:
       enabled: ${OTP_ENABLED:true}
-      dev-code: ${OTP_DEV_CODE:654321}
       ttl-seconds: ${OTP_TTL_SECONDS:300}
       max-attempts: ${OTP_MAX_ATTEMPTS:5}
       max-entries: ${OTP_MAX_ENTRIES:10000}
@@ -91,8 +90,6 @@ app:
         limit: ${RATE_LIMIT_LOGIN_OTP_ISSUE_LIMIT:1}
         window-ms: ${RATE_LIMIT_LOGIN_OTP_ISSUE_WINDOW_MS:60000}
     tokens:
-      verify-dev-code: ${VERIFY_DEV_CODE:123456}
-      reset-dev-code: ${RESET_DEV_CODE:123456}
       reset-cooldown-seconds: ${RESET_COOLDOWN_SECONDS:60}
       reset-session-ttl-minutes: ${RESET_SESSION_TTL_MINUTES:15}
     auth:
