@@ -4,41 +4,45 @@ import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
 import '../theme.css';
 
-type Status = 'idle' | 'ok' | 'error';
-type Tx = { id: number; title: string; category: string; amount: number; date: string };
-type Budget = { id: number; title: string; used: number; limit: number };
-type Account = { id: number; title: string; balance: number; type: string };
+type CardItem = { id: number; name: string; balance: number; mask: string; type: string };
+type Breakdown = { id: number; name: string; spent: number; limit: number };
+type Goal = { id: number; title: string; progress: number; target: string };
+type Payment = { id: number; title: string; amount: number; due: string };
+type Activity = { id: number; title: string; tag: string; time: string; amount?: number };
 
 const DashboardPage: React.FC = () => {
   const [email, setEmail] = useState<string>('user');
   const [fullName, setFullName] = useState<string>('Владелец кошелька');
   const [baseCurrency, setBaseCurrency] = useState<string>('USD');
-  const [status, setStatus] = useState<Status>('idle');
-  const tokenText = 'Токен в httpOnly cookie';
 
-  const accounts: Account[] = [
-    { id: 1, title: 'Основной', balance: 18450.32, type: 'Дебет' },
-    { id: 2, title: 'Накопительный', balance: 4200.75, type: 'Сбережения' },
-    { id: 3, title: 'Кредитка', balance: -1250.12, type: 'Кредит' },
+  const cards: CardItem[] = [
+    { id: 1, name: 'Основной', balance: 18450.32, mask: '••12 45', type: 'Debit' },
+    { id: 2, name: 'Travel', balance: 4200.75, mask: '••55 30', type: 'Debit' },
+    { id: 3, name: 'Credit Plus', balance: -1250.12, mask: '••88 10', type: 'Credit' },
   ];
 
-  const txs: Tx[] = [
-    { id: 1, title: 'Кофе', category: 'Еда и напитки', amount: -4.5, date: 'Сегодня' },
-    { id: 2, title: 'Получен возврат', category: 'Прочее', amount: 120.0, date: 'Вчера' },
-    { id: 3, title: 'Продукты', category: 'Супермаркет', amount: -36.8, date: 'Вчера' },
-    { id: 4, title: 'Такси', category: 'Транспорт', amount: -12.0, date: '02 янв' },
+  const breakdown: Breakdown[] = [
+    { id: 1, name: 'Еда и кафе', spent: 320, limit: 600 },
+    { id: 2, name: 'Транспорт', spent: 90, limit: 200 },
+    { id: 3, name: 'Подписки', spent: 45, limit: 80 },
+    { id: 4, name: 'Здоровье', spent: 60, limit: 150 },
   ];
 
-  const budgets: Budget[] = [
-    { id: 1, title: 'Еда и кафе', used: 320, limit: 600 },
-    { id: 2, title: 'Транспорт', used: 90, limit: 200 },
-    { id: 3, title: 'Подписки', used: 45, limit: 80 },
+  const goals: Goal[] = [
+    { id: 1, title: 'Фонд 3 месяцев', progress: 62, target: '3 000' },
+    { id: 2, title: 'Путешествие', progress: 35, target: '2 500' },
   ];
 
-  const fx = [
-    { pair: 'USD / EUR', rate: '0.91' },
-    { pair: 'USD / KZT', rate: '459.10' },
-    { pair: 'USD / GBP', rate: '0.79' },
+  const payments: Payment[] = [
+    { id: 1, title: 'Аренда', amount: -700, due: '15 янв' },
+    { id: 2, title: 'Spotify', amount: -4.99, due: '19 янв' },
+    { id: 3, title: 'Мобильная связь', amount: -15, due: '22 янв' },
+  ];
+
+  const activities: Activity[] = [
+    { id: 1, title: 'Создан бюджет «Еда и кафе»', tag: 'Бюджеты', time: '2 мин назад' },
+    { id: 2, title: 'Подключён счёт «Travel»', tag: 'Счета', time: '1 час назад' },
+    { id: 3, title: 'Оплачен Netflix', tag: 'Подписки', time: 'Вчера', amount: -10.99 },
   ];
 
   useEffect(() => {
@@ -57,11 +61,6 @@ const DashboardPage: React.FC = () => {
     });
   }, []);
 
-  const checkHealth = async (url: string) => {
-    const res = await ApiClient.request(url, { method: 'GET' });
-    setStatus(res.ok ? 'ok' : 'error');
-  };
-
   const logout = async () => {
     await AuthApi.logout();
     ApiClient.clearEmail();
@@ -71,57 +70,44 @@ const DashboardPage: React.FC = () => {
   const formatMoney = (value: number) =>
     `${value < 0 ? '-' : ''}${Math.abs(value).toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ${baseCurrency}`;
 
-  const totalBalance = accounts.reduce((acc, item) => acc + item.balance, 0);
-  const creditUsed = accounts.filter((a) => a.balance < 0).reduce((acc, a) => acc + Math.abs(a.balance), 0);
-  const monthlyIn = 3420;
-  const monthlyOut = 1980;
+  const totalBalance = cards.reduce((acc, item) => acc + item.balance, 0);
+  const creditUsed = cards.filter((c) => c.balance < 0).reduce((acc, c) => acc + Math.abs(c.balance), 0);
+  const monthlyIn = 4200;
+  const monthlyOut = 2350;
   const savingsRate = monthlyIn === 0 ? 0 : Math.round(((monthlyIn - monthlyOut) / monthlyIn) * 100);
 
   return (
     <div className="app">
-      <div className="container">
-        <header className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style={{ height: 48 }} />
+      <div className="container" style={{ maxWidth: 1280, paddingTop: 20 }}>
+        <header className="nav">
+          <div className="brand">
+            <div className="brand-dot" />
             <div>
-              <h2 style={{ margin: 0 }}>Smart Wallet</h2>
-              <div className="muted">Ваш финансовый дашборд</div>
+              <div className="muted" style={{ fontSize: 12 }}>Smart Wallet</div>
+              <strong>Личный кабинет</strong>
             </div>
           </div>
           <div className="actions">
-            <div className="pill">Dashboard</div>
+            <div className="chip">Базовая валюта: {baseCurrency}</div>
+            <Button variant="ghost" onClick={logout}>Выйти</Button>
           </div>
         </header>
-
-        <div className="card" style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div className="muted">Добро пожаловать,</div>
-            <h3 style={{ margin: 0 }}>{fullName || email}</h3>
-            <div className="muted">Базовая валюта: {baseCurrency}</div>
-          </div>
-          <div className="actions">
-            <Button variant="ghost" onClick={() => checkHealth('/health')}>/health</Button>
-            <Button variant="ghost" onClick={() => checkHealth('/actuator/health')}>/actuator/health</Button>
-            <a className="ghost" style={{ textDecoration: 'none', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)', color: 'var(--text)' }} href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
-            <Button variant="secondary" onClick={logout}>Выйти</Button>
-          </div>
-        </div>
 
         <div className="grid-3" style={{ marginTop: 12 }}>
           <div className="card stat-card">
             <div className="muted">Баланс</div>
             <div className="stat-value">{formatMoney(totalBalance)}</div>
-            <div className="chip">Аккаунты: {accounts.length}</div>
+            <div className="muted">Кредит: {formatMoney(-creditUsed)}</div>
           </div>
           <div className="card stat-card">
-            <div className="muted">Денежный поток (мес.)</div>
+            <div className="muted">Доход / Расход (мес.)</div>
             <div className="stat-value">{formatMoney(monthlyIn - monthlyOut)}</div>
             <div className="muted">Доход: {formatMoney(monthlyIn)} · Расход: {formatMoney(monthlyOut)}</div>
           </div>
           <div className="card stat-card">
             <div className="muted">Ставка сбережений</div>
             <div className="stat-value">{savingsRate}%</div>
-            <div className="muted">Кредитная нагрузка: {formatMoney(-creditUsed)}</div>
+            <div className="muted">{fullName}</div>
           </div>
         </div>
 
@@ -129,17 +115,17 @@ const DashboardPage: React.FC = () => {
           <div className="stack">
             <div className="card">
               <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>Счета</h3>
-                <div className="pill-soft">Синхронизация позже</div>
+                <h3 style={{ margin: 0 }}>Ваши карты</h3>
+                <div className="pill-soft">Обновление балансов вручную</div>
               </div>
               <div className="list" style={{ marginTop: 10 }}>
-                {accounts.map((acc) => (
-                  <div key={acc.id} className="list-item">
+                {cards.map((card) => (
+                  <div key={card.id} className="list-item">
                     <div>
-                      <div style={{ fontWeight: 700 }}>{acc.title}</div>
-                      <small>{acc.type}</small>
+                      <div style={{ fontWeight: 800 }}>{card.name}</div>
+                      <small>{card.type} · {card.mask}</small>
                     </div>
-                    <div className={acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}>{formatMoney(acc.balance)}</div>
+                    <div className={card.balance >= 0 ? 'amount-positive' : 'amount-negative'}>{formatMoney(card.balance)}</div>
                   </div>
                 ))}
               </div>
@@ -147,35 +133,18 @@ const DashboardPage: React.FC = () => {
 
             <div className="card">
               <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>Последние транзакции</h3>
-                <div className="pill-soft">Фильтр: неделя</div>
+                <h3 style={{ margin: 0 }}>Статьи расходов</h3>
+                <div className="pill-soft">Период: месяц</div>
               </div>
               <div className="list" style={{ marginTop: 10 }}>
-                {txs.map((tx) => (
-                  <div key={tx.id} className="list-item">
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{tx.title}</div>
-                      <small>{tx.category} · {tx.date}</small>
-                    </div>
-                    <div className={tx.amount >= 0 ? 'amount-positive' : 'amount-negative'}>{formatMoney(tx.amount)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="stack">
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Бюджеты и цели</h3>
-              <div className="list" style={{ marginTop: 10 }}>
-                {budgets.map((b) => {
-                  const pct = Math.min(100, Math.round((b.used / b.limit) * 100));
+                {breakdown.map((b) => {
+                  const pct = Math.min(100, Math.round((b.spent / b.limit) * 100));
                   return (
                     <div key={b.id} className="progress-wrap">
                       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 700 }}>{b.title}</div>
-                          <small>{formatMoney(b.used)} из {formatMoney(b.limit)}</small>
+                          <div style={{ fontWeight: 700 }}>{b.name}</div>
+                          <small>{formatMoney(b.spent)} из {formatMoney(b.limit)}</small>
                         </div>
                         <div className={pct >= 90 ? 'amount-negative' : 'amount-positive'}>{pct}%</div>
                       </div>
@@ -187,36 +156,59 @@ const DashboardPage: React.FC = () => {
                 })}
               </div>
             </div>
+          </div>
 
+          <div className="stack">
             <div className="card">
-              <h3 style={{ marginTop: 0 }}>Курсы валют</h3>
+              <h3 style={{ marginTop: 0 }}>Цели</h3>
               <div className="list" style={{ marginTop: 10 }}>
-                {fx.map((item, idx) => (
-                  <div key={idx} className="list-item">
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{item.pair}</div>
-                      <small>Базовая: {baseCurrency}</small>
+                {goals.map((g) => (
+                  <div key={g.id} className="progress-wrap">
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>{g.title}</div>
+                        <small>Цель: {g.target} {baseCurrency}</small>
+                      </div>
+                      <div className="chip">{g.progress}%</div>
                     </div>
-                    <div className="amount-positive">{item.rate}</div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${g.progress}%` }} />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="card">
-              <h3 style={{ marginTop: 0 }}>Статус и токен</h3>
-              <div className="row" style={{ alignItems: 'center' }}>
-                <div className={`status-pill ${status === 'ok' ? 'status-ok' : status === 'error' ? 'status-bad' : ''}`}>
-                  {status === 'ok' ? 'Health OK' : status === 'error' ? 'Health error' : 'Health не проверен'}
-                </div>
-                <Button variant="ghost" onClick={() => checkHealth('/health')}>/health</Button>
-                <Button variant="ghost" onClick={() => checkHealth('/actuator/health')}>/actuator/health</Button>
+              <h3 style={{ marginTop: 0 }}>Ближайшие платежи</h3>
+              <div className="list" style={{ marginTop: 10 }}>
+                {payments.map((p) => (
+                  <div key={p.id} className="list-item">
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{p.title}</div>
+                      <small>Срок: {p.due}</small>
+                    </div>
+                    <div className="amount-negative">{formatMoney(p.amount)}</div>
+                  </div>
+                ))}
               </div>
-              <div className="muted" style={{ marginTop: 8 }}>JWT</div>
-              <div className="token-box">{tokenText}</div>
-              <div className="actions" style={{ marginTop: 10 }}>
-                <Button variant="ghost" onClick={logout}>Сбросить токен</Button>
-                <a className="ghost" style={{ textDecoration: 'none', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)', color: 'var(--text)' }} href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
+            </div>
+
+            <div className="card">
+              <h3 style={{ marginTop: 0 }}>Активность</h3>
+              <div className="timeline">
+                {activities.map((a) => (
+                  <div key={a.id} className="timeline-item">
+                    <div className="timeline-dot" />
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{a.title}</div>
+                      <small className="muted">{a.tag}</small>
+                    </div>
+                    <div className={a.amount && a.amount < 0 ? 'amount-negative' : 'muted'}>
+                      {a.amount ? formatMoney(a.amount) : a.time}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

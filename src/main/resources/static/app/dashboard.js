@@ -42,12 +42,6 @@
     if (hb2) hb2.addEventListener('click', () => health('/health', 'Health'));
     const ab2 = document.querySelector(selectors.actHealthBtnInline);
     if (ab2) ab2.addEventListener('click', () => health('/actuator/health', 'Actuator'));
-    const lb = document.querySelector(selectors.logoutBtn);
-    if (lb) lb.addEventListener('click', () => {
-      Api.clearToken();
-      Api.call('/api/auth/logout', 'POST', null, true);
-      window.location.href = '/';
-    });
     const cb = document.querySelector(selectors.clearTokenBtn);
     if (cb) cb.addEventListener('click', () => {
       Api.clearToken();

@@ -150,6 +150,24 @@ button:disabled { opacity: 0.65; cursor: not-allowed; }
 .progress-bar { height: 8px; border-radius: 999px; background: var(--panel-strong); border: 1px solid var(--border); overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); }
 .chip { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--muted); font-weight: 700; }
+.hero-area {
+  background: radial-gradient(circle at 20% 20%, rgba(63, 131, 248, 0.16), transparent 35%), radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.16), transparent 32%), linear-gradient(135deg, var(--panel) 0%, var(--panel-strong) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; align-items: center; }
+.hero-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
+.hero-sub { color: var(--muted); margin: 0; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(60, 199, 196, 0.14); color: var(--accent-2); font-weight: 700; border: 1px solid rgba(60, 199, 196, 0.25); }
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.action-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--panel-strong); display: grid; gap: 4px; cursor: pointer; transition: transform 0.1s ease, border 0.15s ease, box-shadow 0.15s ease; }
+.action-card:hover { transform: translateY(-1px); border-color: var(--accent); box-shadow: 0 10px 26px rgba(79,139,255,0.18); }
+.timeline { display: grid; gap: 10px; }
+.timeline-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-strong); }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.mini-chart { height: 42px; border-radius: 10px; background: linear-gradient(90deg, rgba(63,131,248,0.18), rgba(16,185,129,0.2)); border: 1px dashed var(--border); }
 
 @media (max-width: 640px) {
   .actions { flex-direction: column; align-items: stretch; }

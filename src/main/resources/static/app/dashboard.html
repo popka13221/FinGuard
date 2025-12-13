@@ -11,57 +11,105 @@
   <link rel="stylesheet" href="/app/styles.css">
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style="height:48px;">
-          <h1>Smart Wallet</h1>
+  <div class="container">
+    <header class="nav">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <div>
+          <div class="muted" style="font-size:12px;">Smart Wallet</div>
+          <strong>Личный кабинет</strong>
         </div>
-        <div class="muted" id="subtitle">Ваш финансовый дашборд</div>
       </div>
-      <div class="toolbar">
-        <div class="pill" id="pill">Dashboard</div>
+      <div class="actions">
+        <div class="chip">Базовая валюта: <span id="baseCurrency">USD</span></div>
       </div>
     </header>
 
-    <div class="card card-row" style="margin-top:16px;">
-      <div>
-        <div class="muted">Вы вошли как</div>
-        <h3 id="appEmail">user@example.com</h3>
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card stat-card">
+        <div class="muted">Баланс</div>
+        <div class="stat-value">18 450.32 USD</div>
+        <div class="muted">Кредит: 1 250.12 USD</div>
       </div>
-      <div class="nav-app">
-        <button class="ghost" id="btn-health">/health</button>
-        <button class="ghost" id="btn-actuator">/actuator/health</button>
-        <a class="ghost" style="text-decoration:none; padding:12px 14px; display:inline-block;" href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
-        <button class="secondary" id="btn-logout">Выйти</button>
+      <div class="card stat-card">
+        <div class="muted">Доход / Расход (мес.)</div>
+        <div class="stat-value">1 850.00 USD</div>
+        <div class="muted">Доход: 4 200 · Расход: 2 350</div>
       </div>
+        <div class="card stat-card">
+          <div class="muted">Ставка сбережений</div>
+          <div class="stat-value">62%</div>
+          <div class="muted">Smart Wallet</div>
+        </div>
     </div>
 
-    <div class="grid" style="margin-top:12px;">
+    <div class="grid" style="margin-top:14px; grid-template-columns: 1fr 0.9fr; gap:14px;">
       <div class="stack">
         <div class="card">
-          <h3>Счета</h3>
-          <div class="panel-list">
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <h3 style="margin:0;">Ваши карты</h3>
+            <div class="pill-soft">Обновление вручную</div>
+          </div>
+          <div class="list" style="margin-top:10px;">
             <div class="list-item">
               <div>
-                <div class="muted">Заглушка для списка счетов</div>
-                <strong>Endpoint /api/accounts</strong>
+                <div style="font-weight:800;">Основной</div>
+                <small>Debit · ••12 45</small>
               </div>
-              <button class="ghost" disabled>В разработке</button>
+              <div class="amount-positive">18 450.32 USD</div>
+            </div>
+            <div class="list-item">
+              <div>
+                <div style="font-weight:800;">Travel</div>
+                <small>Debit · ••55 30</small>
+              </div>
+              <div class="amount-positive">4 200.75 USD</div>
+            </div>
+            <div class="list-item">
+              <div>
+                <div style="font-weight:800;">Credit Plus</div>
+                <small>Credit · ••88 10</small>
+              </div>
+              <div class="amount-negative">-1 250.12 USD</div>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <h3>Транзакции</h3>
-          <div class="panel-list">
-            <div class="list-item">
-              <div>
-                <div class="muted">Здесь будет список транзакций и фильтры после подключения API</div>
-                <strong>Endpoint /api/transactions</strong>
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <h3 style="margin:0;">Статьи расходов</h3>
+            <div class="pill-soft">Период: месяц</div>
+          </div>
+          <div class="list" style="margin-top:10px;">
+            <div class="progress-wrap">
+              <div class="row" style="justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight:700;">Еда и кафе</div>
+                  <small>320 из 600</small>
+                </div>
+                <div class="amount-positive">53%</div>
               </div>
-              <button class="ghost" disabled>В разработке</button>
+              <div class="progress-bar"><div class="progress-fill" style="width:53%;"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="row" style="justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight:700;">Транспорт</div>
+                  <small>90 из 200</small>
+                </div>
+                <div class="amount-positive">45%</div>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:45%;"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="row" style="justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight:700;">Подписки</div>
+                  <small>45 из 80</small>
+                </div>
+                <div class="amount-positive">56%</div>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:56%;"></div></div>
             </div>
           </div>
         </div>
@@ -69,23 +117,86 @@
 
       <div class="stack">
         <div class="card">
-          <h3>Статус и токен</h3>
-          <div class="row" style="align-items:center; margin-bottom:8px;">
-            <div id="healthStatusApp" class="status-pill status-bad" role="status" aria-live="polite">Health не проверен</div>
-            <button class="ghost" id="btn-health-inline">/health</button>
-            <button class="ghost" id="btn-actuator-inline">/actuator/health</button>
-          </div>
-          <div class="section-title">JWT</div>
-          <div class="token-box" id="tokenBoxApp">Токен в httpOnly cookie</div>
-          <div class="buttons" style="margin-top:10px;">
-            <button class="ghost" id="btn-clear-token">Сбросить токен</button>
-            <a class="ghost" style="text-decoration:none; padding:12px 14px; display:inline-block;" href="/swagger-ui/index.html" target="_blank">Swagger UI</a>
+          <h3 style="margin-top:0;">Цели</h3>
+          <div class="list" style="margin-top:10px;">
+            <div class="progress-wrap">
+              <div class="row" style="justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight:700;">Фонд 3 месяцев</div>
+                  <small>Цель: 3 000</small>
+                </div>
+                <div class="chip">62%</div>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:62%;"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="row" style="justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight:700;">Путешествие</div>
+                  <small>Цель: 2 500</small>
+                </div>
+                <div class="chip">35%</div>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:35%;"></div></div>
+            </div>
           </div>
         </div>
 
         <div class="card">
-          <h3>Логи API</h3>
-          <pre id="outputApp">Готово к запросам...</pre>
+          <h3 style="margin-top:0;">Ближайшие платежи</h3>
+          <div class="list" style="margin-top:10px;">
+            <div class="list-item">
+              <div>
+                <div style="font-weight:700;">Аренда</div>
+                <small>Срок: 15 янв</small>
+              </div>
+              <div class="amount-negative">-700 USD</div>
+            </div>
+            <div class="list-item">
+              <div>
+                <div style="font-weight:700;">Spotify</div>
+                <small>Срок: 19 янв</small>
+              </div>
+              <div class="amount-negative">-4.99 USD</div>
+            </div>
+            <div class="list-item">
+              <div>
+                <div style="font-weight:700;">Мобильная связь</div>
+                <small>Срок: 22 янв</small>
+              </div>
+              <div class="amount-negative">-15 USD</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Активность</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-weight:700;">Создан бюджет «Еда и кафе»</div>
+                <small class="muted">Бюджеты</small>
+              </div>
+              <div class="muted">2 мин назад</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-weight:700;">Подключён счёт «Travel»</div>
+                <small class="muted">Счета</small>
+              </div>
+              <div class="muted">1 час назад</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-weight:700;">Оплачен Netflix</div>
+                <small class="muted">Подписки</small>
+              </div>
+              <div class="amount-negative">-10.99 USD</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
