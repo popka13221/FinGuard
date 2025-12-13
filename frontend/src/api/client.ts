@@ -19,34 +19,45 @@ export const ApiClient = {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const method = (options.method || 'GET').toUpperCase();
     const needsCsrf = !['GET', 'HEAD', 'OPTIONS'].includes(method);
-    let csrf = ApiClient.readCookie('XSRF-TOKEN');
-    if (needsCsrf && !csrf) {
-      try {
-        const resp = await fetch(ApiClient.baseUrl() + '/api/auth/csrf', { credentials: 'include' });
-        if (resp.ok) {
-          const data = await resp.json().catch(() => ({} as any));
-          csrf = (data as any).token || ApiClient.readCookie('XSRF-TOKEN');
-        }
-      } catch {
-        csrf = ApiClient.readCookie('XSRF-TOKEN');
-      }
-    }
-    if (csrf) {
-      headers['X-XSRF-TOKEN'] = csrf;
-    }
 
-    const resp = await fetch(ApiClient.baseUrl() + path, {
-      credentials: 'include',
-      headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
-      ...options,
-    });
-    const text = await resp.text();
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      json = text;
+    const fetchWithCsrf = async () => {
+      let csrf = ApiClient.readCookie('XSRF-TOKEN');
+      if (needsCsrf && !csrf) {
+        try {
+          const resp = await fetch(ApiClient.baseUrl() + '/api/auth/csrf', { credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json().catch(() => ({} as any));
+            csrf = (data as any).token || ApiClient.readCookie('XSRF-TOKEN');
+          }
+        } catch {
+          csrf = ApiClient.readCookie('XSRF-TOKEN');
+        }
+      }
+      const hdrs = { ...headers, ...(options.headers as Record<string, string> | undefined) };
+      if (csrf) {
+        hdrs['X-XSRF-TOKEN'] = csrf;
+      }
+      const resp = await fetch(ApiClient.baseUrl() + path, {
+        credentials: 'include',
+        headers: hdrs,
+        ...options,
+      });
+      const text = await resp.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = text;
+      }
+      return { resp, json };
+    };
+
+    const first = await fetchWithCsrf();
+    if (needsCsrf && first.resp.status === 403) {
+      await fetch(ApiClient.baseUrl() + '/api/auth/csrf', { credentials: 'include' });
+      const retry = await fetchWithCsrf();
+      return { ok: retry.resp.ok, status: retry.resp.status, data: retry.json };
     }
-    return { ok: resp.ok, status: resp.status, data: json };
+    return { ok: first.resp.ok, status: first.resp.status, data: first.json };
   },
 };

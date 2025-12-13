@@ -36,25 +36,34 @@ const Api = (() => {
     const headers = { 'Content-Type': 'application/json' };
     const upper = (method || 'GET').toUpperCase();
     const needsCsrf = upper !== 'GET' && upper !== 'HEAD' && upper !== 'OPTIONS';
-    let csrfToken = readCookie('XSRF-TOKEN');
-    if (needsCsrf && !csrfToken) {
-      csrfToken = await ensureCsrfToken();
-    }
-    if (csrfToken) {
-      headers['X-XSRF-TOKEN'] = csrfToken;
+    async function doFetch() {
+      let csrfToken = readCookie('XSRF-TOKEN');
+      if (needsCsrf && !csrfToken) {
+        csrfToken = await ensureCsrfToken();
+      }
+      const hdrs = { ...headers };
+      if (csrfToken) {
+        hdrs['X-XSRF-TOKEN'] = csrfToken;
+      }
+      const resp = await fetch(path, {
+        method,
+        headers: hdrs,
+        credentials: 'include',
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const text = await resp.text();
+      let json;
+      try { json = JSON.parse(text); } catch (e) { json = text; }
+      return { resp, json };
     }
 
-    const resp = await fetch(path, {
-      method,
-      headers,
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined
-    });
-
-    const text = await resp.text();
-    let json;
-    try { json = JSON.parse(text); } catch (e) { json = text; }
-    return { ok: resp.ok, status: resp.status, data: json };
+    const first = await doFetch();
+    if (needsCsrf && first.resp.status === 403) {
+      await ensureCsrfToken();
+      const retry = await doFetch();
+      return { ok: retry.resp.ok, status: retry.resp.status, data: retry.json };
+    }
+    return { ok: first.resp.ok, status: first.resp.status, data: first.json };
   }
 
   return { call, clearToken, getEmail, setEmail };

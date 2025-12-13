@@ -37,7 +37,16 @@ public class AppAccessDeniedHandler implements AccessDeniedHandler, Authenticati
     }
 
     private boolean isApi(HttpServletRequest request) {
+        if (request == null) {
+            return false;
+        }
         String uri = request.getRequestURI();
-        return uri != null && uri.startsWith("/api/");
+        String path = request.getServletPath();
+        Object original = request.getAttribute("jakarta.servlet.error.request_uri");
+        Object legacyOriginal = request.getAttribute("javax.servlet.error.request_uri");
+        String orig = original != null ? original.toString() : legacyOriginal != null ? legacyOriginal.toString() : "";
+        return (uri != null && uri.contains("/api/"))
+                || (path != null && path.contains("/api/"))
+                || (orig != null && orig.contains("/api/"));
     }
 }
