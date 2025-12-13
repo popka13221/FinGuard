@@ -141,28 +141,33 @@
     }
   }
 
-  function switchForm(form) {
-    const loginForm = document.querySelector(selectors.loginForm);
-    const registerForm = document.querySelector(selectors.registerForm);
-    const tabLogin = document.querySelector(selectors.tabLogin);
-    const tabRegister = document.querySelector(selectors.tabRegister);
-    if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
-    // сохраняем состояние OTP при возврате на логин, скрываем только визуально при переходе на регистрацию
-    if (form === 'register') {
-      const otpSection = document.querySelector(selectors.otpSection);
-      if (otpSection) otpSection.style.display = 'none';
-      const loginBtn = document.querySelector(selectors.loginButton);
-      if (loginBtn) loginBtn.style.display = 'inline-block';
-    } else if (form === 'login' && otpPending) {
-      showOtpSection();
-    } else {
-      hideOtpSection();
-    }
-    clearFieldErrors();
-    const remaining = remainingLoginCooldownSeconds();
-    if (remaining > 0) {
-      const formatter = formatCooldownMessage(loginCooldownCode);
-      showError(formatter(remaining));
+function switchForm(form) {
+  const loginForm = document.querySelector(selectors.loginForm);
+  const registerForm = document.querySelector(selectors.registerForm);
+  const tabLogin = document.querySelector(selectors.tabLogin);
+  const tabRegister = document.querySelector(selectors.tabRegister);
+  if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
+  // сохраняем состояние OTP при возврате на логин, скрываем только визуально при переходе на регистрацию
+  if (form === 'register') {
+    const otpSection = document.querySelector(selectors.otpSection);
+    if (otpSection) otpSection.style.display = 'none';
+    const loginBtn = document.querySelector(selectors.loginButton);
+    if (loginBtn) loginBtn.style.display = 'inline-block';
+  } else if (form === 'login' && otpPending) {
+    showOtpSection();
+  } else {
+    hideOtpSection();
+  }
+  if (form === 'login') {
+    // не показываем блок верификации на вкладке входа
+    const verifySection = document.querySelector(selectors.verifySection);
+    if (verifySection) verifySection.style.display = 'none';
+  }
+  clearFieldErrors();
+  const remaining = remainingLoginCooldownSeconds();
+  if (remaining > 0) {
+    const formatter = formatCooldownMessage(loginCooldownCode);
+    showError(formatter(remaining));
     } else {
       showError('');
     }
@@ -262,6 +267,8 @@
         verifyPending = true;
         verifyEmail = email;
         verifyPassword = password;
+        verifyCodeValue = '';
+        saveVerifyState();
         showVerifySection('Email не подтвержден. Введите код из письма.');
         showVerifyStatus('Мы отправили код на указанный email.', false);
         Api.call('/api/auth/verify/request', 'POST', { email }, false);
@@ -352,11 +359,15 @@
   let loginCooldownCode = '';
   let loginCooldownTimer = null;
   let otpCooldownTimer = null;
-  let verifyPending = false;
-  let verifyEmail = '';
-  let verifyPassword = '';
-  let verifyCooldownUntil = 0;
-  let verifyCooldownTimer = null;
+let verifyPending = false;
+let verifyEmail = '';
+let verifyPassword = '';
+let verifyCooldownUntil = 0;
+let verifyCooldownTimer = null;
+let verifyCodeValue = '';
+let verifyFullName = '';
+let verifyBaseCurrency = '';
+const verifyStateKey = 'verify_state';
 
   function loadOtpState() {
     try {
@@ -375,20 +386,55 @@
     }
   }
 
-  function saveOtpState() {
-    localStorage.setItem('otp_state', JSON.stringify({
-      pending: otpPending,
-      email: otpEmail,
-      cooldownUntil: otpCooldownUntil,
-      codeValue: otpCodeValue
-    }));
-  }
+function saveOtpState() {
+  localStorage.setItem('otp_state', JSON.stringify({
+    pending: otpPending,
+    email: otpEmail,
+    cooldownUntil: otpCooldownUntil,
+    codeValue: otpCodeValue
+  }));
+}
 
-  function loadLoginCooldown() {
-    const raw = localStorage.getItem('login_cooldown_until') || '0';
-    loginCooldownUntil = Number(raw) || 0;
-    loginCooldownCode = localStorage.getItem('login_cooldown_code') || '';
+function loadVerifyState() {
+  try {
+    const raw = localStorage.getItem(verifyStateKey) || '';
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    verifyPending = Boolean(parsed.pending);
+    verifyEmail = parsed.email || '';
+    verifyPassword = parsed.password || '';
+    verifyCooldownUntil = parsed.cooldownUntil || 0;
+    verifyCodeValue = parsed.codeValue || '';
+    verifyFullName = parsed.fullName || '';
+    verifyBaseCurrency = parsed.baseCurrency || '';
+  } catch (e) {
+    verifyPending = false;
+    verifyEmail = '';
+    verifyPassword = '';
+    verifyCooldownUntil = 0;
+    verifyCodeValue = '';
+    verifyFullName = '';
+    verifyBaseCurrency = '';
   }
+}
+
+function saveVerifyState() {
+  localStorage.setItem(verifyStateKey, JSON.stringify({
+    pending: verifyPending,
+    email: verifyEmail,
+    password: verifyPassword,
+    cooldownUntil: verifyCooldownUntil,
+    codeValue: verifyCodeValue,
+    fullName: verifyFullName,
+    baseCurrency: verifyBaseCurrency
+  }));
+}
+
+function loadLoginCooldown() {
+  const raw = localStorage.getItem('login_cooldown_until') || '0';
+  loginCooldownUntil = Number(raw) || 0;
+  loginCooldownCode = localStorage.getItem('login_cooldown_code') || '';
+}
 
   function saveLoginCooldown(until, code) {
     loginCooldownUntil = until;
@@ -423,13 +469,12 @@
 
   function remainingOtpCooldownSeconds() {
     const now = Date.now();
+    if (!otpPending) {
+      return 0;
+    }
     if (otpCooldownUntil <= now) {
-      if (otpCooldownUntil !== 0) {
-        otpCooldownUntil = 0;
-        saveOtpState();
-      } else {
-        otpCooldownUntil = 0;
-      }
+      otpCooldownUntil = 0;
+      saveOtpState();
       return 0;
     }
     return Math.max(1, Math.ceil((otpCooldownUntil - now) / 1000));
@@ -468,31 +513,44 @@
     }
   }
 
-  function showVerifySection(message) {
-    const section = document.querySelector(selectors.verifySection);
-    const hint = document.querySelector(selectors.verifyHint);
-    const error = document.querySelector(selectors.verifyError);
-    const status = document.querySelector(selectors.verifyStatus);
-    const registerBtn = document.querySelector(selectors.registerButton);
-    if (section) section.style.display = 'grid';
-    if (hint && message) hint.textContent = message;
-    if (error) { error.style.display = 'none'; error.textContent = ''; }
-    if (status) { status.style.display = 'none'; status.textContent = ''; status.classList.remove('success'); }
-    if (registerBtn) registerBtn.style.display = 'none';
-    startVerifyCooldownTimer();
-  }
+function showVerifySection(message) {
+  const section = document.querySelector(selectors.verifySection);
+  const hint = document.querySelector(selectors.verifyHint);
+  const error = document.querySelector(selectors.verifyError);
+  const status = document.querySelector(selectors.verifyStatus);
+  const input = document.querySelector(selectors.verifyCode);
+  const registerBtn = document.querySelector(selectors.registerButton);
+  const emailInput = document.querySelector(selectors.regEmail);
+  const pwInput = document.querySelector(selectors.regPassword);
+  const nameInput = document.querySelector(selectors.regFullName);
+  const curSelect = document.querySelector(selectors.regCurrency);
+  if (section) section.style.display = 'grid';
+  if (hint && message) hint.textContent = message;
+  if (error) { error.style.display = 'none'; error.textContent = ''; }
+  if (status) { status.style.display = 'none'; status.textContent = ''; status.classList.remove('success'); }
+  if (input && verifyCodeValue) input.value = verifyCodeValue;
+  if (emailInput && verifyEmail) emailInput.value = verifyEmail;
+  if (pwInput && verifyPassword) pwInput.value = verifyPassword;
+  if (nameInput && verifyFullName) nameInput.value = verifyFullName;
+  if (curSelect && verifyBaseCurrency) curSelect.value = verifyBaseCurrency;
+  if (registerBtn) registerBtn.style.display = 'none';
+  startVerifyCooldownTimer();
+  saveVerifyState();
+}
 
-  function hideVerifySection() {
-    const section = document.querySelector(selectors.verifySection);
-    if (section) section.style.display = 'none';
-    verifyPending = false;
-    verifyEmail = '';
-    verifyPassword = '';
-    verifyCooldownUntil = 0;
-    updateVerifyResendButton();
-    const registerBtn = document.querySelector(selectors.registerButton);
-    if (registerBtn) registerBtn.style.display = '';
-  }
+function hideVerifySection() {
+  const section = document.querySelector(selectors.verifySection);
+  if (section) section.style.display = 'none';
+  verifyPending = false;
+  verifyEmail = '';
+  verifyPassword = '';
+  verifyCooldownUntil = 0;
+  verifyCodeValue = '';
+  updateVerifyResendButton();
+  const registerBtn = document.querySelector(selectors.registerButton);
+  if (registerBtn) registerBtn.style.display = '';
+  saveVerifyState();
+}
 
   function showVerifyError(msg) {
     const el = document.querySelector(selectors.verifyError);
@@ -670,6 +728,8 @@
     }
     const codeInput = document.querySelector(selectors.verifyCode);
     const code = (codeInput && codeInput.value || '').trim();
+    verifyCodeValue = code;
+    saveVerifyState();
     if (!code) {
       showVerifyError('Введите код из письма');
       return;
@@ -683,6 +743,7 @@
       showVerifyStatus('Email подтвержден. Входим...', true);
       // Если бек отдал токены и cookies, просто идем в дашборд
       if (res.data && res.data.token) {
+        hideVerifySection();
         window.location.href = '/app/dashboard.html';
         return;
       }
@@ -725,6 +786,7 @@
       const retry = res.data && res.data.retryAfterSeconds ? Number(res.data.retryAfterSeconds) : 60;
       verifyCooldownUntil = Date.now() + retry * 1000;
       startVerifyCooldownTimer();
+      saveVerifyState();
     } else {
       showVerifyStatus('Не удалось отправить код. Попробуйте позже.', false);
     }
@@ -834,6 +896,10 @@
       verifyPending = true;
       verifyEmail = email;
       verifyPassword = password;
+      verifyFullName = validation.payload.fullName || '';
+      verifyBaseCurrency = validation.payload.baseCurrency || '';
+      verifyCodeValue = '';
+      saveVerifyState();
       const hint = (result.data && result.data.message) || 'Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.';
       showVerifySection(hint);
     } else {
@@ -880,6 +946,11 @@
     if (verifyBtn) verifyBtn.addEventListener('click', submitVerifyCode);
     const verifyResendBtn = document.querySelector(selectors.verifyResendButton);
     if (verifyResendBtn) verifyResendBtn.addEventListener('click', resendVerifyCode);
+    const verifyCodeInput = document.querySelector(selectors.verifyCode);
+    if (verifyCodeInput) verifyCodeInput.addEventListener('input', (e) => {
+      verifyCodeValue = e.target.value || '';
+      saveVerifyState();
+    });
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
@@ -894,26 +965,22 @@
   document.addEventListener('DOMContentLoaded', () => {
     Theme.init(selectors.themeToggle);
     loadOtpState();
+    loadVerifyState();
     loadLoginCooldown();
-    const now = Date.now();
-    if (otpPending && otpEmail && now < otpCooldownUntil) {
+    switchForm(verifyPending ? 'register' : 'login');
+    if (otpPending && otpEmail) {
       showOtpSection();
     } else {
       hideOtpSection();
     }
-    if (loginCooldownCode !== '429002' && otpPending) {
-      hideOtpSection();
-      otpPending = false;
-      otpEmail = '';
-      otpCooldownUntil = 0;
-      otpCodeValue = '';
-      saveOtpState();
-    }
-    if (!otpPending && loginCooldownCode === '429002') {
-      otpPending = true;
-      otpEmail = value(selectors.loginEmail).trim().toLowerCase() || otpEmail;
-      showOtpSection();
-      saveOtpState();
+    if (verifyPending && verifyEmail) {
+      const msg = 'Введите код из письма, чтобы завершить регистрацию.';
+      showVerifySection(msg);
+      const input = document.querySelector(selectors.verifyCode);
+      if (input && verifyCodeValue) input.value = verifyCodeValue;
+      switchForm('register');
+    } else {
+      hideVerifySection();
     }
     clearPasswords();
     bindAuthActions();
@@ -927,7 +994,6 @@
     }
     startOtpCooldownTimer();
     startLoginCooldownTimer();
-    switchForm('login');
 
     const params = new URLSearchParams(window.location.search);
     const verified = params.get('verified');

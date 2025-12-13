@@ -10,6 +10,13 @@ import { LookupApi, type Currency } from '../api/lookup';
 import '../theme.css';
 
 type Mode = 'login' | 'register';
+type OtpPersistedState = {
+  mode: Mode;
+  email: string;
+  otpStep: boolean;
+  otpExpiresIn: number;
+  otpCode: string;
+};
 
 const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<Mode>('login');
@@ -22,6 +29,7 @@ const AuthPage: React.FC = () => {
   const [otpCode, setOtpCode] = useState<string>('');
   const [otpExpiresIn, setOtpExpiresIn] = useState<number>(0);
   const [otpError, setOtpError] = useState<string>('');
+  const otpStateKey = 'fg_auth_otp_state';
 
   const [values, setValues] = useState({
     email: '',
@@ -29,6 +37,41 @@ const AuthPage: React.FC = () => {
     fullName: '',
     baseCurrency: '',
   });
+
+  // Restore OTP step after page reload
+  useEffect(() => {
+    const raw = sessionStorage.getItem(otpStateKey);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as OtpPersistedState;
+      if (parsed.mode) setMode(parsed.mode);
+      if (parsed.email) setValues((prev) => ({ ...prev, email: parsed.email }));
+      setOtpStep(Boolean(parsed.otpStep));
+      setOtpExpiresIn(parsed.otpExpiresIn || 0);
+      setOtpCode(parsed.otpCode || '');
+    } catch {
+      sessionStorage.removeItem(otpStateKey);
+    }
+  }, []);
+
+  // Persist OTP state for reload
+  useEffect(() => {
+    const state: OtpPersistedState = {
+      mode,
+      email: values.email,
+      otpStep,
+      otpExpiresIn,
+      otpCode,
+    };
+    sessionStorage.setItem(otpStateKey, JSON.stringify(state));
+  }, [mode, values.email, otpStep, otpExpiresIn, otpCode]);
+
+  const clearOtpState = () => {
+    setOtpStep(false);
+    setOtpExpiresIn(0);
+    setOtpCode('');
+    sessionStorage.removeItem(otpStateKey);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -61,10 +104,8 @@ const AuthPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setOtpStep(false);
-    setOtpCode('');
+    clearOtpState();
     setOtpError('');
-    setOtpExpiresIn(0);
   }, [mode, values.email]);
 
   const onChange = (field: string, val: string) => {
@@ -124,6 +165,7 @@ const AuthPage: React.FC = () => {
     setIsSubmitting(false);
     if (res.ok && res.data && (res.data as any).token) {
       ApiClient.setEmail(values.email.trim().toLowerCase());
+      clearOtpState();
       window.location.href = '/dashboard';
     } else {
       setOtpError('Код неверный или истек. Попробуйте снова.');

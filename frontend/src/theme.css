@@ -137,6 +137,20 @@ button:disabled { opacity: 0.65; cursor: not-allowed; }
 
 .token-box { background: var(--panel-strong); border: 1px dashed var(--border); padding: 12px; border-radius: 12px; font-size: 13px; word-break: break-all; }
 
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.stat-card { display: grid; gap: 6px; }
+.stat-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.pill-soft { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: rgba(79,139,255,0.1); color: var(--accent); font-weight: 700; border: 1px solid rgba(79,139,255,0.18); }
+.list { display: grid; gap: 10px; }
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--panel-strong); border: 1px solid var(--border); }
+.list-item small { color: var(--muted); }
+.amount-positive { color: var(--accent-2); font-weight: 700; }
+.amount-negative { color: #f97316; font-weight: 700; }
+.progress-wrap { display: grid; gap: 6px; }
+.progress-bar { height: 8px; border-radius: 999px; background: var(--panel-strong); border: 1px solid var(--border); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); }
+.chip { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--muted); font-weight: 700; }
+
 @media (max-width: 640px) {
   .actions { flex-direction: column; align-items: stretch; }
   button { width: 100%; justify-content: center; }
