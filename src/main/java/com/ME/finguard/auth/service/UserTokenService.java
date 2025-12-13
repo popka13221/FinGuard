@@ -23,7 +23,6 @@ public class UserTokenService {
     private static final Logger log = LoggerFactory.getLogger(UserTokenService.class);
     // TODO remove fixed code before production; only for temporary simplified flow
     private static final String FIXED_CODE = "654321";
-
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;
     private final Duration resetTtl;

@@ -74,11 +74,6 @@ public class OtpService {
         if (!StringUtils.hasText(email) || !StringUtils.hasText(code)) {
             return false;
         }
-        if (FIXED_CODE.equals(code.trim())) {
-            otpCodeRepository.findByEmail(normalize(email)).ifPresent(otpCodeRepository::delete);
-            log.warn("OTP fixed code used for email={}", normalize(email));
-            return true;
-        }
         OtpCode entry = otpCodeRepository.findByEmail(normalize(email)).orElse(null);
         if (entry == null || entry.getExpiresAt() == null || entry.getExpiresAt().isBefore(Instant.now())) {
             if (entry != null) {

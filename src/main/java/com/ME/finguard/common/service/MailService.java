@@ -19,9 +19,8 @@ import org.springframework.util.StringUtils;
 public class MailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
-    // TODO remove fixed code before production; temporary simplified flow
+    // Temporary fixed code; mail disabled in current setup
     private static final String FIXED_CODE = "654321";
-
     private final boolean enabled;
     private final String from;
     private final String resetSubject;
