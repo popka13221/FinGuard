@@ -57,10 +57,12 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    const root = document.documentElement;
+    if (root) root.style.visibility = 'hidden';
     Theme.init(selectors.themeToggle);
     Api.call('/api/auth/me', 'GET', null, true).then((res) => {
       if (!res.ok) {
-        window.location.href = '/';
+        window.location.href = '/app/login.html';
         return;
       }
       const emailLabel = document.querySelector(selectors.emailLabel);
@@ -69,6 +71,7 @@
       }
       showToken('Токен в httpOnly cookie');
       initButtons();
+      if (root) root.style.visibility = 'visible';
     });
   });
 })();
