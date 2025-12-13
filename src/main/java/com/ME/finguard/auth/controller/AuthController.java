@@ -60,6 +60,8 @@ public class AuthController {
     private final UserTokenService userTokenService;
     private final int forgotLimit;
     private final long forgotWindowMs;
+    private final int verifyLimit;
+    private final long verifyWindowMs;
 
     public AuthController(AuthService authService,
                           JwtTokenProvider jwtTokenProvider,
@@ -69,7 +71,9 @@ public class AuthController {
                           @Value("${app.security.jwt.cookie-secure:true}") boolean cookieSecure,
                           @Value("${app.security.jwt.cookie-samesite:Strict}") String cookieSameSite,
                           @Value("${app.security.rate-limit.forgot.limit:5}") int forgotLimit,
-                          @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs) {
+                          @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs,
+                          @Value("${app.security.rate-limit.verify.limit:3}") int verifyLimit,
+                          @Value("${app.security.rate-limit.verify.window-ms:300000}") long verifyWindowMs) {
         this.authService = authService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.clientIpResolver = clientIpResolver;
@@ -79,6 +83,8 @@ public class AuthController {
         this.userTokenService = userTokenService;
         this.forgotLimit = forgotLimit;
         this.forgotWindowMs = forgotWindowMs;
+        this.verifyLimit = verifyLimit;
+        this.verifyWindowMs = verifyWindowMs;
     }
 
     @PostMapping("/register")
@@ -140,7 +146,18 @@ public class AuthController {
     @PostMapping("/verify/request")
     @Operation(summary = "Запрос кода верификации email", description = "Отправляет письмо с кодом для подтверждения адреса")
     @ApiResponse(responseCode = "200", description = "Письмо отправлено")
-    public ResponseEntity<Void> requestVerification(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<?> requestVerification(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
+        String email = request.email().trim().toLowerCase();
+        String ip = clientIpResolver.resolve(httpRequest);
+        RateLimiterService.Result ipRes = rateLimiterService.check("verify:ip:" + ip, verifyLimit, verifyWindowMs);
+        RateLimiterService.Result emailRes = rateLimiterService.check("verify:email:" + email, verifyLimit, verifyWindowMs);
+        if (!ipRes.allowed() || !emailRes.allowed()) {
+            long retryMs = Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs());
+            long retrySec = (long) Math.ceil(retryMs / 1000.0);
+            return ResponseEntity.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(retrySec, 1)))
+                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Слишком много запросов. Попробуйте позже.", Math.max(retrySec, 1)));
+        }
         authService.requestVerification(request);
         return ResponseEntity.ok().build();
     }
@@ -148,7 +165,18 @@ public class AuthController {
     @PostMapping("/verify")
     @Operation(summary = "Подтверждение email", description = "Проверяет код верификации, помечает email подтвержденным и выдает токены")
     @ApiResponse(responseCode = "200", description = "Email подтвержден")
-    public ResponseEntity<AuthResponse> verify(@Valid @RequestBody VerifyRequest request) {
+    public ResponseEntity<?> verify(@Valid @RequestBody VerifyRequest request, HttpServletRequest httpRequest) {
+        String email = request.email().trim().toLowerCase();
+        String ip = clientIpResolver.resolve(httpRequest);
+        RateLimiterService.Result ipRes = rateLimiterService.check("verify:ip:" + ip, verifyLimit, verifyWindowMs);
+        RateLimiterService.Result emailRes = rateLimiterService.check("verify:email:" + email, verifyLimit, verifyWindowMs);
+        if (!ipRes.allowed() || !emailRes.allowed()) {
+            long retryMs = Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs());
+            long retrySec = (long) Math.ceil(retryMs / 1000.0);
+            return ResponseEntity.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(retrySec, 1)))
+                    .body(new ApiError(ErrorCodes.RATE_LIMIT, "Слишком много попыток. Попробуйте позже.", Math.max(retrySec, 1)));
+        }
         AuthTokens tokens = authService.verify(request);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
