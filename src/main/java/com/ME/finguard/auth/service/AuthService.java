@@ -11,6 +11,7 @@ import com.yourname.finguard.auth.dto.UserProfileResponse;
 import com.yourname.finguard.auth.dto.VerifyRequest;
 import com.yourname.finguard.auth.dto.OtpVerifyRequest;
 import com.yourname.finguard.auth.model.User;
+import com.yourname.finguard.auth.model.PendingRegistration;
 import com.yourname.finguard.auth.model.PasswordResetSession;
 import com.yourname.finguard.auth.model.UserToken;
 import com.yourname.finguard.auth.model.UserTokenType;
@@ -18,6 +19,7 @@ import com.yourname.finguard.auth.repository.UserRepository;
 import com.yourname.finguard.common.constants.ErrorCodes;
 import com.yourname.finguard.common.model.Role;
 import com.yourname.finguard.common.util.PasswordValidator;
+import com.yourname.finguard.auth.service.PendingRegistrationService;
 import com.yourname.finguard.common.service.CurrencyService;
 import com.yourname.finguard.common.service.MailService;
 import com.yourname.finguard.common.service.PwnedPasswordChecker;
@@ -60,6 +62,7 @@ public class AuthService {
     private final UserTokenService userTokenService;
     private final UserSessionService userSessionService;
     private final MailService mailService;
+    private final PendingRegistrationService pendingRegistrationService;
     private final PasswordResetSessionService passwordResetSessionService;
     private final RateLimiterService rateLimiterService;
     private final OtpService otpService;
@@ -90,6 +93,7 @@ public class AuthService {
                        TokenBlacklistService tokenBlacklistService,
                        UserTokenService userTokenService,
                        UserSessionService userSessionService,
+                       PendingRegistrationService pendingRegistrationService,
                        PasswordResetSessionService passwordResetSessionService,
                        RateLimiterService rateLimiterService,
                        OtpService otpService,
@@ -121,6 +125,7 @@ public class AuthService {
         this.userTokenService = userTokenService;
         this.userSessionService = userSessionService;
         this.mailService = mailService;
+        this.pendingRegistrationService = pendingRegistrationService;
         this.passwordResetSessionService = passwordResetSessionService;
         this.rateLimiterService = rateLimiterService;
         this.otpService = otpService;
@@ -165,21 +170,20 @@ public class AuthService {
         if (pwnedPasswordChecker.isPwned(request.password())) {
             throw new ApiException(ErrorCodes.AUTH_WEAK_PASSWORD, "Password is compromised. Choose another password.", HttpStatus.BAD_REQUEST);
         }
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setFullName(fullName);
-        user.setBaseCurrency(baseCurrency);
-        user.setRole(Role.USER);
-        user.setEmailVerified(false);
-        User saved = userRepository.save(user);
-        String verifyToken = userTokenService.issue(saved, UserTokenType.VERIFY);
-        mailService.sendVerifyEmail(saved.getEmail(), verifyToken, userTokenService.getVerifyTtl());
-        if (requireEmailVerified) {
-            return new RegistrationResult(null, true);
+        if (userRepository.existsByEmail(email)) {
+            throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
         }
-        AuthTokens tokens = issueTokens(saved);
-        return new RegistrationResult(tokens, false);
+        String verifyCode = userTokenService.generateVerifyCode();
+        PendingRegistrationService.IssuedToken pending = pendingRegistrationService.createOrUpdate(
+                email,
+                request.password(),
+                fullName,
+                baseCurrency,
+                Role.USER,
+                verifyCode
+        );
+        mailService.sendVerifyEmail(email, verifyCode, pendingRegistrationService.getVerifyTtl());
+        return new RegistrationResult(null, true);
     }
 
     public LoginOutcome login(LoginRequest request, String ip) {
@@ -334,13 +338,23 @@ public class AuthService {
     }
 
     public AuthTokens verify(VerifyRequest request) {
-        UserToken token = userTokenService.findValid(request.token(), UserTokenType.VERIFY)
+        String email = request.email().trim().toLowerCase();
+        PendingRegistration pending = pendingRegistrationService.findValid(email, request.token())
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
-        User user = token.getUser();
+        if (userRepository.existsByEmail(email)) {
+            pendingRegistrationService.delete(pending);
+            throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
+        }
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(pending.getPasswordHash());
+        user.setFullName(pending.getFullName());
+        user.setBaseCurrency(pending.getBaseCurrency());
+        user.setRole(pending.getRole() == null ? Role.USER : pending.getRole());
         user.setEmailVerified(true);
-        userRepository.save(user);
-        userTokenService.markUsed(token);
-        return issueTokens(user);
+        User saved = userRepository.save(user);
+        pendingRegistrationService.delete(pending);
+        return issueTokens(saved);
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {

@@ -87,7 +87,7 @@
     if (!validateEmail(emailVal) | !validateToken(tokenVal)) return;
     const btn = qs(selectors.btnVerify);
     if (btn) btn.disabled = true;
-    const res = await Api.call('/api/auth/verify', 'POST', { token: tokenVal }, false);
+    const res = await Api.call('/api/auth/verify', 'POST', { email: emailVal, token: tokenVal }, false);
     if (btn) btn.disabled = false;
     if (res.ok) {
       setStatus('Email подтвержден. Теперь можно войти.', true);

@@ -677,7 +677,7 @@
     showVerifyError('');
     const btn = document.querySelector(selectors.verifyButton);
     if (btn) btn.disabled = true;
-    const res = await Api.call('/api/auth/verify', 'POST', { token: code }, false);
+    const res = await Api.call('/api/auth/verify', 'POST', { email: verifyEmail, token: code }, false);
     if (btn) btn.disabled = false;
     if (res.ok) {
       showVerifyStatus('Email подтвержден. Входим...', true);

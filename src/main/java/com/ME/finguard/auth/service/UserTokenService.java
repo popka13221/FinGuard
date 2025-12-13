@@ -127,6 +127,10 @@ public class UserTokenService {
         return FIXED_CODE;
     }
 
+    public String generateVerifyCode() {
+        return generateToken(UserTokenType.VERIFY);
+    }
+
     private String hashToken(String value) {
         if (value == null || value.isBlank()) {
             return "";

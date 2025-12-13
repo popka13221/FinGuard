@@ -101,7 +101,7 @@ public class AuthController {
         return ResponseEntity.status(201)
                 .body(new RegistrationResponse(
                         result.verificationRequired(),
-                        "Мы отправили код 654321 на ваш email. Подтвердите адрес, чтобы закончить регистрацию. (TODO убрать фиксированный код)",
+                        "Мы отправили код на ваш email. Подтвердите адрес, чтобы закончить регистрацию.",
                         null
                 ));
     }
