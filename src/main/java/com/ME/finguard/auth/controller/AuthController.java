@@ -67,7 +67,7 @@ public class AuthController {
                           UserTokenService userTokenService,
                           ClientIpResolver clientIpResolver,
                           @Value("${app.security.jwt.cookie-secure:true}") boolean cookieSecure,
-                          @Value("${app.security.jwt.cookie-samesite:Lax}") String cookieSameSite,
+                          @Value("${app.security.jwt.cookie-samesite:Strict}") String cookieSameSite,
                           @Value("${app.security.rate-limit.forgot.limit:5}") int forgotLimit,
                           @Value("${app.security.rate-limit.forgot.window-ms:300000}") long forgotWindowMs) {
         this.authService = authService;

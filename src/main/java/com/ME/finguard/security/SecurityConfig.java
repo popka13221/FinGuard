@@ -47,7 +47,6 @@ public class SecurityConfig {
                             "/health",
                             "/actuator/health",
                             "/actuator/health/**",
-                            "/api/auth/**",
                             "/api/currencies",
                             "/app/**",
                             "/playground/**",

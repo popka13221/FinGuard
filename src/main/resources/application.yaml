@@ -55,7 +55,7 @@ app:
       audience: ${JWT_AUDIENCE:finguard-app}
       require-env-secret: ${JWT_REQUIRE_ENV_SECRET:true}
       cookie-secure: ${JWT_COOKIE_SECURE:false}
-      cookie-samesite: ${JWT_COOKIE_SAMESITE:Lax}
+      cookie-samesite: ${JWT_COOKIE_SAMESITE:Strict}
     otp:
       enabled: ${OTP_ENABLED:true}
       ttl-seconds: ${OTP_TTL_SECONDS:300}

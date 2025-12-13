@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthApi } from '../api/auth';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -35,8 +35,13 @@ const ResetPage: React.FC = () => {
   const [initialToken, setInitialToken] = useState('');
   const [attempts, setAttempts] = useState(0);
   const [confirmedFlag, setConfirmedFlag] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
+    // clear any legacy stored reset tokens if they exist
+    sessionStorage.removeItem('spa_reset_session');
+    sessionStorage.removeItem('spa_reset_session_expires');
+
     const t = searchParams.get('token');
     const email = searchParams.get('email');
     const confirmed = searchParams.get('confirmed');
@@ -51,6 +56,15 @@ const ResetPage: React.FC = () => {
       setConfirmedFlag(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const state = (location.state as { resetSessionToken?: string; expiresInSeconds?: number } | null) || null;
+    if (state?.resetSessionToken) {
+      setResetSessionToken(state.resetSessionToken);
+      setTimer(state.expiresInSeconds || 0);
+      setConfirmedFlag(true);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!resetSessionToken) return;
@@ -97,6 +111,7 @@ const ResetPage: React.FC = () => {
       setResetSessionToken(res.data.resetSessionToken);
       setTimer(res.data.expiresInSeconds || 0);
       setInfo('Код подтверждён. Введите новый пароль.');
+      setConfirmedFlag(true);
     } else {
       const code = res.data && (res.data as any).code;
       if (code === '100005') {

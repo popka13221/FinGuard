@@ -121,15 +121,8 @@ const ForgotPage: React.FC = () => {
       setAttempts(0);
       const resetSessionToken = (res.data as any).resetSessionToken;
       const expiresInSeconds = (res.data as any).expiresInSeconds;
-      if (resetSessionToken) {
-        sessionStorage.setItem('spa_reset_session', resetSessionToken);
-        if (expiresInSeconds) {
-          const expiresAt = Date.now() + expiresInSeconds * 1000;
-          sessionStorage.setItem('spa_reset_session_expires', String(expiresAt));
-        }
-      }
       const url = `/reset?confirmed=1${email ? `&email=${encodeURIComponent(email.trim())}` : ''}`;
-      navigate(url);
+      navigate(url, { state: { resetSessionToken, expiresInSeconds } });
       return;
     }
     const code = res.data && (res.data as any).code;

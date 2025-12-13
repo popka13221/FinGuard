@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Iterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -90,6 +91,7 @@ public class RateLimiterService {
             }
             evictExpired(now);
             evictIfNeeded();
+            pruneLocks();
             if (allowed.get()) {
                 return new Result(true, 0);
             }
@@ -117,6 +119,7 @@ public class RateLimiterService {
             });
         } else {
             rateLimitBucketRepository.deleteExpired(nowMs);
+            pruneLocks();
         }
     }
 
@@ -140,6 +143,24 @@ public class RateLimiterService {
                 if (toRemove-- <= 0) break;
                 rateLimitBucketRepository.deleteById(b.getBucketKey());
             }
+        }
+    }
+
+    private void pruneLocks() {
+        if (keyLocks == null) {
+            return;
+        }
+        int limit = Math.max(maxEntries * 2, maxEntries + 1000);
+        int size = keyLocks.size();
+        if (size <= limit) {
+            return;
+        }
+        int toRemove = size - maxEntries;
+        Iterator<String> it = keyLocks.keySet().iterator();
+        while (toRemove > 0 && it.hasNext()) {
+            String key = it.next();
+            keyLocks.remove(key);
+            toRemove--;
         }
     }
 
