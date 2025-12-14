@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class UserTokenService {
 
     private static final Logger log = LoggerFactory.getLogger(UserTokenService.class);
-    // TODO remove fixed code before production; only for temporary simplified flow
+    // демо-код по умолчанию, бэк оставлен с фиксированным значением
     private static final String FIXED_CODE = "654321";
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;

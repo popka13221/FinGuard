@@ -4,7 +4,6 @@ import com.yourname.finguard.security.model.OtpCode;
 import com.yourname.finguard.security.repository.OtpCodeRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;
 import org.slf4j.Logger;
@@ -17,9 +16,8 @@ import org.springframework.util.StringUtils;
 @Service
 public class OtpService {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger log = LoggerFactory.getLogger(OtpService.class);
-    // TODO remove fixed code before production; temporary simplified flow
+    // демо-код оставлен фиксированным
     private static final String FIXED_CODE = "654321";
 
     private final OtpCodeRepository otpCodeRepository;

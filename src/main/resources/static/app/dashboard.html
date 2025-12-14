@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Wallet | Dashboard</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/app/styles.css">
 </head>
 <body>
@@ -21,9 +18,15 @@
         </div>
       </div>
       <div class="actions">
-        <div class="chip">Базовая валюта: <span id="baseCurrency">USD</span></div>
+        <div class="chip">Базовая валюта: <span id="baseCurrency">—</span></div>
+        <div class="chip" id="userEmail">—</div>
+        <button type="button" class="ghost" id="btn-logout">Выйти</button>
       </div>
     </header>
+
+    <div class="callout" style="margin: 8px 0 6px;">
+      Демо-дашборд: данные ниже статичны, подключение реальных счетов и транзакций ещё в работе.
+    </div>
 
     <div class="grid-3" style="margin-top:16px;">
       <div class="card stat-card">

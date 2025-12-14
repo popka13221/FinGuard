@@ -267,7 +267,6 @@ function switchForm(form) {
         verifyPending = true;
         verifyEmail = email;
         verifyPassword = password;
-        verifyCodeValue = '';
         saveVerifyState();
         showVerifySection('Email не подтвержден. Введите код из письма.');
         showVerifyStatus('Мы отправили код на указанный email.', false);
@@ -354,7 +353,6 @@ function switchForm(form) {
   let otpPending = false;
   let otpEmail = '';
   let otpCooldownUntil = 0;
-  let otpCodeValue = '';
   let loginCooldownUntil = 0;
   let loginCooldownCode = '';
   let loginCooldownTimer = null;
@@ -364,7 +362,6 @@ let verifyEmail = '';
 let verifyPassword = '';
 let verifyCooldownUntil = 0;
 let verifyCooldownTimer = null;
-let verifyCodeValue = '';
 let verifyFullName = '';
 let verifyBaseCurrency = '';
 const verifyStateKey = 'verify_state';
@@ -377,12 +374,10 @@ const verifyStateKey = 'verify_state';
       otpPending = Boolean(parsed.pending);
       otpEmail = parsed.email || '';
       otpCooldownUntil = parsed.cooldownUntil || 0;
-      otpCodeValue = parsed.codeValue || '';
     } catch (e) {
       otpPending = false;
       otpEmail = '';
       otpCooldownUntil = 0;
-      otpCodeValue = '';
     }
   }
 
@@ -390,8 +385,7 @@ function saveOtpState() {
   localStorage.setItem('otp_state', JSON.stringify({
     pending: otpPending,
     email: otpEmail,
-    cooldownUntil: otpCooldownUntil,
-    codeValue: otpCodeValue
+    cooldownUntil: otpCooldownUntil
   }));
 }
 
@@ -404,7 +398,6 @@ function loadVerifyState() {
     verifyEmail = parsed.email || '';
     verifyPassword = parsed.password || '';
     verifyCooldownUntil = parsed.cooldownUntil || 0;
-    verifyCodeValue = parsed.codeValue || '';
     verifyFullName = parsed.fullName || '';
     verifyBaseCurrency = parsed.baseCurrency || '';
   } catch (e) {
@@ -412,7 +405,6 @@ function loadVerifyState() {
     verifyEmail = '';
     verifyPassword = '';
     verifyCooldownUntil = 0;
-    verifyCodeValue = '';
     verifyFullName = '';
     verifyBaseCurrency = '';
   }
@@ -424,7 +416,6 @@ function saveVerifyState() {
     email: verifyEmail,
     password: verifyPassword,
     cooldownUntil: verifyCooldownUntil,
-    codeValue: verifyCodeValue,
     fullName: verifyFullName,
     baseCurrency: verifyBaseCurrency
   }));
@@ -528,7 +519,6 @@ function showVerifySection(message) {
   if (hint && message) hint.textContent = message;
   if (error) { error.style.display = 'none'; error.textContent = ''; }
   if (status) { status.style.display = 'none'; status.textContent = ''; status.classList.remove('success'); }
-  if (input && verifyCodeValue) input.value = verifyCodeValue;
   if (emailInput && verifyEmail) emailInput.value = verifyEmail;
   if (pwInput && verifyPassword) pwInput.value = verifyPassword;
   if (nameInput && verifyFullName) nameInput.value = verifyFullName;
@@ -545,7 +535,6 @@ function hideVerifySection() {
   verifyEmail = '';
   verifyPassword = '';
   verifyCooldownUntil = 0;
-  verifyCodeValue = '';
   updateVerifyResendButton();
   const registerBtn = document.querySelector(selectors.registerButton);
   if (registerBtn) registerBtn.style.display = '';
@@ -658,7 +647,7 @@ function hideVerifySection() {
     if (otpSection) otpSection.style.display = 'grid';
     if (loginBtn) loginBtn.style.display = 'none';
     if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
-    if (otpInput) otpInput.value = otpCodeValue || '';
+    if (otpInput) otpInput.value = '';
     otpPending = true;
     saveOtpState();
     startOtpCooldownTimer();
@@ -675,7 +664,6 @@ function hideVerifySection() {
     if (loginBtn) loginBtn.style.display = 'inline-block';
     otpPending = false;
     otpEmail = '';
-    otpCodeValue = '';
     otpCooldownUntil = 0;
     saveOtpState();
     startOtpCooldownTimer();
@@ -686,8 +674,6 @@ function hideVerifySection() {
     const otpError = document.querySelector(selectors.otpError);
     if (!codeInput) return;
     const code = (codeInput.value || '').trim();
-    otpCodeValue = code;
-    saveOtpState();
     if (!code) {
       if (otpError) { otpError.textContent = 'Введите код из письма'; otpError.style.display = 'block'; }
       return;
@@ -728,8 +714,6 @@ function hideVerifySection() {
     }
     const codeInput = document.querySelector(selectors.verifyCode);
     const code = (codeInput && codeInput.value || '').trim();
-    verifyCodeValue = code;
-    saveVerifyState();
     if (!code) {
       showVerifyError('Введите код из письма');
       return;
@@ -830,7 +814,6 @@ function hideVerifySection() {
         otpPending = true;
         otpEmail = validation.payload.email;
         otpCooldownUntil = until;
-        otpCodeValue = otpCodeValue || '';
         saveOtpState();
         const otpError = document.querySelector(selectors.otpError);
         if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
@@ -843,7 +826,6 @@ function hideVerifySection() {
         otpPending = false;
         otpCooldownUntil = 0;
         otpEmail = '';
-        otpCodeValue = '';
         saveOtpState();
         hideOtpSection();
         const msg = result.data && result.data.message ? result.data.message : formatter(retry);
@@ -855,7 +837,6 @@ function hideVerifySection() {
     if (result.status === 202 && result.data && result.data.otpRequired) {
       otpPending = true;
       otpEmail = validation.payload.email;
-      otpCodeValue = '';
       otpCooldownUntil = Date.now() + 60000;
       saveOtpState();
       showOtpSection(result.data.expiresInSeconds);
@@ -898,7 +879,6 @@ function hideVerifySection() {
       verifyPassword = password;
       verifyFullName = validation.payload.fullName || '';
       verifyBaseCurrency = validation.payload.baseCurrency || '';
-      verifyCodeValue = '';
       saveVerifyState();
       const hint = (result.data && result.data.message) || 'Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.';
       showVerifySection(hint);
@@ -946,11 +926,6 @@ function hideVerifySection() {
     if (verifyBtn) verifyBtn.addEventListener('click', submitVerifyCode);
     const verifyResendBtn = document.querySelector(selectors.verifyResendButton);
     if (verifyResendBtn) verifyResendBtn.addEventListener('click', resendVerifyCode);
-    const verifyCodeInput = document.querySelector(selectors.verifyCode);
-    if (verifyCodeInput) verifyCodeInput.addEventListener('input', (e) => {
-      verifyCodeValue = e.target.value || '';
-      saveVerifyState();
-    });
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
@@ -976,8 +951,6 @@ function hideVerifySection() {
     if (verifyPending && verifyEmail) {
       const msg = 'Введите код из письма, чтобы завершить регистрацию.';
       showVerifySection(msg);
-      const input = document.querySelector(selectors.verifyCode);
-      if (input && verifyCodeValue) input.value = verifyCodeValue;
       switchForm('register');
     } else {
       hideVerifySection();

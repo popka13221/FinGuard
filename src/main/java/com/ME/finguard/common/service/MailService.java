@@ -19,8 +19,6 @@ import org.springframework.util.StringUtils;
 public class MailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
-    // Temporary fixed code; mail disabled in current setup
-    private static final String FIXED_CODE = "654321";
     private final boolean enabled;
     private final String from;
     private final String resetSubject;
@@ -53,7 +51,7 @@ public class MailService {
         if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
             return;
         }
-        String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(FIXED_CODE) + "&email=" + urlEncode(to);
+        String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
         String body = """
                 Привет!
 
@@ -63,13 +61,13 @@ public class MailService {
                 Код действует примерно %s минут. Он одноразовый.
 
                 Если запрос сделали не вы — просто игнорируйте письмо.
-                """.formatted(FIXED_CODE, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+                """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, resetSubject, body, Instant.now());
         outbox.add(message);
 
         if (!enabled || mailSender == null) {
-            log.info("Mail disabled, would send reset email to {} with code {}", maskEmail(to), FIXED_CODE);
+            log.info("Mail disabled, would send reset email to {} with code {}", maskEmail(to), maskCode(token));
             return;
         }
 
@@ -101,7 +99,7 @@ public class MailService {
         outbox.add(message);
 
         if (!enabled || mailSender == null) {
-            log.info("Mail disabled, would send OTP email to {} with code {}", maskEmail(to), code);
+            log.info("Mail disabled, would send OTP email to {} with code {}", maskEmail(to), maskCode(code));
             return;
         }
 
@@ -121,7 +119,7 @@ public class MailService {
         if (!StringUtils.hasText(to) || !StringUtils.hasText(token)) {
             return;
         }
-        String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(FIXED_CODE) + "&email=" + urlEncode(to);
+        String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
         String body = """
                 Привет!
 
@@ -131,13 +129,13 @@ public class MailService {
                 Код действует примерно %s минут.
 
                 Если запрос сделали не вы — игнорируйте письмо.
-                """.formatted(FIXED_CODE, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
+                """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, verifySubject, body, Instant.now());
         outbox.add(message);
 
         if (!enabled || mailSender == null) {
-            log.info("Mail disabled, would send verify email to {} with token {}", maskEmail(to), FIXED_CODE);
+            log.info("Mail disabled, would send verify email to {} with token {}", maskEmail(to), maskCode(token));
             return;
         }
 
@@ -179,5 +177,16 @@ public class MailService {
         int at = email.indexOf('@');
         if (at <= 1) return "***";
         return email.charAt(0) + "***" + email.substring(at);
+    }
+
+    private String maskCode(String code) {
+        if (!StringUtils.hasText(code)) {
+            return "***";
+        }
+        int len = code.length();
+        if (len <= 2) {
+            return "***";
+        }
+        return "***" + code.substring(len - 2);
     }
 }

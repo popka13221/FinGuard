@@ -3,7 +3,6 @@ package com.yourname.finguard.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -47,9 +46,6 @@ public class SecurityConfig {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
-                            "/health",
-                            "/actuator/health",
-                            "/actuator/health/**",
                             "/api/currencies",
                             "/app/**",
                             "/playground/**",
@@ -95,20 +91,19 @@ public class SecurityConfig {
                         "/app/forgot.html",
                         "/app/reset.html",
                         "/app/verify.html",
-                        "/app/dashboard.html",
                         "/app/auth.js",
                         "/app/recover.js",
                         "/app/verify.js",
                         "/app/api.js",
                         "/app/theme.js",
                         "/app/styles.css",
-                        "/app/dashboard.js",
                         "/app/forbidden.html",
                         "/app/assets/**",
                         "/index.html",
                         "/"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/health").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
+                        .requestMatchers("/health", "/actuator/health", "/actuator/health/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
