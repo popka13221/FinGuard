@@ -689,9 +689,7 @@ function hideVerifySection() {
       otpPending = true;
       otpEmail = email;
       saveOtpState();
-      const msg = (result.data && result.data.message)
-        ? result.data.message
-        : `Слишком много попыток. Попробуйте через ${retry} сек.`;
+      const msg = `Слишком много попыток. Попробуйте через ${retry} сек.`;
       showError(msg);
       if (otpError) { otpError.textContent = ''; otpError.style.display = 'none'; }
       showOtpSection();
@@ -828,7 +826,7 @@ function hideVerifySection() {
         otpEmail = '';
         saveOtpState();
         hideOtpSection();
-        const msg = result.data && result.data.message ? result.data.message : formatter(retry);
+        const msg = formatter(retry);
         showError(msg);
       }
       startLoginCooldownTimer(formatter);
@@ -880,7 +878,7 @@ function hideVerifySection() {
       verifyFullName = validation.payload.fullName || '';
       verifyBaseCurrency = validation.payload.baseCurrency || '';
       saveVerifyState();
-      const hint = (result.data && result.data.message) || 'Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.';
+      const hint = 'Мы отправили код на указанный email. Введите его, чтобы завершить регистрацию.';
       showVerifySection(hint);
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';

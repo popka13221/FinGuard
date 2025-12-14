@@ -191,7 +191,7 @@ public class AuthService {
         enforceRateLimit("login:email:" + email, loginEmailLimit, loginEmailWindowMs);
         if (loginAttemptService.isLocked(email)) {
             log.warn("Login blocked due to lockout for email={}", email);
-            throw new ApiException(ErrorCodes.AUTH_LOCKED, "Слишком много попыток. Попробуйте позже.", HttpStatus.TOO_MANY_REQUESTS);
+            throw new ApiException(ErrorCodes.AUTH_LOCKED, "Too many attempts. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
         }
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -506,7 +506,7 @@ public class AuthService {
         RateLimiterService.Result res = rateLimiterService.check(key, limit, windowMs);
         if (!res.allowed()) {
             long retry = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
-            throw new ApiException(ErrorCodes.RATE_LIMIT, "Слишком много запросов. Попробуйте позже.", HttpStatus.TOO_MANY_REQUESTS, retry);
+            throw new ApiException(ErrorCodes.RATE_LIMIT, "Too many requests. Please try again later.", HttpStatus.TOO_MANY_REQUESTS, retry);
         }
     }
 
