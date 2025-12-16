@@ -232,6 +232,11 @@ pre {
   .actions { flex-direction: column; align-items: stretch; }
   .tabs { flex-direction: column; }
   .chart-grid { grid-template-columns: 1fr; }
+  .chart-shell { padding: 8px; }
+  .chart-svg { height: 180px; }
+  .chart-value { font-size: 11px; }
+  .chart-label { font-size: 10px; }
+  .chart-legend { font-size: 12px; gap: 8px; }
 }
 
 .helper-row {
