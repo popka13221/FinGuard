@@ -48,6 +48,7 @@ header .pill { padding: 8px 11px; border-radius: 999px; background: rgba(79,139,
 .muted { color: var(--muted); font-size: 13px; }
 
 .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px; margin-top: 18px; }
+.main-grid { grid-template-columns: 1fr 0.9fr; gap: 14px; margin-top: 14px; }
 .stack { display: grid; gap: 12px; }
 .form { display: grid; gap: 12px; }
 .field { display: grid; gap: 6px; }
@@ -164,6 +165,7 @@ pre {
 .container { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
 .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .brand { display: inline-flex; gap: 8px; align-items: center; }
+.brand-logo { height: 36px; width: auto; }
 .brand-dot { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px rgba(79,139,255,0.6); }
 .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .stat-card { display: grid; gap: 6px; }
@@ -216,7 +218,7 @@ pre {
 .hero p { margin: 10px 0 0; color: var(--muted); }
 
 @media (max-width: 1024px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid, .main-grid { grid-template-columns: 1fr; }
   .col { min-width: 180px; }
   header h1 { font-size: 22px; }
 }
