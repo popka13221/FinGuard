@@ -203,6 +203,46 @@
         </div>
       </div>
     </div>
+
+    <div class="grid chart-grid">
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="badge alt">Демо</div>
+            <h3 style="margin:6px 0 4px;">Динамика баланса</h3>
+            <div class="muted">Последние 6 месяцев, USD</div>
+          </div>
+          <div class="pill-soft">Тренд: +9.2%</div>
+        </div>
+        <div id="balanceChart" class="chart-shell" aria-label="График баланса"></div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-dot" style="background: linear-gradient(135deg, #4f8bff, #3cc7c4);"></span>
+            Баланс
+          </div>
+          <div class="legend-item muted">Мин: 18 200 · Макс: 20 950</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="badge alt">Демо</div>
+            <h3 style="margin:6px 0 4px;">Структура расходов</h3>
+            <div class="muted">Текущий месяц, USD</div>
+          </div>
+          <div class="pill-soft">Всего: 2 350</div>
+        </div>
+        <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#4f8bff;"></span> Жильё</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Еда</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Транспорт</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#3cc7c4;"></span> Подписки</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#9aa0aa;"></span> Прочее</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/app/theme.js"></script>

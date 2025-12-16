@@ -195,6 +195,18 @@ pre {
 .timeline-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-strong); }
 .timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
 .mini-chart { height: 42px; border-radius: 10px; background: linear-gradient(90deg, rgba(63,131,248,0.18), rgba(16,185,129,0.2)); border: 1px dashed var(--border); }
+.chart-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 14px; margin-top: 14px; }
+.chart-shell { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-strong); overflow: hidden; }
+.chart-svg { width: 100%; height: 220px; display: block; }
+.chart-area { fill: url(#lineFill); }
+.chart-line { fill: none; stroke: url(#lineStroke); stroke-width: 3; }
+.chart-dot { fill: var(--panel); stroke: #4f8bff; stroke-width: 2; }
+.chart-bar { opacity: 0.92; }
+.chart-value { font-size: 12px; fill: var(--text); text-anchor: middle; }
+.chart-label { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; color: var(--muted); font-size: 13px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: var(--accent); }
 
 .hero {
   text-align: center;
@@ -217,6 +229,7 @@ pre {
   .row-inline .ghost { width: auto; }
   .actions { flex-direction: column; align-items: stretch; }
   .tabs { flex-direction: column; }
+  .chart-grid { grid-template-columns: 1fr; }
 }
 
 .helper-row {
