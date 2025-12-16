@@ -1,6 +1,5 @@
 (() => {
   const selectors = {
-    baseCurrency: '#baseCurrency',
     userEmail: '#userEmail',
     logoutBtn: '#btn-logout',
     balanceChart: '#balanceChart',
@@ -19,10 +18,6 @@
   };
 
   function renderProfile(profile) {
-    const currency = document.querySelector(selectors.baseCurrency);
-    if (currency && profile && profile.baseCurrency) {
-      currency.textContent = profile.baseCurrency;
-    }
     const email = document.querySelector(selectors.userEmail);
     if (email && profile && profile.email) {
       email.textContent = profile.email;
