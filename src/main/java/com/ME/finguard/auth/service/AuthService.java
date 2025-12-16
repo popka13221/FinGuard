@@ -173,17 +173,16 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
         }
-        String verifyCode = userTokenService.generateVerifyCode();
-        PendingRegistrationService.IssuedToken pending = pendingRegistrationService.createOrUpdate(
-                email,
-                request.password(),
-                fullName,
-                baseCurrency,
-                Role.USER,
-                verifyCode
-        );
-        mailService.sendVerifyEmail(email, verifyCode, pendingRegistrationService.getVerifyTtl());
-        return new RegistrationResult(null, true);
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setFullName(fullName);
+        user.setBaseCurrency(baseCurrency);
+        user.setRole(Role.USER);
+        user.setEmailVerified(true);
+        User saved = userRepository.save(user);
+        AuthTokens tokens = issueTokens(saved);
+        return new RegistrationResult(tokens, false);
     }
 
     public LoginOutcome login(LoginRequest request, String ip) {
