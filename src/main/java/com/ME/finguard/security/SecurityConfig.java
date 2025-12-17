@@ -49,6 +49,7 @@ public class SecurityConfig {
                             "/api/currencies",
                             "/app/**",
                             "/playground/**",
+                            "/crypto/**",
                             "/"
                     )
             );
@@ -96,9 +97,14 @@ public class SecurityConfig {
                         "/app/verify.js",
                         "/app/api.js",
                         "/app/theme.js",
+                        "/app/landing.js",
                         "/app/styles.css",
                         "/app/forbidden.html",
                         "/app/assets/**",
+                        "/app",
+                        "/app/",
+                        "/crypto/**",
+                        "/index",
                         "/index.html",
                         "/"
                         ).permitAll()

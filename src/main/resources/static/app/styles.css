@@ -225,6 +225,30 @@ pre {
 .hero h2 { margin: 0; font-size: 22px; }
 .hero p { margin: 10px 0 0; color: var(--muted); }
 
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 18px; }
+.feature-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+}
+.feature-dot { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px rgba(79,139,255,0.4); }
+.landing-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 10px;
+}
+.mini-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.stat-chip { border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--panel); }
+.hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
 @media (max-width: 1024px) {
   .grid, .main-grid { grid-template-columns: 1fr; }
   .col { min-width: 180px; }

@@ -6,8 +6,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeRedirectController {
 
-    @GetMapping({"/", "/index", "/app", "/app/"})
-    public String rootToLogin() {
-        return "redirect:/app/dashboard.html";
+    @GetMapping({"/", "/index"})
+    public String landingPage() {
+        return "forward:/index.html";
+    }
+
+    @GetMapping({"/app", "/app/"})
+    public String appRoot() {
+        return "redirect:/app/login.html";
     }
 }

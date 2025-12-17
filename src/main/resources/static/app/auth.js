@@ -662,6 +662,29 @@ function loadLoginCooldown() {
     }
   }
 
+  async function redirectIfAuthenticated() {
+    try {
+      const me = await Api.call('/api/auth/me', 'GET');
+      if (me.ok) {
+        window.location.href = '/app/dashboard.html';
+        return true;
+      }
+      if (me.status === 401) {
+        const refreshed = await Api.call('/api/auth/refresh', 'POST', {});
+        if (refreshed.ok) {
+          const profile = await Api.call('/api/auth/me', 'GET');
+          if (profile.ok) {
+            window.location.href = '/app/dashboard.html';
+            return true;
+          }
+        }
+      }
+    } catch (_) {
+      // ignore and keep user on login page
+    }
+    return false;
+  }
+
   function bindAuthActions() {
     const loginBtn = document.querySelector(selectors.loginButton);
     if (loginBtn) loginBtn.addEventListener('click', login);
@@ -682,8 +705,17 @@ function loadLoginCooldown() {
     loadCurrencies();
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     Theme.init(selectors.themeToggle);
+    let authenticated = false;
+    try {
+      authenticated = await redirectIfAuthenticated();
+    } finally {
+      if (!authenticated) {
+        document.body.classList.remove('auth-loading');
+      }
+    }
+    if (authenticated) return;
     loadOtpState();
     loadLoginCooldown();
     switchForm('login');

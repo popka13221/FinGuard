@@ -12,6 +12,7 @@ docs/AUTH_FLOW.md
 frontend/dist/
 frontend/node_modules/
 local-notes/
+landing-notes.md
 
 # IDE/editor cruft
 .vscode/
