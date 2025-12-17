@@ -69,6 +69,13 @@
     setAudience('users');
   }
 
+  function initSnapScroll() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if ('ontouchstart' in window) return;
+    const sections = Array.from(document.querySelectorAll('.snap-section'));
+    if (sections.length < 2) return;
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initReveal();

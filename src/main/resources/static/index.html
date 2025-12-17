@@ -12,16 +12,23 @@
       --glow: rgba(79,139,255,0.14);
       --glow-2: rgba(60,199,196,0.14);
     }
+    html, body { height: 100%; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: 'Space Grotesk', 'Inter', 'Segoe UI', 'SF Pro Display', sans-serif;
       background: radial-gradient(circle at 18% 12%, var(--glow), transparent 30%), radial-gradient(circle at 82% 8%, var(--glow-2), transparent 28%), linear-gradient(180deg, #0d1016 0%, #0f1117 40%, #0f1115 100%), var(--bg);
+      background-attachment: fixed;
+      background-size: cover;
       min-height: 100vh;
       color: var(--text);
     }
     body.light {
       background: radial-gradient(circle at 18% 12%, rgba(59,130,246,0.18), transparent 32%), radial-gradient(circle at 82% 8%, rgba(16,185,129,0.18), transparent 30%), linear-gradient(180deg, #f5f7fb 0%, #f7f8fc 40%, #f7f8fc 100%), var(--bg);
     }
-    .page { max-width: 1400px; margin: 0 auto; padding: 28px 22px 120px; position: relative; }
+    .page {
+      max-width: 1400px; margin: 0 auto; padding: 28px 22px 120px; position: relative;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
     .nav-sticky {
       position: sticky; top: 12px; z-index: 10;
       display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
@@ -52,7 +59,7 @@
     .label { letter-spacing: 0.2em; text-transform: uppercase; font-size: 12px; color: var(--muted); }
     .hero h1 { margin: 10px 0 10px; font-size: clamp(36px, 6vw, 52px); letter-spacing: -0.02em; }
     .hero p { margin: 0 0 16px; color: var(--muted); line-height: 1.6; }
-    .microline { margin-top: 10px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+    .microline { margin-top: 10px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; justify-content: center; }
     .hero-visual {
       background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 26px; padding: 20px; box-shadow: var(--shadow);
       display: grid; gap: 14px; position: relative; overflow: hidden;
@@ -105,40 +112,96 @@
     .alert-pill.danger { background: rgba(249,115,22,0.14); color: #f97316; border-color: rgba(249,115,22,0.4); }
     .alert-pill.soft { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border); }
 
-    .section { margin-top: clamp(36px, 8vw, 80px); }
+    .section {
+      margin: clamp(140px, 16vw, 260px) 0;
+      padding: clamp(70px, 11vw, 160px) 0;
+    }
     .section h2 { margin: 0 0 10px; font-size: 26px; letter-spacing: -0.01em; }
-    .section p.lead { margin: 0 0 12px; color: var(--muted); }
-    .flow {
+    .hero-mega {
+      font-size: clamp(34px, 6.8vw, 88px) !important;
+      line-height: 0.9;
+      text-align: center;
+      letter-spacing: -0.05em;
+      margin: 0 0 clamp(28px, 4vw, 64px);
+    }
+
+    .section-header {
+      text-align: center;
       display: grid;
-      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 12px;
+      margin-bottom: clamp(30px, 5vw, 64px);
+    }
+    .section-header .lead { margin: 0 auto; max-width: 860px; }
+
+    
+    .section p.lead { margin: 0 0 12px; color: var(--muted); }
+    .centered { text-align: center; display: grid; justify-items: center; }
+    .centered > * { margin-left: auto; margin-right: auto; }
+    .centered .lead { margin-left: auto; margin-right: auto; max-width: 880px; text-align: center; }
+    .centered .flow { justify-content: center; }
+
+    #intro {
+      margin-top: clamp(150px, 22vw, 320px);
+      padding-top: clamp(34px, 10vw, 102px);
+      padding-bottom: clamp(120px, 14vw, 220px);
+    }
+    #intro .hero-mega { margin-bottom: clamp(46px, 7vw, 110px); }
+    #intro .lead { margin-top: clamp(10px, 3vw, 22px); }
+    #goals .hero-mega { margin-bottom: clamp(46px, 7vw, 110px); }
+
+    .flow {
+      display: flex;
+      flex-wrap: nowrap;
       gap: 24px;
-      align-items: center;
+      align-items: stretch;
       margin-top: 24px;
       width: 100%;
+    }
+    .hero-flow { gap: clamp(16px, 4vw, 28px); }
+    .hero-flow .flow-chip {
+      min-height: clamp(140px, 16vw, 220px);
+      padding: clamp(24px, 4vw, 52px);
+      font-size: clamp(26px, 5vw, 42px);
+    }
+    .hero-flow .flow-arrow {
+      font-size: clamp(32px, 6vw, 64px);
+      padding: 0 8px;
     }
     .flow-chip {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 36px 40px;
+      padding: clamp(22px, 3vw, 40px);
       border-radius: 26px;
       border: 1px solid var(--border);
       background: linear-gradient(135deg, rgba(79,139,255,0.18), rgba(60,199,196,0.14));
       text-align: center;
       font-weight: 900;
-      font-size: 36px;
+      font-size: clamp(24px, 4vw, 36px);
       box-shadow: var(--shadow);
       letter-spacing: 0.06em;
-      min-height: 160px;
+      min-height: clamp(140px, 14vw, 200px);
+      width: 100%;
+      flex: 1 1 0;
     }
     .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       color: var(--muted);
       font-weight: 900;
       font-size: 48px;
+      flex: 0 0 auto;
     }
 
     .feature-pack { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 28px; margin-top: 14px; }
+    .hero-pack { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 36px; }
+    .hero-pack .feature-tile { min-height: 520px; padding: 40px; }
+    .hero-pack .feature-pill { font-size: 34px; padding: 28px 32px; }
+    .hero-pack h3 { font-size: 32px; }
+    .hero-pack p { font-size: 20px; line-height: 1.6; }
+    .section.fullscreen { min-height: 100vh; display: grid; align-content: center; gap: 26px; padding-top: clamp(80px, 12vw, 160px); padding-bottom: clamp(80px, 12vw, 160px); }
     .feature-tile {
       position: relative; padding: 26px; border-radius: 28px; min-height: 260px;
       border: 1px solid var(--border); box-shadow: var(--shadow);
@@ -159,7 +222,19 @@
 
     .story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
     .sticky-col { position: sticky; top: 90px; align-self: start; display: grid; gap: 12px; }
+    #rules .sticky-col { text-align: center; }
+    #rules .sticky-col .lead { font-size: clamp(18px, 2.8vw, 24px); }
     .story-visuals { display: grid; gap: 16px; }
+    .story-icon {
+      width: 72px; height: 72px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 10px;
+    }
+    .story-icon svg, .story-icon img { width: 72px; height: 72px; }
+    .story-icon svg { stroke: currentColor; }
+    .story-icon img { filter: brightness(0) invert(1); }
+    .story-icon .accent { stroke: var(--accent, #4f8bff); }
     .story-card {
       border: 1px solid var(--border);
       border-radius: 20px;
@@ -177,6 +252,7 @@
     }
     .story-card h3 { margin: 0; font-size: 28px; letter-spacing: -0.02em; text-align: center; }
     .story-card p { margin: 0; color: var(--muted); line-height: 1.6; text-align: left; }
+    #rules .story-card p { text-align: center; }
     .story-card:hover {
       transform: translateY(-6px);
       box-shadow: 0 18px 40px rgba(79,139,255,0.22);
@@ -199,6 +275,9 @@
     .footer { margin-top: 24px; display: grid; gap: 8px; justify-items: center; color: var(--muted); }
     .footer a { color: var(--muted); text-decoration: none; }
 
+    .snap-container { flex: 1; }
+    .snap-section { scroll-snap-align: unset; scroll-snap-stop: normal; min-height: auto; }
+
     .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     @keyframes shimmer { 0% { transform: translateX(-40%); } 100% { transform: translateX(140%); } }
@@ -216,11 +295,11 @@
       </a>
       <nav class="nav-links">
         <a href="#overview">Обзор</a>
-        <a href="#alerts-story">Алерты</a>
-        <a href="#highlights">Цели</a>
+        <a href="#rules">Правила</a>
+        <a href="#goals">Цели</a>
         <a href="#assets">Активы</a>
         <a href="#onchain">On-chain</a>
-        <a href="#roadmap">Roadmap</a>
+        <a href="#roadmap">Дорожная карта</a>
         <a href="#security">Безопасность</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -230,241 +309,281 @@
       </div>
     </header>
 
-    <main id="top">
-      <section class="hero reveal" id="overview">
+    <main id="top" class="snap-container">
+      <section class="hero reveal snap-section" id="overview">
         <div class="hero-grid">
           <div class="stack">
             <span class="label">FINANCE, GUARDED.</span>
-            <div class="muted">FinGuard by Finwize</div>
-            <h1 id="hero-title">FinGuard. Финансы под контролем.</h1>
-            <p id="hero-subtitle">Учет, цели и правила, которые вовремя предупреждают.</p>
-            <div class="actions" style="gap:10px;">
+            <h1 id="hero-title">FinGuard. Личные финансы под контролем.</h1>
+            <p id="hero-subtitle">Учет, цели и правила, которые предупреждают раньше, чем появляется проблема.</p>
+            <div class="actions" style="gap:10px; justify-content:center;">
               <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
               <a class="btn ghost" href="#docs">Документация</a>
             </div>
-            <div class="microline">Self-host · Правила и уведомления · Валюта и активы · On-chain аудит </div>
+            <div class="microline">Правила и уведомления · Валюты и активы · On-chain аудит</div>
           </div>
           <div class="hero-visual">
             <div class="dash-mock">
               <div class="status-grid">
                 <div class="status-card">
                   <h4>Баланс</h4>
-                  <p>$22 650</p>
+                  <p>$22 650 · multi-currency</p>
                 </div>
                 <div class="status-card">
-                  <h4>Алерты</h4>
-                  <p>5 активных · Расходы > лимита · Срочно</p>
+                  <h4>Правила</h4>
+                  <p>5 активных · Лимиты · Пороги · Подписки</p>
                 </div>
                 <div class="status-card">
-                  <h4>FX / Цели</h4>
-                  <p>USD/RUB 96.20 · Порог · Резерв 62%</p>
+                  <h4>FX / Активы</h4>
+                  <p>USD/RUB 96.20 · Порог активен · Портфель +2.4%</p>
                 </div>
+              </div>
+              <div class="alert-feed">
+                <div class="alert-item">
+                  <div>
+                    <h4>Лимит: Подписки</h4>
+                    <p>Расходы 78% от месячного лимита — предупредим заранее.</p>
+                  </div>
+                  <span class="alert-pill soft">Контроль</span>
+                </div>
+                <div class="alert-item">
+                  <div>
+                    <h4>Порог USD/RUB</h4>
+                    <p>Достигнут 96.20 — уведомление ушло в Telegram.</p>
+                  </div>
+                  <span class="alert-pill danger">Сигнал</span>
+                </div>
+              </div>
+              <div class="status-card">
+                <h4>Цель: Резерв</h4>
+                <p>62% · осталось $3.2k · темп +$480/мес.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section reveal" id="intro">
-        <h2>В двух словах</h2>
-        <p class="lead">Не просто учет. Это режим контроля.</p>
-        <div class="flow">
-          <div class="flow-chip">Data</div>
+      <section class="section reveal fullscreen centered snap-section" id="intro">
+        <h2 class="hero-mega">Не просто учет. Это система контроля бюджета.</h2>
+        <p class="lead">FinGuard собирает счета, транзакции и отчеты в одном месте — и добавляет главное: правила. Вы задаете условия, и система сама следит и уведомляет.</p>
+        <div class="flow hero-flow">
+          <div class="flow-chip">Данные</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-chip">Rules</div>
+          <div class="flow-chip">Правила</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-chip">Alerts</div>
+          <div class="flow-chip">Уведомления</div>
         </div>
       </section>
 
-      <section class="section reveal" id="highlights">
-        <h2>Highlights</h2>
-        <div class="feature-pack">
+      <section class="section reveal fullscreen snap-section" id="goals">
+        <h2 class="hero-mega">Главное — три вещи.</h2>
+        <div class="feature-pack hero-pack">
           <div class="feature-tile tone-a">
-            <div class="feature-pill">Rules</div>
+            <div class="feature-pill">Правила</div>
             <div>
               <h3 style="margin:8px 0 6px;">Правила, которые работают за вас.</h3>
-              <p class="muted">Лимиты, пороги, аномалии, подписки — сигнал раньше проблемы.</p>
+              <p class="muted">Лимиты, пороги и повторяющиеся списания — сигнал приходит, когда ещё можно спокойно исправить.</p>
             </div>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">Goals</div>
+            <div class="feature-pill">Цели</div>
             <div>
               <h3 style="margin:8px 0 6px;">Цели с понятным прогрессом.</h3>
-              <p class="muted">Срок, сумма, темп — “сколько в месяц”, чтобы дойти.</p>
+              <p class="muted">Срок, сумма, темп — FinGuard показывает, сколько откладывать в месяц, чтобы дойти до цели.</p>
             </div>
           </div>
           <div class="feature-tile tone-c" id="assets">
-            <div class="feature-pill">FX & Assets</div>
+            <div class="feature-pill">Валюты и активы</div>
             <div>
               <h3 style="margin:8px 0 6px;">Валюты и активы — в одной панели.</h3>
-              <p class="muted">Курсы, изменения, триггеры — без лишних вкладок.</p>
+              <p class="muted">Курсы и изменения — чтобы видеть ситуацию целиком, не переключаясь между сервисами.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section reveal" id="alerts-story">
+      <section class="section reveal snap-section" id="rules">
         <div class="story-grid">
           <div class="sticky-col">
-            <h2>Rules & Alerts</h2>
-            <p class="lead">Алерты, которые понимают контекст.</p>
+            <h2 class="hero-mega" style="font-size: clamp(32px, 5vw, 64px);">Уведомления, которые не шумят — и срабатывают по делу.</h2>
+            <p class="lead">Настройте правило один раз — FinGuard будет проверять и предупреждать автоматически.</p>
           </div>
           <div class="story-visuals">
             <div class="story-card">
-              <h3>Конструктор правил</h3>
-              <p class="muted">Настройте условие один раз — FinGuard следит каждый день.</p>
+              <div class="story-icon">
+                <img src="/app/assets/bell_ring_icon_136887.svg" alt="Автоматизация и уведомления">
+              </div>
+              <h3>Правила, которые работают сами.</h3>
+              <p class="muted">Условие + расписание — FinGuard проверяет и даёт сигнал, когда важно среагировать.</p>
             </div>
             <div class="story-card">
-              <h3>Лимиты по категориям</h3>
-              <p class="muted">“Еда”, “Транспорт”, “Подписки”. Уведомление, когда риск.</p>
+              <div class="story-icon">
+                <img src="/app/assets/donut_chart_icon_207654.svg" alt="Лимиты по категориям">
+              </div>
+              <h3>Лимиты по категориям.</h3>
+              <p class="muted">“Еда”, “Транспорт”, “Подписки” — уведомление приходит, когда вы подходите к лимиту.</p>
             </div>
             <div class="story-card">
-              <h3>Порог по курсу</h3>
-              <p class="muted">Когда курс достигает порога — вы узнаете сразу.</p>
+              <div class="story-icon">
+                <img src="/app/assets/linechart_120376.svg" alt="Пороги по курсам и активам">
+              </div>
+              <h3>Пороги по курсам и активам.</h3>
+              <p class="muted">Когда курс достигает порога — вы узнаёте об этом сразу.</p>
             </div>
             <div class="story-card">
-              <h3>Повторяющиеся списания</h3>
-              <p class="muted">Находит регулярные списания и показывает их отдельно.</p>
+              <div class="story-icon">
+                <img src="/app/assets/subscription_notifications_communication_updates_email_alerts_icon_260969.svg" alt="Регулярные списания">
+              </div>
+              <h3>Регулярные списания.</h3>
+              <p class="muted">Выделяет регулярные списания отдельно — чтобы подписки не терялись в ленте.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section reveal" id="how">
-        <h2>Три шага — и вы в guard-режиме.</h2>
+      <section class="section reveal snap-section" id="how">
+        <div class="section-header">
+          <h2 class="hero-mega">Три шага — и контроль включён.</h2>
+        </div>
         <div class="feature-pack">
           <div class="feature-tile tone-c">
-            <div class="feature-pill">1</div>
+            <div class="feature-pill">Структура</div>
             <div>
               <h3 style="margin:8px 0 6px;">Структура</h3>
-              <p class="muted">Счета, категории, валюта.</p>
+              <p class="muted">Создайте счета, категории и базовую валюту.</p>
             </div>
           </div>
           <div class="feature-tile tone-a">
-            <div class="feature-pill">2</div>
+            <div class="feature-pill">Транзакции</div>
             <div>
-              <h3 style="margin:8px 0 6px;">Данные</h3>
-              <p class="muted">Доходы и траты. Импорт CSV — скоро.</p>
+              <h3 style="margin:8px 0 6px;">Транзакции</h3>
+              <p class="muted">Добавляйте доходы и траты. Импорт CSV — в разработке.</p>
             </div>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">3</div>
+            <div class="feature-pill">Правила</div>
             <div>
-              <h3 style="margin:8px 0 6px;">Контроль</h3>
-              <p class="muted">Правила и уведомления.</p>
+              <h3 style="margin:8px 0 6px;">Правила</h3>
+              <p class="muted">Включите правила и уведомления. FinGuard следит — вы решаете.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section reveal" id="modules">
-        <h2>Функции</h2>
+      <section class="section reveal snap-section" id="modules">
+        <div class="section-header">
+          <h2 class="hero-mega">Возможности</h2>
+        </div>
         <div class="modules">
-          <div class="module"><strong>Счета и транзакции</strong><p class="muted">История, фильтры, баланс.</p></div>
+          <div class="module"><strong>Счета и транзакции</strong><p class="muted">История, фильтры и актуальный баланс.</p></div>
           <div class="module"><strong>Отчеты</strong><p class="muted">Сводка периода, cash-flow, категории.</p></div>
-          <div class="module"><strong>Цели</strong><p class="muted">Срок, прогресс, темп.</p></div>
-          <div class="module"><strong>Правила</strong><p class="muted">Условия, пороги, расписание.</p></div>
-          <div class="module"><strong>Уведомления</strong><p class="muted">Email/Telegram/встроенные.</p></div>
-          <div class="module"><strong>Мультивалюта и активы</strong><p class="muted">FX, цены, изменения, алерты.</p></div>
+          <div class="module"><strong>Цели</strong><p class="muted">Прогресс, срок и расчет темпа.</p></div>
+          <div class="module"><strong>Правила</strong><p class="muted">Лимиты, пороги и условия срабатывания.</p></div>
+          <div class="module"><strong>Уведомления</strong><p class="muted">Email, Telegram и встроенные уведомления.</p></div>
+          <div class="module"><strong>Валюты и активы</strong><p class="muted">FX и цены активов, изменения, пороги.</p></div>
         </div>
       </section>
 
-      <section class="section reveal" id="onchain">
-        <span class="label">OPTIONAL MODULE</span>
-        <h2>On-chain: доказуемость без компромиссов.</h2>
-        <p class="lead">Фиксируйте контрольные метки в блокчейне — без раскрытия деталей.</p>
+      <section class="section reveal snap-section" id="onchain">
+        <div class="section-header">
+          <h2 class="hero-mega">On-chain аудит: проверяемость без раскрытия деталей.</h2>
+          <p class="lead">FinGuard может фиксировать метки аудита в блокчейне — без публикации ваших финансовых данных. Это полезно там, где важны неизменяемость и подтверждение времени.</p>
+        </div>
         <div class="feature-pack">
           <div class="feature-tile tone-c">
-            <div class="feature-pill">Audit anchoring</div>
-            <p class="muted">Хэш отчёта/правил как метка времени.</p>
+            <div class="feature-pill">Метки аудита</div>
+            <p class="muted">Фиксация контрольного отпечатка отчета/правил.</p>
           </div>
           <div class="feature-tile tone-a">
-            <div class="feature-pill">Vault policies</div>
-            <p class="muted">Лимиты и правила на уровне кошелька.</p>
+            <div class="feature-pill">Политики кошелька</div>
+            <p class="muted">Лимиты и правила могут исполняться на уровне Vault.</p>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">Escrow goals</div>
-            <p class="muted">Цели как сейфы с условиями.</p>
+            <div class="feature-pill">Сейф-цели</div>
+            <p class="muted">Цель может быть escrow с условиями разблокировки.</p>
           </div>
         </div>
-        <div class="story-card" style="margin-top:16px;">
-          <strong>Запись подтверждена в сети.</strong>
-          <p class="muted">Tx hash · time · verified.</p>
-        </div>
       </section>
 
-      <section class="section reveal" id="perspective">
-        <h2 id="persp-title">FinGuard масштабируется вместе с задачей.</h2>
-        <p class="lead" id="persp-sub">Один продукт — для себя, для команды и как модуль.</p>
+      <section class="section reveal snap-section" id="perspective">
+        <div class="section-header">
+          <h2 class="hero-mega" id="persp-title">Один продукт — несколько сценариев роста.</h2>
+          <p class="lead" id="persp-sub">Для себя, для команды, как модуль или платформа.</p>
+        </div>
         <div class="story-four">
-          <div class="story-block"><strong>Для личного использования</strong><p class="muted">Учет + цели + правила. Привычки расходов становятся управляемыми.</p></div>
-          <div class="story-block"><strong>Для команд</strong><p class="muted">Бюджеты, роли, лимиты, контроль расходов по направлениям.</p></div>
-          <div class="story-block"><strong>Как модуль</strong><p class="muted">Rules/Alerts engine как сервис: события → правила → действия.</p></div>
-          <div class="story-block"><strong>Как dev-платформа</strong><p class="muted">Чистая архитектура, документация, расширяемость интеграциями.</p></div>
+          <div class="story-block"><strong>Для личного использования</strong><p class="muted">Контроль бюджета и привычек: учет + цели + правила.</p></div>
+          <div class="story-block"><strong>Для команд (перспектива)</strong><p class="muted">Бюджеты, роли и лимиты — контроль расходов по направлениям.</p></div>
+          <div class="story-block"><strong>Как модуль для систем (перспектива)</strong><p class="muted">Rules/Alerts engine: события → правила → действия. Подходит для финтеха и внутренних систем контроля.</p></div>
+          <div class="story-block"><strong>Как платформа (перспектива)</strong><p class="muted">Интеграции, расширяемость, документация.</p></div>
         </div>
       </section>
 
-      <section class="section reveal" id="roadmap">
-        <h2>Дорожная карта. Понятно. По релизам.</h2>
+      <section class="section reveal snap-section" id="roadmap">
+        <div class="section-header">
+          <h2 class="hero-mega">Дорожная карта. Поэтапно и прозрачно.</h2>
+        </div>
         <div class="accordion">
           <details open>
             <summary>Версия 1 — Основа</summary>
-            <p class="muted">Accounts · Transactions · Reports · Basic rules · Notifications</p>
+            <p class="muted">Счета · Транзакции · Отчеты · Базовые правила · Уведомления</p>
           </details>
           <details>
             <summary>Версия 2 — Инсайты</summary>
-            <p class="muted">Goals · Subscriptions · Advanced rules · Better analytics</p>
+            <p class="muted">Цели · Подписки · Расширенные правила · Улучшенная аналитика</p>
           </details>
           <details>
             <summary>Версия 3 — Интеграции</summary>
-            <p class="muted">Import · FX providers · Asset tracking · Webhooks</p>
+            <p class="muted">Импорт CSV · Провайдеры FX · Активы · Webhooks</p>
           </details>
           <details>
-            <summary>Версия 4 — On-chain </summary>
-            <p class="muted">Audit anchoring · Vault policies · Escrow goals</p>
+            <summary>Версия 4 — On-chain</summary>
+            <p class="muted">Метки аудита · Политики Vault · Escrow-цели</p>
           </details>
         </div>
       </section>
 
-      <section class="section reveal" id="security">
-        <h2>Безопасность — не настройка. Это фундамент.</h2>
+      <section class="section reveal snap-section" id="security">
+        <div class="section-header">
+          <h2 class="hero-mega">Безопасность — часть продукта.</h2>
+        </div>
         <div class="story-four">
-          <div class="story-block"><strong>Защита доступа</strong><p class="muted">Сессии, токены, контроль действий.</p></div>
-          <div class="story-block"><strong>Восстановление и верификация</strong><p class="muted">Чистые потоки восстановления и подтверждения.</p></div>
-          <div class="story-block"><strong>Приватность по умолчанию</strong><p class="muted">Self-host сценарий и минимум данных в интеграциях.</p></div>
+          <div class="story-block"><strong>Доступ</strong><p class="muted">Защищенные сессии и контроль действий.</p></div>
+          <div class="story-block"><strong>Восстановление</strong><p class="muted">Надежные потоки верификации и reset.</p></div>
+          <div class="story-block"><strong>Приватность</strong><p class="muted">Контроль данных и минимизация сведений в интеграциях.</p></div>
         </div>
       </section>
 
-      <section class="section reveal" id="docs">
-        <h2>Документация и API, которые приятно использовать.</h2>
-        <p class="lead">OpenAPI, Docker-запуск, примеры запросов.</p>
+      <section class="section reveal snap-section" id="docs">
+        <div class="section-header">
+          <h2 class="hero-mega">Документация и API. Без лишнего шума.</h2>
+          <p class="lead">Поднимите проект локально и начните интеграцию. Примеры запросов и понятные эндпоинты.</p>
+        </div>
         <div class="actions" style="gap:10px;">
-          <a class="btn primary" href="#tech">Открыть Docs</a>
-          <a class="btn ghost" href="/swagger-ui.html">OpenAPI</a>
+          <a class="btn primary" href="/docs">Открыть Docs</a>
+          <a class="btn ghost" href="/swagger-ui.html">OpenAPI / Swagger</a>
         </div>
       </section>
 
-      <section class="section reveal" id="faq">
-        <h2>FAQ</h2>
+      <section class="section reveal snap-section" id="faq">
+        <div class="section-header">
+          <h2 class="hero-mega">FAQ</h2>
+        </div>
         <div class="accordion">
           <details><summary>Это банк?</summary><p class="muted">Нет. FinGuard не хранит деньги и не проводит платежи — он помогает учитывать, планировать и контролировать.</p></details>
-          <details><summary>Где хранятся данные?</summary><p class="muted">На вашем устройстве или на вашем сервере (self-host). Вы контролируете данные.</p></details>
-          <details><summary>Есть ли импорт?</summary><p class="muted">CSV — скоро. Банковские интеграции обсуждаем отдельно.</p></details>
-          <details><summary>Как работают правила?</summary><p class="muted">Вы задаете условия, система проверяет и отправляет сигнал.</p></details>
-          <details><summary>Какие уведомления?</summary><p class="muted">Email, Telegram и встроенные.</p></details>
-          <details><summary>Поддерживается мультивалюта?</summary><p class="muted">Да: курсы и конвертация.</p></details>
-          <details><summary>On-chain обязателен?</summary><p class="muted">Нет. Модуль опционален.</p></details>
-          <details><summary>Можно self-host?</summary><p class="muted">Да. Можно развернуть на своём сервере.</p></details>
-          <details><summary>Для чего проект в будущем?</summary><p class="muted">Личный, командный и как модуль для финтеха.</p></details>
-          <details><summary>Как быстро начать?</summary><p class="muted">Откройте демо или поднимите через Docker.</p></details>
+          <details><summary>Где хранятся данные?</summary><p class="muted">Локально или на вашем сервере — вы контролируете данные.</p></details>
+          <details><summary>Как работают правила?</summary><p class="muted">Вы задаёте правило (лимит/порог/период). FinGuard проверяет по расписанию и отправляет уведомление.</p></details>
+          <details><summary>Какие уведомления есть?</summary><p class="muted">Встроенные уведомления, а также Email и Telegram (по настройке).</p></details>
+          <details><summary>Есть импорт транзакций?</summary><p class="muted">Импорт CSV — в разработке. Банковские интеграции — отдельный этап.</p></details>
+          <details><summary>Поддерживаются валюты и активы?</summary><p class="muted">Да: курсы, изменения, пороги и уведомления.</p></details>
+          <details><summary>On-chain обязателен?</summary><p class="muted">Нет. Это опциональный модуль.</p></details>
+          <details><summary>Как начать?</summary><p class="muted">Откройте демо или разверните проект через Docker.</p></details>
         </div>
       </section>
 
-      <section class="section reveal" id="cta">
+      <section class="section reveal snap-section" id="cta">
         <div class="cta-final">
-          <h2 id="cta-title">Готовы включить guard-режим?</h2>
-          <p id="cta-sub">Откройте демо или поднимите FinGuard локально за несколько минут.</p>
+          <h2 id="cta-title">Включите контроль.</h2>
+          <p id="cta-sub">Откройте демо или поднимите FinGuard локально и настройте первые правила.</p>
           <div class="actions" style="justify-content:center; gap:10px;">
             <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
             <a class="btn ghost" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
@@ -479,6 +598,8 @@
         <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
         <a href="#roadmap">Roadmap</a>
         <a href="#security">Security</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
         <a href="#faq">FAQ</a>
         <a href="mailto:hello@finguard">Contact</a>
       </div>
