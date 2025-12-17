@@ -61,7 +61,28 @@
     .dash-bar { height: 140px; border-radius: 18px; background: linear-gradient(120deg, var(--glow), var(--glow-2)); position: relative; overflow: hidden; }
     .dash-bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); animation: shimmer 3s infinite; }
     .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-    .status-card { border: 1px solid var(--border); border-radius: 20px; padding: 16px; background: var(--panel); box-shadow: var(--shadow); display: grid; gap: 6px; }
+    .status-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      animation: floatStatus 7s ease-in-out infinite;
+    }
+    .status-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.08), transparent 60%);
+      opacity: 0;
+      animation: shimmerSoft 4s ease-in-out infinite;
+    }
+    .status-card:nth-child(2) { animation-delay: 0.8s; }
+    .status-card:nth-child(3) { animation-delay: 1.6s; }
     .status-card h4 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
     .status-card p { margin: 0; color: var(--muted); font-size: 16px; }
     .alert-feed { border: 1px solid var(--border); border-radius: 24px; padding: 18px; background: var(--panel); box-shadow: var(--shadow); display: grid; gap: 16px; }
@@ -118,7 +139,12 @@
       display: grid; gap: 12px; align-content: space-between; overflow: hidden;
       transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.3s ease;
     }
-    .feature-tile:hover { transform: translateY(-8px); border-color: var(--accent); box-shadow: 0 24px 52px rgba(79,139,255,0.25); }
+    .feature-tile:hover {
+      transform: none;
+      border-color: var(--border);
+      box-shadow: var(--shadow);
+      background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(79,139,255,0.06));
+    }
     .tone-a { background: linear-gradient(145deg, rgba(79,139,255,0.18), rgba(255,255,255,0.03)); }
     .tone-b { background: linear-gradient(145deg, rgba(60,199,196,0.18), rgba(255,255,255,0.03)); }
     .tone-c { background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(79,139,255,0.08)); }
@@ -147,6 +173,8 @@
     .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     @keyframes shimmer { 0% { transform: translateX(-40%); } 100% { transform: translateX(140%); } }
+    @keyframes shimmerSoft { 0% { opacity: 0; transform: translateX(-30%);} 50% { opacity: 0.4; transform: translateX(0);} 100% { opacity: 0; transform: translateX(30%);} }
+    @keyframes floatStatus { 0% { transform: translateY(0);} 50% { transform: translateY(-6px);} 100% { transform: translateY(0);} }
     @media (max-width: 900px) { .nav-sticky { grid-template-columns: 1fr; } .nav-links { justify-content: flex-start; } .sticky-col { position: relative; top: auto; } }
   </style>
 </head>
@@ -178,13 +206,14 @@
         <div class="hero-grid">
           <div class="stack">
             <span class="label">FINANCE, GUARDED.</span>
+            <div class="muted">FinGuard by Finwize</div>
             <h1 id="hero-title">FinGuard. Финансы под контролем.</h1>
-            <p id="hero-subtitle">Учет, цели и умные правила, которые сами следят.</p>
+            <p id="hero-subtitle">Учет, цели и правила, которые вовремя предупреждают.</p>
             <div class="actions" style="gap:10px;">
               <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
               <a class="btn ghost" href="#docs">Документация</a>
             </div>
-            <div class="microline">Self-host option · Rules & Alerts Engine · FX & Assets · On-chain audit (optional)</div>
+            <div class="microline">Self-host · Правила и уведомления · Валюта и активы · On-chain аудит (опционально)</div>
           </div>
           <div class="hero-visual">
             <div class="dash-mock">
@@ -202,7 +231,6 @@
                   <p>USD/RUB 96.20 · Порог · Резерв 62%</p>
                 </div>
               </div>
-              <div class="dash-bar"></div>
             </div>
           </div>
         </div>
@@ -210,7 +238,7 @@
 
       <section class="section reveal" id="intro">
         <h2>В двух словах</h2>
-        <p class="lead">Не просто учет. Это guard-режим.</p>
+        <p class="lead">Не просто учет. Это режим контроля.</p>
         <div class="flow">
           <div class="flow-chip">Data</div>
           <div class="flow-arrow">→</div>
@@ -252,24 +280,23 @@
           <div class="sticky-col">
             <h2>Rules & Alerts</h2>
             <p class="lead">Алерты, которые понимают контекст.</p>
-            <div class="feature-pill">Sticky-story</div>
           </div>
           <div class="story-visuals">
             <div class="story-card">
-              <h3>Rule builder</h3>
+              <h3>Конструктор правил</h3>
               <p class="muted">Настройте условие один раз — FinGuard следит каждый день.</p>
             </div>
             <div class="story-card">
               <h3>Лимиты по категориям</h3>
-              <p class="muted">“Еда”, “Транспорт”, “Подписки”. Сигнал при риске.</p>
+              <p class="muted">“Еда”, “Транспорт”, “Подписки”. Уведомление, когда риск.</p>
             </div>
             <div class="story-card">
               <h3>Порог по курсу</h3>
-              <p class="muted">FX/актив достигает значения — сигнал сразу.</p>
+              <p class="muted">Когда курс достигает порога — вы узнаете сразу.</p>
             </div>
             <div class="story-card">
               <h3>Повторяющиеся списания</h3>
-              <p class="muted">Подсветка регулярных трат и подписок.</p>
+              <p class="muted">Находит регулярные списания и показывает их отдельно.</p>
             </div>
           </div>
         </div>
@@ -289,7 +316,7 @@
             <div class="feature-pill">2</div>
             <div>
               <h3 style="margin:8px 0 6px;">Данные</h3>
-              <p class="muted">Доходы и траты. Импорт в roadmap.</p>
+              <p class="muted">Доходы и траты. Импорт CSV — скоро.</p>
             </div>
           </div>
           <div class="feature-tile tone-b">
@@ -317,7 +344,7 @@
       <section class="section reveal" id="onchain">
         <span class="label">OPTIONAL MODULE</span>
         <h2>On-chain: доказуемость без компромиссов.</h2>
-        <p class="lead">Метки в блокчейне без публикации финансовых данных.</p>
+        <p class="lead">Фиксируйте контрольные метки в блокчейне — без раскрытия деталей.</p>
         <div class="feature-pack">
           <div class="feature-tile tone-c">
             <div class="feature-pill">Audit anchoring</div>
@@ -333,14 +360,14 @@
           </div>
         </div>
         <div class="story-card" style="margin-top:16px;">
-          <strong>Audit record</strong>
-          <p class="muted">Tx hash · timestamp · status verified.</p>
+          <strong>Запись подтверждена в сети.</strong>
+          <p class="muted">Tx hash · time · verified.</p>
         </div>
       </section>
 
       <section class="section reveal" id="perspective">
         <h2 id="persp-title">FinGuard масштабируется вместе с задачей.</h2>
-        <p class="lead" id="persp-sub">Личный, командный, модульный.</p>
+        <p class="lead" id="persp-sub">Один продукт — для себя, для команды и как модуль.</p>
         <div class="story-four">
           <div class="story-block"><strong>Для личного использования</strong><p class="muted">Учет + цели + правила. Привычки расходов становятся управляемыми.</p></div>
           <div class="story-block"><strong>Для команд</strong><p class="muted">Бюджеты, роли, лимиты, контроль расходов по направлениям.</p></div>
@@ -353,19 +380,19 @@
         <h2>Дорожная карта. Понятно. По релизам.</h2>
         <div class="accordion">
           <details open>
-            <summary>Release 1 — Core</summary>
+            <summary>Версия 1 — Основа</summary>
             <p class="muted">Accounts · Transactions · Reports · Basic rules · Notifications</p>
           </details>
           <details>
-            <summary>Release 2 — Insights</summary>
+            <summary>Версия 2 — Инсайты</summary>
             <p class="muted">Goals · Subscriptions · Advanced rules · Better analytics</p>
           </details>
           <details>
-            <summary>Release 3 — Integrations</summary>
+            <summary>Версия 3 — Интеграции</summary>
             <p class="muted">Import · FX providers · Asset tracking · Webhooks</p>
           </details>
           <details>
-            <summary>Release 4 — On-chain (optional)</summary>
+            <summary>Версия 4 — On-chain (опционально)</summary>
             <p class="muted">Audit anchoring · Vault policies · Escrow goals</p>
           </details>
         </div>
@@ -392,16 +419,16 @@
       <section class="section reveal" id="faq">
         <h2>FAQ</h2>
         <div class="accordion">
-          <details><summary>Это банк?</summary><p class="muted">Нет, это учет и контроль.</p></details>
-          <details><summary>Где хранятся данные?</summary><p class="muted">Локально или self-host.</p></details>
-          <details><summary>Есть ли импорт?</summary><p class="muted">В планах: CSV/банки.</p></details>
-          <details><summary>Как работают правила?</summary><p class="muted">Условия → проверка → сигнал.</p></details>
-          <details><summary>Какие уведомления?</summary><p class="muted">Email/Telegram/встроенные.</p></details>
-          <details><summary>Поддерживается мультивалюта?</summary><p class="muted">Да, курсы и конвертация.</p></details>
-          <details><summary>On-chain обязателен?</summary><p class="muted">Нет, модуль опционален.</p></details>
-          <details><summary>Можно self-host?</summary><p class="muted">Да, сценарий предусмотрен.</p></details>
-          <details><summary>Для чего проект в будущем?</summary><p class="muted">Личный, командный и модуль для финтеха.</p></details>
-          <details><summary>Как быстро начать?</summary><p class="muted">Откройте демо или поднимите docker.</p></details>
+          <details><summary>Это банк?</summary><p class="muted">Нет. FinGuard не хранит деньги и не проводит платежи — он помогает учитывать, планировать и контролировать.</p></details>
+          <details><summary>Где хранятся данные?</summary><p class="muted">На вашем устройстве или на вашем сервере (self-host). Вы контролируете данные.</p></details>
+          <details><summary>Есть ли импорт?</summary><p class="muted">CSV — скоро. Банковские интеграции обсуждаем отдельно.</p></details>
+          <details><summary>Как работают правила?</summary><p class="muted">Вы задаете условия, система проверяет и отправляет сигнал.</p></details>
+          <details><summary>Какие уведомления?</summary><p class="muted">Email, Telegram и встроенные.</p></details>
+          <details><summary>Поддерживается мультивалюта?</summary><p class="muted">Да: курсы и конвертация.</p></details>
+          <details><summary>On-chain обязателен?</summary><p class="muted">Нет. Модуль опционален.</p></details>
+          <details><summary>Можно self-host?</summary><p class="muted">Да. Можно развернуть на своём сервере.</p></details>
+          <details><summary>Для чего проект в будущем?</summary><p class="muted">Личный, командный и как модуль для финтеха.</p></details>
+          <details><summary>Как быстро начать?</summary><p class="muted">Откройте демо или поднимите через Docker.</p></details>
         </div>
       </section>
 
