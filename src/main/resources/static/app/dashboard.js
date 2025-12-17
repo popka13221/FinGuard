@@ -119,8 +119,8 @@
   function renderSparkline(target, series, color) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el || !Array.isArray(series) || series.length === 0) return;
-    const width = el.clientWidth || 160;
-    const height = 56;
+    const width = el.clientWidth || 140;
+    const height = 52;
     const pad = 8;
     const max = Math.max(...series);
     const min = Math.min(...series);

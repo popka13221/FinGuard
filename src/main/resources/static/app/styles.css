@@ -47,8 +47,8 @@ header h1 { margin: 0; font-size: 24px; letter-spacing: 0.2px; }
 header .pill { padding: 8px 11px; border-radius: 999px; background: rgba(79,139,255,0.12); color: var(--accent); font-weight: 700; border: 1px solid rgba(79,139,255,0.25); }
 .muted { color: var(--muted); font-size: 13px; }
 
-.grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px; margin-top: 18px; }
-.main-grid { grid-template-columns: 1fr 0.9fr; gap: 14px; margin-top: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 18px; }
+.main-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 14px; }
 .stack { display: grid; gap: 12px; }
 .form { display: grid; gap: 12px; }
 .field { display: grid; gap: 6px; }
@@ -197,7 +197,7 @@ pre {
 .timeline-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-strong); }
 .timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
 .mini-chart { height: 42px; border-radius: 10px; background: linear-gradient(90deg, rgba(63,131,248,0.18), rgba(16,185,129,0.2)); border: 1px dashed var(--border); }
-.chart-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 14px; margin-top: 14px; }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; margin-top: 14px; }
 .chart-shell { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-strong); overflow: hidden; }
 .chart-svg { width: 100%; height: 220px; display: block; }
 .chart-area { fill: url(#lineFill); }
@@ -211,10 +211,10 @@ pre {
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: var(--accent); }
 .crypto-grid { display: grid; gap: 10px; grid-template-columns: 1fr; margin-top: 10px; }
 .mini-coin { border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--panel-strong); display: grid; }
-.coin-row { display: grid; grid-template-columns: auto 1fr auto 160px; align-items: center; gap: 8px; width: 100%; }
+.coin-row { display: grid; grid-template-columns: auto 1fr auto 140px; align-items: center; gap: 8px; width: 100%; }
 .coin-title { display: grid; gap: 2px; }
-.mini-spark { width: 100%; max-width: 160px; height: 56px; margin-left: auto; }
-.spark-svg { width: 100%; height: 56px; display: block; }
+.mini-spark { width: 100%; max-width: 140px; height: 52px; margin-left: auto; }
+.spark-svg { width: 100%; height: 52px; display: block; }
 .coin-dot { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
 .coin-logo { width: 28px; height: 28px; border-radius: 50%; background: var(--panel-strong); object-fit: contain; box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
 
