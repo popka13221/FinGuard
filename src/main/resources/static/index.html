@@ -338,9 +338,10 @@
       grid-template-columns: repeat(4, minmax(200px, 1fr));
       grid-template-rows: auto auto;
       column-gap: 28px;
-      row-gap: 120px;
+      row-gap: var(--roadmap-gap, 120px);
       align-items: center;
-      padding: 48px 0 12px;
+      padding: 48px 0 48px;
+      --roadmap-gap: 120px;
     }
     .roadmap-grid::before {
       content: "";
@@ -382,7 +383,7 @@
       gap: 12px;
       justify-items: center;
       text-align: center;
-      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      transition: box-shadow 0.25s ease, border-color 0.25s ease;
       width: 100%;
     }
     .roadmap-item.top { grid-row: 1; align-self: end; }
@@ -395,28 +396,14 @@
       content: "";
       position: absolute;
       width: 2px;
-      height: 60px;
+      height: calc(var(--roadmap-gap, 120px) / 2);
       background: rgba(255,255,255,0.6);
       left: 50%;
       transform: translateX(-50%);
     }
     .roadmap-item.top::after { top: 100%; }
     .roadmap-item.bottom::after { bottom: 100%; }
-    .roadmap-item::before {
-      content: "";
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: rgba(255,255,255,0.9);
-      border-radius: 3px;
-      box-shadow: 0 0 12px rgba(255,255,255,0.25);
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    .roadmap-item.top::before { top: calc(100% + 60px); }
-    .roadmap-item.bottom::before { bottom: calc(100% + 60px); }
     .roadmap-item:hover {
-      transform: translateY(-4px);
       border-color: rgba(79,139,255,0.4);
       box-shadow: 0 14px 32px rgba(79,139,255,0.18);
     }
