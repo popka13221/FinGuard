@@ -197,10 +197,10 @@
 
     .feature-pack { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 28px; margin-top: 14px; }
     .hero-pack { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 36px; }
-    .hero-pack .feature-tile { min-height: 520px; padding: 40px; }
-    .hero-pack .feature-pill { font-size: 34px; padding: 28px 32px; }
-    .hero-pack h3 { font-size: 32px; }
-    .hero-pack p { font-size: 20px; line-height: 1.6; }
+    .hero-pack .feature-tile { min-height: 360px; padding: 26px; }
+    .hero-pack .feature-pill { font-size: 24px; padding: 18px 22px; }
+    .hero-pack h3 { font-size: 26px; }
+    .hero-pack p { font-size: 17px; line-height: 1.6; }
     .section.fullscreen { min-height: 100vh; display: grid; align-content: center; gap: 26px; padding-top: clamp(80px, 12vw, 160px); padding-bottom: clamp(80px, 12vw, 160px); }
     .feature-tile {
       position: relative; padding: 26px; border-radius: 28px; min-height: 260px;
@@ -335,24 +335,9 @@
     .roadmap-grid {
       position: relative;
       display: grid;
-      grid-template-columns: repeat(4, minmax(200px, 1fr));
-      grid-template-rows: 1fr auto 1fr;
-      gap: 28px 20px;
-      align-items: center;
-      padding: 30px 10px;
-    }
-    .roadmap-grid::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      height: 4px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.9) 80%, transparent 100%);
-      filter: blur(0.5px);
-      opacity: 0.95;
-      pointer-events: none;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+      padding: 20px 0;
     }
     .roadmap-item {
       position: relative;
@@ -367,29 +352,13 @@
       justify-items: center;
       text-align: center;
       transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      width: 100%;
     }
     .roadmap-item:hover {
       transform: translateY(-4px);
       border-color: rgba(79,139,255,0.4);
       box-shadow: 0 14px 32px rgba(79,139,255,0.18);
     }
-    .roadmap-item.top { grid-row: 1; }
-    .roadmap-item.bottom { grid-row: 3; }
-    .roadmap-item:nth-child(1) { grid-column: 1; }
-    .roadmap-item:nth-child(2) { grid-column: 2; }
-    .roadmap-item:nth-child(3) { grid-column: 3; }
-    .roadmap-item:nth-child(4) { grid-column: 4; }
-    .roadmap-item.top::before,
-    .roadmap-item.bottom::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      width: 2px;
-      height: 36px;
-      background: rgba(255,255,255,0.4);
-    }
-    .roadmap-item.top::before { bottom: -36px; }
-    .roadmap-item.bottom::before { top: -36px; }
     .roadmap-step { font-weight: 800; letter-spacing: 0.08em; font-size: 14px; color: var(--muted); }
     .roadmap-item strong { font-size: clamp(22px, 3vw, 30px); }
     .roadmap-item p { margin: 0; font-size: 18px; }
@@ -487,6 +456,53 @@
     @keyframes floatStatus { 0% { transform: translateY(0);} 50% { transform: translateY(-3px);} 100% { transform: translateY(0);} }
     @media (max-width: 1100px) { .modules { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
     @media (max-width: 900px) { .nav-sticky { grid-template-columns: 1fr; } .nav-links { justify-content: flex-start; } .sticky-col { position: relative; top: auto; } }
+    @media (max-width: 720px) {
+      .page { padding: 18px 14px 80px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .feature-pack,
+      .hero-pack,
+      .modules,
+      .story-grid,
+      .story-four { grid-template-columns: 1fr; }
+      .feature-pill { font-size: 22px; padding: 18px 20px; }
+      .hero-mega { font-size: clamp(30px, 9vw, 54px) !important; }
+      .section { margin: clamp(80px, 18vw, 140px) 0; padding: clamp(40px, 12vw, 90px) 0; }
+      .hero { padding: 22px; }
+      .nav-links { display: none; }
+      .nav-sticky { grid-template-columns: 1fr auto; gap: 10px; }
+      .nav-sticky .actions .btn.github { display: none; }
+    }
+    @media (max-width: 640px) {
+      .section { margin: clamp(60px, 14vw, 100px) 0; padding: clamp(28px, 10vw, 60px) 0; }
+      .feature-tile,
+      #how .feature-tile,
+      #onchain .feature-tile { min-height: auto; padding: 20px 18px; gap: 12px; }
+      .hero-pack { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+      .hero-pack .feature-tile { max-width: 520px; width: 100%; margin: 0 auto; }
+      .feature-pill { font-size: 20px; padding: 16px 18px; }
+      #intro { margin-top: clamp(100px, 16vw, 200px); padding-top: clamp(22px, 8vw, 60px); padding-bottom: clamp(80px, 12vw, 140px); }
+      #intro .hero-mega { font-size: clamp(32px, 10vw, 48px) !important; }
+      #intro .lead { font-size: clamp(16px, 4vw, 20px); }
+      .hero-flow .flow-chip { min-height: 120px; font-size: clamp(20px, 6vw, 28px); padding: 18px; }
+      .hero-flow .flow-arrow { display: none; }
+      .flow { flex-wrap: wrap; gap: 10px; justify-content: center; }
+      .hero-flow { flex-direction: column; align-items: stretch; }
+      .hero-flow .flow-chip { width: 100%; }
+      .modules { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+      .story-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+      .alert-feed { gap: 12px; padding: 14px; }
+      .alert-item { grid-template-columns: 1fr; justify-items: flex-start; }
+      .hero { padding: 18px; }
+      .roadmap-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      #cta .section-header { margin: clamp(80px, 20vw, 160px) 0 clamp(80px, 20vw, 160px); }
+      .footer .actions {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px !important;
+        justify-items: center;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -507,7 +523,7 @@
       </nav>
       <div class="actions">
         <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
-        <a class="btn" href="https://github.com/popka13221/FinGuard" target="_blank" rel="noreferrer">GitHub</a>
+        <a class="btn github" href="https://github.com/popka13221/FinGuard" target="_blank" rel="noreferrer">GitHub</a>
       </div>
     </header>
 
@@ -528,37 +544,37 @@
             <div class="dash-mock">
               <div class="status-grid">
                 <div class="status-card">
-                  <h4>Баланс</h4>
-                  <p>$22 650 · multi-currency</p>
+                  <h4>Итого на счетах</h4>
+                  <p>$22 650 · сумма по всем счетам</p>
                 </div>
                 <div class="status-card">
-                  <h4>Правила</h4>
-                  <p>5 активных · Лимиты · Пороги · Подписки</p>
+                  <h4>Активные правила</h4>
+                  <p>лимиты · пороги · подписки</p>
                 </div>
                 <div class="status-card">
-                  <h4>FX / Активы</h4>
-                  <p>USD/RUB 96.20 · Порог активен · Портфель +2.4%</p>
+                  <h4>Курсы и портфель</h4>
+                  <p>BTC/USD 118936,62 · портфель +2,4%</p>
                 </div>
               </div>
               <div class="alert-feed">
                 <div class="alert-item">
                   <div>
-                    <h4>Лимит: Подписки</h4>
-                    <p>Расходы 78% от месячного лимита — предупредим заранее.</p>
+                    <h4>Лимит на подписки</h4>
+                    <p>Потрачено 78% · предупредим при 90%.</p>
                   </div>
-                  <span class="alert-pill soft">Контроль</span>
+                  <span class="alert-pill soft">Настроить</span>
                 </div>
                 <div class="alert-item">
                   <div>
-                    <h4>Порог USD/RUB</h4>
-                    <p>Достигнут 96.20 — уведомление ушло в Telegram.</p>
+                    <h4>Порог по USD/RUB</h4>
+                    <p>96,20 достигнут · отправлено в Telegram.</p>
                   </div>
-                  <span class="alert-pill danger">Сигнал</span>
+                  <span class="alert-pill danger">История</span>
                 </div>
               </div>
               <div class="status-card">
-                <h4>Цель: Резерв</h4>
-                <p>62% · осталось $3.2k · темп +$480/мес.</p>
+                <h4>Финансовая подушка</h4>
+                <p>Готово 62% · осталось $3,2k · темп $480/мес.</p>
               </div>
             </div>
           </div>
@@ -719,22 +735,22 @@
           <h2 class="hero-mega">Дорожная карта. Поэтапно и прозрачно.</h2>
         </div>
         <div class="roadmap-grid">
-          <div class="roadmap-item top">
+          <div class="roadmap-item">
             <span class="roadmap-step">V1</span>
             <strong>Основа</strong>
             <p class="muted">Счета · Транзакции · Отчеты · Базовые правила · Уведомления</p>
           </div>
-          <div class="roadmap-item bottom">
+          <div class="roadmap-item">
             <span class="roadmap-step">V2</span>
             <strong>Инсайты</strong>
             <p class="muted">Цели · Подписки · Расширенные правила · Улучшенная аналитика</p>
           </div>
-          <div class="roadmap-item top">
+          <div class="roadmap-item">
             <span class="roadmap-step">V3</span>
             <strong>Интеграции</strong>
             <p class="muted">Импорт CSV · Провайдеры FX · Активы · Webhooks</p>
           </div>
-          <div class="roadmap-item bottom">
+          <div class="roadmap-item">
             <span class="roadmap-step">V4</span>
             <strong>On-chain</strong>
             <p class="muted">Метки аудита · Политики Vault · Escrow-цели</p>
