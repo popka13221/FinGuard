@@ -27,7 +27,13 @@
     registerButton: '#btn-register',
     themeToggle: '#btn-theme',
     showPasswordLogin: '#show-login-password',
-    showPasswordRegister: '#show-register-password'
+    showPasswordRegister: '#show-register-password',
+    regOtpSection: '#regOtpSection',
+    regOtpCode: '#regOtpCode',
+    regOtpError: '#regOtpError',
+    regOtpButton: '#btn-reg-otp',
+    regOtpResendButton: '#btn-reg-otp-resend',
+    regOtpHint: '#regOtpHint'
   };
 
   function value(id) {
@@ -80,7 +86,7 @@
 
   function clearFieldErrors() {
     const inputs = ['loginEmail', 'loginPassword', 'regEmail', 'regPassword', 'regFullName', 'regCurrency'];
-    const errors = ['emailError', 'passwordError', 'otpError', 'regEmailError', 'regPasswordError', 'fullNameError', 'currencyError'];
+    const errors = ['emailError', 'passwordError', 'otpError', 'regEmailError', 'regPasswordError', 'fullNameError', 'currencyError', 'regOtpError'];
     inputs.forEach(key => {
       const el = document.querySelector(selectors[key]);
       if (el) el.classList.remove('error');
@@ -134,28 +140,36 @@
     }
   }
 
-function switchForm(form) {
-  const loginForm = document.querySelector(selectors.loginForm);
-  const registerForm = document.querySelector(selectors.registerForm);
-  const tabLogin = document.querySelector(selectors.tabLogin);
-  const tabRegister = document.querySelector(selectors.tabRegister);
-  if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
-  // сохраняем состояние OTP при возврате на логин, скрываем только визуально при переходе на регистрацию
-  if (form === 'register') {
-    const otpSection = document.querySelector(selectors.otpSection);
-    if (otpSection) otpSection.style.display = 'none';
-    const loginBtn = document.querySelector(selectors.loginButton);
-    if (loginBtn) loginBtn.style.display = 'inline-block';
-  } else if (form === 'login' && otpPending) {
-    showOtpSection();
-  } else {
-    hideOtpSection();
-  }
-  clearFieldErrors();
-  const remaining = remainingLoginCooldownSeconds();
-  if (remaining > 0) {
-    const formatter = formatCooldownMessage(loginCooldownCode);
-    showError(formatter(remaining));
+  function switchForm(form) {
+    const loginForm = document.querySelector(selectors.loginForm);
+    const registerForm = document.querySelector(selectors.registerForm);
+    const tabLogin = document.querySelector(selectors.tabLogin);
+    const tabRegister = document.querySelector(selectors.tabRegister);
+    if (!loginForm || !registerForm || !tabLogin || !tabRegister) return;
+    // сохраняем состояние OTP при возврате на логин, скрываем только визуально при переходе на регистрацию
+    if (form === 'register') {
+      const otpSection = document.querySelector(selectors.otpSection);
+      if (otpSection) otpSection.style.display = 'none';
+      const loginBtn = document.querySelector(selectors.loginButton);
+      if (loginBtn) loginBtn.style.display = 'inline-block';
+      if (regOtpPending) {
+        showRegOtpSection();
+      } else {
+        hideRegOtpSection(false);
+      }
+    } else {
+      hideRegOtpSection(false);
+      if (form === 'login' && otpPending) {
+        showOtpSection();
+      } else {
+        hideOtpSection();
+      }
+    }
+    clearFieldErrors();
+    const remaining = remainingLoginCooldownSeconds();
+    if (remaining > 0) {
+      const formatter = formatCooldownMessage(loginCooldownCode);
+      showError(formatter(remaining));
     } else {
       showError('');
     }
@@ -333,6 +347,10 @@ function switchForm(form) {
   let loginCooldownCode = '';
   let loginCooldownTimer = null;
   let otpCooldownTimer = null;
+  let regOtpPending = false;
+  let regOtpEmail = '';
+  let regOtpCooldownUntil = 0;
+  let regOtpTimer = null;
 
   function loadOtpState() {
     try {
@@ -440,6 +458,51 @@ function loadLoginCooldown() {
     }
   }
 
+  function remainingRegOtpCooldownSeconds() {
+    const now = Date.now();
+    if (!regOtpPending) {
+      return 0;
+    }
+    if (regOtpCooldownUntil <= now) {
+      regOtpCooldownUntil = 0;
+      return 0;
+    }
+    return Math.max(1, Math.ceil((regOtpCooldownUntil - now) / 1000));
+  }
+
+  function updateRegOtpResendButton() {
+    const btn = document.querySelector(selectors.regOtpResendButton);
+    if (!btn) return;
+    const baseText = 'Отправить новый код';
+    const remaining = remainingRegOtpCooldownSeconds();
+    if (remaining > 0) {
+      btn.disabled = true;
+      btn.textContent = `${baseText} (${remaining} сек.)`;
+    } else {
+      btn.disabled = submitting || !regOtpPending;
+      btn.textContent = baseText;
+    }
+  }
+
+  function startRegOtpCooldownTimer() {
+    updateRegOtpResendButton();
+    if (regOtpTimer) {
+      clearInterval(regOtpTimer);
+      regOtpTimer = null;
+    }
+    const left = remainingRegOtpCooldownSeconds();
+    if (left > 0) {
+      regOtpTimer = setInterval(() => {
+        const remaining = remainingRegOtpCooldownSeconds();
+        updateRegOtpResendButton();
+        if (remaining <= 0 && regOtpTimer) {
+          clearInterval(regOtpTimer);
+          regOtpTimer = null;
+        }
+      }, 1000);
+    }
+  }
+
   function startLoginCooldownTimer(formatter) {
     if (loginCooldownCode === '429002') {
       if (loginCooldownTimer) {
@@ -505,6 +568,47 @@ function loadLoginCooldown() {
     startOtpCooldownTimer();
   }
 
+  function showRegOtpSection(message) {
+    const section = document.querySelector(selectors.regOtpSection);
+    const input = document.querySelector(selectors.regOtpCode);
+    const error = document.querySelector(selectors.regOtpError);
+    const btn = document.querySelector(selectors.registerButton);
+    const hint = document.querySelector(selectors.regOtpHint);
+    if (section) section.style.display = 'grid';
+    if (btn) btn.style.display = 'none';
+    if (error) { error.textContent = ''; error.style.display = 'none'; }
+    if (input) input.value = '';
+    regOtpPending = true;
+    if (hint) {
+      const emailNote = regOtpEmail ? ` (${regOtpEmail})` : '';
+      hint.textContent = message || `Мы отправили код на ваш email${emailNote}.`;
+      hint.style.display = 'block';
+    }
+    startRegOtpCooldownTimer();
+  }
+
+  function hideRegOtpSection(resetState = true) {
+    const section = document.querySelector(selectors.regOtpSection);
+    const error = document.querySelector(selectors.regOtpError);
+    const input = document.querySelector(selectors.regOtpCode);
+    const btn = document.querySelector(selectors.registerButton);
+    const hint = document.querySelector(selectors.regOtpHint);
+    if (section) section.style.display = 'none';
+    if (btn) btn.style.display = 'inline-block';
+    if (error) { error.textContent = ''; error.style.display = 'none'; }
+    if (hint) { hint.textContent = ''; hint.style.display = 'none'; }
+    if (resetState) {
+      if (input) input.value = '';
+      regOtpPending = false;
+      regOtpEmail = '';
+      regOtpCooldownUntil = 0;
+      if (regOtpTimer) {
+        clearInterval(regOtpTimer);
+        regOtpTimer = null;
+      }
+    }
+  }
+
   async function submitOtp(email) {
     const codeInput = document.querySelector(selectors.otpCode);
     const otpError = document.querySelector(selectors.otpError);
@@ -538,6 +642,48 @@ function loadLoginCooldown() {
       window.location.href = '/app/dashboard.html';
     } else {
       if (otpError) { otpError.textContent = 'Код неверный или истек. Попробуйте снова.'; otpError.style.display = 'block'; }
+    }
+  }
+
+  async function submitRegOtp() {
+    const codeInput = document.querySelector(selectors.regOtpCode);
+    const errorEl = document.querySelector(selectors.regOtpError);
+    const email = (regOtpEmail || (value(selectors.regEmail) || '')).trim().toLowerCase();
+    if (!codeInput) return;
+    const code = (codeInput.value || '').trim();
+    if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
+    showError('', selectors.errorBoxRegister);
+    if (!code) {
+      if (errorEl) { errorEl.textContent = 'Введите код из письма'; errorEl.style.display = 'block'; }
+      return;
+    }
+    if (!email) {
+      showError('Введите email и повторите регистрацию, чтобы получить код.', selectors.errorBoxRegister);
+      return;
+    }
+    submitting = true;
+    setSubmitting(true);
+    const res = await Api.call('/api/auth/verify', 'POST', { email, token: code }, false);
+    submitting = false;
+    setSubmitting(false);
+    if (res.ok && res.data && res.data.token) {
+      Api.setEmail(email);
+      hideRegOtpSection();
+      window.location.href = '/app/dashboard.html';
+      return;
+    }
+    const errCode = res.data && res.data.code ? res.data.code : '';
+    if (res.status === 429) {
+      const retry = res.data && res.data.retryAfterSeconds ? Number(res.data.retryAfterSeconds) : 60;
+      regOtpCooldownUntil = Date.now() + retry * 1000;
+      startRegOtpCooldownTimer();
+      showError(`Слишком много попыток. Попробуйте через ${Math.max(1, retry)} сек.`, selectors.errorBoxRegister);
+      return;
+    }
+    if (errCode === '100005') {
+      if (errorEl) { errorEl.textContent = 'Код недействителен или истек. Запросите новый код или попробуйте снова.'; errorEl.style.display = 'block'; }
+    } else {
+      showError('Не удалось подтвердить код. Попробуйте снова.', selectors.errorBoxRegister);
     }
   }
 
@@ -618,6 +764,11 @@ function loadLoginCooldown() {
     }
   }
 
+  async function resendRegOtp() {
+    if (submitting) return;
+    await register();
+  }
+
   async function register() {
     if (submitting) return;
     const currencySelect = document.querySelector(selectors.regCurrency);
@@ -627,15 +778,30 @@ function loadLoginCooldown() {
     }
     const validation = validateRegister();
     if (!validation.valid) return;
+    regOtpEmail = validation.payload.email;
+    const regOtpErr = document.querySelector(selectors.regOtpError);
+    if (regOtpErr) { regOtpErr.textContent = ''; regOtpErr.style.display = 'none'; }
+    showError('', selectors.errorBoxRegister);
     submitting = true;
     setSubmitting(true);
     const result = await Api.call('/api/auth/register', 'POST', validation.payload, false);
     submitting = false;
     setSubmitting(false);
-    if (result.ok) {
+    if (result.ok && result.data && result.data.verificationRequired) {
+      const retry = result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
+      regOtpCooldownUntil = Date.now() + Math.max(1, retry || 0) * 1000;
+      showRegOtpSection(result.data.message);
+      startRegOtpCooldownTimer();
+      return;
+    }
+    if (result.ok && result.data && result.data.token) {
       const email = validation.payload.email;
       Api.setEmail(email);
+      hideRegOtpSection();
       window.location.href = '/app/dashboard.html';
+    } else if (result.status === 429) {
+      const retry = result.data && result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
+      showError(`Слишком много попыток. Попробуйте через ${Math.max(1, retry)} сек.`, selectors.errorBoxRegister);
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
       handleErrorCode(code);
@@ -647,18 +813,23 @@ function loadLoginCooldown() {
       selectors.loginButton,
       selectors.registerButton,
       selectors.otpButton,
-      selectors.otpResendButton
+      selectors.otpResendButton,
+      selectors.regOtpButton,
+      selectors.regOtpResendButton
     ].map((sel) => document.querySelector(sel));
     buttons.forEach((btn) => {
       if (!btn) return;
       if (btn.matches(selectors.otpResendButton)) {
         btn.disabled = state || remainingOtpCooldownSeconds() > 0;
+      } else if (btn.matches(selectors.regOtpResendButton)) {
+        btn.disabled = state || remainingRegOtpCooldownSeconds() > 0 || !regOtpPending;
       } else {
         btn.disabled = state;
       }
     });
     if (!state) {
       updateOtpResendButton();
+      updateRegOtpResendButton();
     }
   }
 
@@ -694,6 +865,10 @@ function loadLoginCooldown() {
     if (otpBtn) otpBtn.addEventListener('click', () => submitOtp((value(selectors.loginEmail) || '').trim().toLowerCase()));
     const otpResendBtn = document.querySelector(selectors.otpResendButton);
     if (otpResendBtn) otpResendBtn.addEventListener('click', resendOtp);
+    const regOtpBtn = document.querySelector(selectors.regOtpButton);
+    if (regOtpBtn) regOtpBtn.addEventListener('click', submitRegOtp);
+    const regOtpResendBtn = document.querySelector(selectors.regOtpResendButton);
+    if (regOtpResendBtn) regOtpResendBtn.addEventListener('click', resendRegOtp);
     const tabLogin = document.querySelector(selectors.tabLogin);
     const tabRegister = document.querySelector(selectors.tabRegister);
     if (tabLogin) tabLogin.addEventListener('click', () => switchForm('login'));
@@ -736,6 +911,7 @@ function loadLoginCooldown() {
     }
     startOtpCooldownTimer();
     startLoginCooldownTimer();
+    startRegOtpCooldownTimer();
 
     const params = new URLSearchParams(window.location.search);
     const verified = params.get('verified');

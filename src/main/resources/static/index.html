@@ -335,20 +335,23 @@
     .roadmap-grid {
       position: relative;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      padding: 40px 0 12px;
-      align-items: start;
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
+      grid-template-rows: auto auto;
+      column-gap: 28px;
+      row-gap: 120px;
+      align-items: center;
+      padding: 48px 0 12px;
     }
     .roadmap-grid::before {
       content: "";
       position: absolute;
       left: 0;
       right: 0;
-      top: 26px;
+      top: 50%;
       height: 3px;
+      transform: translateY(-50%);
       background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.9) 80%, transparent 100%);
-      filter: blur(0.5px);
+      filter: blur(0.4px);
       opacity: 0.9;
       pointer-events: none;
     }
@@ -367,28 +370,51 @@
       transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
       width: 100%;
     }
-    .roadmap-item::before {
-      content: "";
-      position: absolute;
-      top: -24px;
-      left: 50%;
-      width: 2px;
-      height: 24px;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.55);
+    .roadmap-item {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      min-height: 220px;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      width: 100%;
     }
+    .roadmap-item.top { grid-row: 1; align-self: end; }
+    .roadmap-item.bottom { grid-row: 2; align-self: start; }
+    .roadmap-item:nth-child(1) { grid-column: 1; }
+    .roadmap-item:nth-child(2) { grid-column: 2; }
+    .roadmap-item:nth-child(3) { grid-column: 3; }
+    .roadmap-item:nth-child(4) { grid-column: 4; }
     .roadmap-item::after {
       content: "";
       position: absolute;
-      top: -34px;
+      width: 2px;
+      height: 60px;
+      background: rgba(255,255,255,0.6);
       left: 50%;
+      transform: translateX(-50%);
+    }
+    .roadmap-item.top::after { top: 100%; }
+    .roadmap-item.bottom::after { bottom: 100%; }
+    .roadmap-item::before {
+      content: "";
+      position: absolute;
       width: 10px;
       height: 10px;
-      transform: translateX(-50%);
       background: rgba(255,255,255,0.9);
       border-radius: 3px;
       box-shadow: 0 0 12px rgba(255,255,255,0.25);
+      left: 50%;
+      transform: translateX(-50%);
     }
+    .roadmap-item.top::before { top: calc(100% + 60px); }
+    .roadmap-item.bottom::before { bottom: calc(100% + 60px); }
     .roadmap-item:hover {
       transform: translateY(-4px);
       border-color: rgba(79,139,255,0.4);
@@ -528,8 +554,9 @@
       .alert-feed { gap: 12px; padding: 14px; }
       .alert-item { grid-template-columns: 1fr; justify-items: flex-start; }
       .hero { padding: 18px; }
-      .roadmap-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .roadmap-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); grid-template-rows: auto; }
       .roadmap-grid::before { display: none; }
+      .roadmap-item { grid-column: auto !important; grid-row: auto !important; }
       .roadmap-item::before,
       .roadmap-item::after { display: none; }
       #cta .section-header { margin: clamp(80px, 20vw, 160px) 0 clamp(80px, 20vw, 160px); }
@@ -773,22 +800,22 @@
           <h2 class="hero-mega">Дорожная карта. Поэтапно и прозрачно.</h2>
         </div>
         <div class="roadmap-grid">
-          <div class="roadmap-item">
+          <div class="roadmap-item top">
             <span class="roadmap-step">V1</span>
             <strong>Основа</strong>
             <p class="muted">Счета · Транзакции · Отчеты · Базовые правила · Уведомления</p>
           </div>
-          <div class="roadmap-item">
+          <div class="roadmap-item bottom">
             <span class="roadmap-step">V2</span>
             <strong>Инсайты</strong>
             <p class="muted">Цели · Подписки · Расширенные правила · Улучшенная аналитика</p>
           </div>
-          <div class="roadmap-item">
+          <div class="roadmap-item top">
             <span class="roadmap-step">V3</span>
             <strong>Интеграции</strong>
             <p class="muted">Импорт CSV · Провайдеры FX · Активы · Webhooks</p>
           </div>
-          <div class="roadmap-item">
+          <div class="roadmap-item bottom">
             <span class="roadmap-step">V4</span>
             <strong>On-chain</strong>
             <p class="muted">Метки аудита · Политики Vault · Escrow-цели</p>
