@@ -1,0 +1,70 @@
+package com.yourname.finguard.accounts.controller;
+
+import com.yourname.finguard.accounts.dto.UserBalanceResponse;
+import com.yourname.finguard.accounts.service.AccountService;
+import com.yourname.finguard.auth.model.User;
+import com.yourname.finguard.auth.repository.UserRepository;
+import com.yourname.finguard.common.constants.ErrorCodes;
+import com.yourname.finguard.common.exception.ApiException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/accounts")
+@Tag(name = "Accounts", description = "Работа со счетами и балансом")
+public class AccountController {
+
+    private final AccountService accountService;
+    private final UserRepository userRepository;
+
+    public AccountController(AccountService accountService, UserRepository userRepository) {
+        this.accountService = accountService;
+        this.userRepository = userRepository;
+    }
+
+    @GetMapping("/balance")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Баланс пользователя", description = "Возвращает баланс по счетам текущего пользователя. "
+            + "Архивные счета не учитываются в агрегированном значении.")
+    @ApiResponse(responseCode = "200", description = "Баланс получен")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<UserBalanceResponse> balance(Authentication authentication) {
+        Long userId = resolveUserId(authentication);
+        return ResponseEntity.ok(accountService.getUserBalance(userId));
+    }
+
+    private Long resolveUserId(Authentication authentication) {
+        if (authentication == null
+                || authentication.getPrincipal() == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            throw unauthorized();
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof com.yourname.finguard.security.UserPrincipal userPrincipal) {
+            return userPrincipal.getId();
+        }
+        if (principal instanceof UserDetails userDetails) {
+            return userRepository.findByEmail(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElseThrow(this::unauthorized);
+        }
+        return userRepository.findByEmail(authentication.getName())
+                .map(User::getId)
+                .orElseThrow(this::unauthorized);
+    }
+
+    private ApiException unauthorized() {
+        return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
+    }
+}
