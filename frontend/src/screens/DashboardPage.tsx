@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
+import { AccountsApi, type AccountBalance, type CurrencyBalance } from '../api/accounts';
 import '../theme.css';
 
-type CardItem = { id: number; name: string; balance: number; mask: string; type: string };
 type Breakdown = { id: number; name: string; spent: number; limit: number };
 type Goal = { id: number; title: string; progress: number; target: string };
 type Payment = { id: number; title: string; amount: number; due: string };
@@ -14,12 +14,10 @@ const DashboardPage: React.FC = () => {
   const [email, setEmail] = useState<string>('user');
   const [fullName, setFullName] = useState<string>('Владелец кошелька');
   const [baseCurrency, setBaseCurrency] = useState<string>('USD');
-
-  const cards: CardItem[] = [
-    { id: 1, name: 'Основной', balance: 18450.32, mask: '••12 45', type: 'Debit' },
-    { id: 2, name: 'Travel', balance: 4200.75, mask: '••55 30', type: 'Debit' },
-    { id: 3, name: 'Credit Plus', balance: -1250.12, mask: '••88 10', type: 'Credit' },
-  ];
+  const [accounts, setAccounts] = useState<AccountBalance[]>([]);
+  const [totalsByCurrency, setTotalsByCurrency] = useState<CurrencyBalance[]>([]);
+  const [balanceError, setBalanceError] = useState<string>('');
+  const [balanceLoading, setBalanceLoading] = useState<boolean>(true);
 
   const breakdown: Breakdown[] = [
     { id: 1, name: 'Еда и кафе', spent: 320, limit: 600 },
@@ -46,7 +44,27 @@ const DashboardPage: React.FC = () => {
   ];
 
   useEffect(() => {
-    AuthApi.profile().then((res) => {
+    const loadBalance = async () => {
+      setBalanceLoading(true);
+      setBalanceError('');
+      try {
+        const res = await AccountsApi.balance();
+        if (res.ok && res.data) {
+          setAccounts(res.data.accounts || []);
+          setTotalsByCurrency(res.data.totalsByCurrency || []);
+          setBalanceError('');
+        } else {
+          setBalanceError('Не удалось загрузить баланс');
+        }
+      } catch (e) {
+        setBalanceError('Не удалось загрузить баланс');
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    const loadProfile = async () => {
+      const res = await AuthApi.profile();
       if (!res.ok) {
         window.location.href = '/auth';
         return;
@@ -58,7 +76,10 @@ const DashboardPage: React.FC = () => {
         setBaseCurrency(profile.baseCurrency || 'USD');
         ApiClient.setEmail(profile.email);
       }
-    });
+      await loadBalance();
+    };
+
+    loadProfile();
   }, []);
 
   const logout = async () => {
@@ -67,13 +88,15 @@ const DashboardPage: React.FC = () => {
     window.location.href = '/auth';
   };
 
-  const formatMoney = (value: number) =>
-    `${value < 0 ? '-' : ''}${Math.abs(value).toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ${baseCurrency}`;
+  const formatMoney = (value: number, currency?: string) =>
+    `${value < 0 ? '-' : ''}${Math.abs(value).toLocaleString('ru-RU', {
+      minimumFractionDigits: 2,
+    })} ${currency || baseCurrency}`;
 
-  const totalBalance = cards.reduce((acc, item) => acc + item.balance, 0);
-  const creditUsed = cards.filter((c) => c.balance < 0).reduce((acc, c) => acc + Math.abs(c.balance), 0);
-  const monthlyIn = 4200;
-  const monthlyOut = 2350;
+  const totalBalance = accounts.reduce((acc, item) => acc + item.balance, 0);
+  const creditUsed = accounts.filter((c) => c.balance < 0).reduce((acc, c) => acc + Math.abs(c.balance), 0);
+  const monthlyIn: number = 4200;
+  const monthlyOut: number = 2350;
   const savingsRate = monthlyIn === 0 ? 0 : Math.round(((monthlyIn - monthlyOut) / monthlyIn) * 100);
 
   return (
@@ -85,6 +108,7 @@ const DashboardPage: React.FC = () => {
             <div>
               <div className="muted" style={{ fontSize: 12 }}>Smart Wallet</div>
               <strong>Личный кабинет</strong>
+              <div className="muted" style={{ fontSize: 12 }}>{email}</div>
             </div>
           </div>
           <div className="actions">
@@ -96,8 +120,17 @@ const DashboardPage: React.FC = () => {
         <div className="grid-3" style={{ marginTop: 12 }}>
           <div className="card stat-card">
             <div className="muted">Баланс</div>
-            <div className="stat-value">{formatMoney(totalBalance)}</div>
-            <div className="muted">Кредит: {formatMoney(-creditUsed)}</div>
+            <div className="stat-value">
+              {balanceLoading ? 'Загрузка…' : formatMoney(totalBalance, totalsByCurrency[0]?.currency || baseCurrency)}
+            </div>
+            <div className="muted">Кредит: {formatMoney(-creditUsed, totalsByCurrency[0]?.currency || baseCurrency)}</div>
+            {totalsByCurrency.length > 1 && (
+              <div className="muted" style={{ marginTop: 4 }}>
+                Баланс по валютам:{' '}
+                {totalsByCurrency.map((t) => `${t.total.toFixed(2)} ${t.currency}`).join(' · ')}
+              </div>
+            )}
+            {balanceError && <div className="amount-negative" style={{ marginTop: 6 }}>{balanceError}</div>}
           </div>
           <div className="card stat-card">
             <div className="muted">Доход / Расход (мес.)</div>
@@ -119,13 +152,20 @@ const DashboardPage: React.FC = () => {
                 <div className="pill-soft">Обновление балансов вручную</div>
               </div>
               <div className="list" style={{ marginTop: 10 }}>
-                {cards.map((card) => (
+                {balanceLoading && <div className="muted">Загружаем баланс…</div>}
+                {!balanceLoading && balanceError && <div className="amount-negative">{balanceError}</div>}
+                {!balanceLoading && !balanceError && accounts.length === 0 && (
+                  <div className="muted">Счета пока не добавлены.</div>
+                )}
+                {!balanceLoading && !balanceError && accounts.map((card) => (
                   <div key={card.id} className="list-item">
                     <div>
                       <div style={{ fontWeight: 800 }}>{card.name}</div>
-                      <small>{card.type} · {card.mask}</small>
+                      <small>{card.currency}{card.archived ? ' · Архив' : ''}</small>
                     </div>
-                    <div className={card.balance >= 0 ? 'amount-positive' : 'amount-negative'}>{formatMoney(card.balance)}</div>
+                    <div className={card.balance >= 0 ? 'amount-positive' : 'amount-negative'}>
+                      {formatMoney(card.balance, card.currency)}
+                    </div>
                   </div>
                 ))}
               </div>

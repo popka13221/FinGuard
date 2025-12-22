@@ -86,8 +86,10 @@
     <div class="grid-3" style="margin-top:16px;">
       <div class="card stat-card">
         <div class="muted">Баланс</div>
-        <div class="stat-value">18 450.32 USD</div>
-        <div class="muted">Кредит: 1 250.12 USD</div>
+        <div class="stat-value" id="totalBalance">—</div>
+        <div class="muted" id="creditValue">Кредит: —</div>
+        <div class="muted" id="totalsByCurrency" style="margin-top:4px; display:none;"></div>
+        <div class="amount-negative" id="balanceError" style="margin-top:6px; display:none;"></div>
       </div>
       <div class="card stat-card">
         <div class="muted">Доход / Расход (мес.)</div>
@@ -102,28 +104,8 @@
           <div class="row" style="justify-content: space-between; align-items: center;">
             <h3 style="margin:0;">Ваши карты</h3>
           </div>
-          <div class="list" style="margin-top:10px;">
-            <div class="list-item">
-              <div>
-                <div style="font-weight:800;">Основной</div>
-                <small>Debit · ••12 45</small>
-              </div>
-              <div class="amount-positive">18 450.32 USD</div>
-            </div>
-            <div class="list-item">
-              <div>
-                <div style="font-weight:800;">Travel</div>
-                <small>Debit · ••55 30</small>
-              </div>
-              <div class="amount-positive">4 200.75 USD</div>
-            </div>
-            <div class="list-item">
-              <div>
-                <div style="font-weight:800;">Credit Plus</div>
-                <small>Credit · ••88 10</small>
-              </div>
-              <div class="amount-positive">1 250.12 USD</div>
-            </div>
+          <div class="list" style="margin-top:10px;" id="accountsList">
+            <div class="muted">Загружаем баланс…</div>
           </div>
         </div>
 
@@ -165,7 +147,7 @@
           <div>
             <div class="badge alt">Демо</div>
             <h3 style="margin:6px 0 4px;">Динамика баланса</h3>
-            <div class="muted">Последние 6 месяцев, USD</div>
+            <div class="muted">Последние 6 месяцев, <span id="balanceCurrency">USD</span></div>
           </div>
           <div class="pill-soft">Тренд: +9.2%</div>
         </div>
@@ -184,9 +166,9 @@
           <div>
             <div class="badge alt">Демо</div>
             <h3 style="margin:6px 0 4px;">Структура расходов</h3>
-            <div class="muted">Текущий месяц, USD</div>
+            <div class="muted">Текущий месяц, <span id="expenseCurrency">USD</span></div>
           </div>
-          <div class="pill-soft">Всего: 2 350</div>
+          <div class="pill-soft" id="expenseTotal">Всего: 2 350</div>
         </div>
         <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
         <div class="chart-legend">
