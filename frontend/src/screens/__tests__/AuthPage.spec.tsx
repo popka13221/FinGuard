@@ -1,11 +1,10 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import AuthPage from '../AuthPage';
 import * as AuthApiModule from '../../api/auth';
 
 vi.mock('../../api/auth', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as typeof import('../../api/auth');
   return {
     ...actual,
     AuthApi: {
