@@ -103,6 +103,13 @@
         <div class="card">
           <div class="row" style="justify-content: space-between; align-items: center;">
             <h3 style="margin:0;">Ваши карты</h3>
+            <button type="button" class="ghost" id="btn-add-account">Добавить</button>
+          </div>
+          <div class="dropdown-menu" id="add-account-menu" style="display:none;">
+            <button type="button" class="dropdown-item">1</button>
+            <button type="button" class="dropdown-item">2</button>
+            <button type="button" class="dropdown-item">3</button>
+            <button type="button" class="dropdown-item">4</button>
           </div>
           <div class="list" style="margin-top:10px;" id="accountsList">
             <div class="muted">Загружаем баланс…</div>
@@ -152,13 +159,6 @@
           <div class="pill-soft">Тренд: +9.2%</div>
         </div>
         <div id="balanceChart" class="chart-shell" aria-label="График баланса"></div>
-        <div class="chart-legend">
-          <div class="legend-item">
-            <span class="legend-dot" style="background: linear-gradient(135deg, #4f8bff, #3cc7c4);"></span>
-            Баланс
-          </div>
-          <div class="legend-item muted">Мин: 18 200 · Макс: 20 950</div>
-        </div>
       </div>
 
       <div class="card">
@@ -171,16 +171,9 @@
           <div class="pill-soft" id="expenseTotal">Всего: 2 350</div>
         </div>
         <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
-        <div class="chart-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#4f8bff;"></span> Жильё</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Еда</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> Транспорт</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#3cc7c4;"></span> Подписки</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#9aa0aa;"></span> Прочее</div>
-        </div>
       </div>
 
-      <div class="card crypto-card">
+      <div class="card crypto-card span-2">
         <div class="card-row">
           <div>
             <div class="badge alt">Crypto</div>

@@ -161,12 +161,12 @@
       return d.toLocaleString('ru-RU', { month: 'short' });
     });
 
-    const width = Math.max(el.clientWidth || 640, 640);
-    const height = 260;
-    const padLeft = 56;
-    const padRight = 20;
-    const padTop = 24;
-    const padBottom = 40;
+    const width = Math.max(el.clientWidth || 520, 520);
+    const height = 200;
+    const padLeft = 110;
+    const padRight = 16;
+    const padTop = 18;
+    const padBottom = 34;
     const max = Math.max(...data);
     const min = Math.min(...data);
     const span = max - min || 1;
@@ -184,14 +184,13 @@
     ].join(' ');
 
     const linePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
-    const circles = points.map((p, idx) => `<circle cx="${p.x}" cy="${p.y}" r="4" class="chart-dot" data-idx="${idx}"></circle>`).join('');
     const yTicks = 4;
     const gridLines = Array.from({ length: yTicks + 1 }, (_, i) => {
       const value = min + (span / yTicks) * i;
       const y = height - padBottom - ((value - min) / span) * (height - padTop - padBottom);
       return `
         <line x1="${padLeft}" x2="${width - padRight}" y1="${y}" y2="${y}" class="chart-gridline"></line>
-        <text x="${padLeft - 8}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${formatMoney(value, currency || baseCurrency)}</text>
+        <text x="${padLeft - 10}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${formatMoney(value, currency || baseCurrency)}</text>
       `;
     }).join('');
 
@@ -200,12 +199,17 @@
       return `<text x="${x}" y="${height - padBottom + 18}" text-anchor="middle" class="chart-axis-label">${label}</text>`;
     }).join('');
 
+    const delta = data[data.length - 1] - data[0];
+    const avg = data.reduce((a, b) => a + b, 0) / (data.length || 1);
+    const deltaPct = data[0] !== 0 ? (delta / data[0]) * 100 : 0;
+    const formatPercent = (val) => `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
+
     el.innerHTML = `
-      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="chart-svg">
+      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" class="chart-svg">
         <defs>
           <linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#4f8bff" stop-opacity="0.35" />
-            <stop offset="100%" stop-color="#3cc7c4" stop-opacity="0.05" />
+            <stop offset="0%" stop-color="#4f8bff" stop-opacity="0.32" />
+            <stop offset="100%" stop-color="#3cc7c4" stop-opacity="0.08" />
           </linearGradient>
           <linearGradient id="lineStroke" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stop-color="#4f8bff" />
@@ -214,57 +218,147 @@
         </defs>
         ${gridLines}
         <polygon points="${areaPoints}" class="chart-area" />
-        <polyline points="${linePoints}" class="chart-line" />
-        ${circles}
+        <polyline points="${linePoints}" class="chart-line" stroke-linecap="round" stroke-linejoin="round" />
         ${xLabels}
-        <text x="${padLeft}" y="${padTop}" class="chart-axis-title">Баланс, ${currency || baseCurrency}</text>
       </svg>
+      <div class="mini-stats">
+        <div class="stat-chip">
+          <div class="muted">Мин</div>
+          <div class="stat-value">${formatMoney(min, currency || baseCurrency)}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="muted">Макс</div>
+          <div class="stat-value">${formatMoney(max, currency || baseCurrency)}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="muted">Изменение</div>
+          <div class="stat-value">${formatMoney(delta, currency || baseCurrency)}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="muted">Среднее</div>
+          <div class="stat-value">${formatMoney(avg, currency || baseCurrency)}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="muted">Тренд %</div>
+          <div class="stat-value">${formatPercent(deltaPct)}</div>
+        </div>
+      </div>
     `;
   }
 
   function renderBarChart(target, items, currency) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el || !Array.isArray(items) || items.length === 0) return;
-    const width = Math.max(el.clientWidth || 520, 640);
-    const height = Math.max(240, Math.min(320, Math.round(width * 0.42)));
-    const padLeft = 56;
-    const padRight = 20;
-    const padTop = 24;
-    const padBottom = 40;
-    const max = Math.max(...items.map(i => i.value)) || 1;
-    const barSpace = (width - padLeft - padRight) / items.length;
-    const barWidth = Math.max(32, Math.min(72, barSpace * 0.62));
-
-    const bars = items.map((item, idx) => {
-      const x = padLeft + idx * barSpace + (barSpace - barWidth) / 2;
-      const h = Math.max(10, ((item.value) / max) * (height - padTop - padBottom));
-      const y = height - padBottom - h;
-      return `
-        <g>
-          <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="8" fill="${item.color}" class="chart-bar"></rect>
-          <text x="${x + barWidth / 2}" y="${y - 8}" class="chart-value">${formatMoney(item.value, currency || baseCurrency)}</text>
-          <text x="${x + barWidth / 2}" y="${height - padBottom + 18}" class="chart-label">${item.label}</text>
-        </g>
-      `;
-    }).join('');
-
-    const steps = 4;
-    const grid = Array.from({ length: steps + 1 }, (_, i) => {
-      const value = max - (max / steps) * i;
-      const y = padTop + (i / steps) * (height - padTop - padBottom);
-      return `
-        <line x1="${padLeft}" x2="${width - padRight}" y1="${y}" y2="${y}" class="chart-gridline"></line>
-        <text x="${padLeft - 8}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${formatMoney(value, currency || baseCurrency)}</text>
-      `;
+    const currencyLabel = currency || baseCurrency;
+    const total = items.reduce((acc, item) => acc + (item.value || 0), 0) || 1;
+    const size = 200;
+    const radius = 78;
+    const center = size / 2;
+    let offset = 0;
+    const slices = items.map((item) => {
+      const value = item.value || 0;
+      const pct = value / total;
+      const fullSpan = pct * Math.PI * 2;
+      const startAngle = (offset / total) * Math.PI * 2;
+      const endAngle = startAngle + fullSpan;
+      offset += value;
+      return { item, startAngle, endAngle };
+    });
+    const legend = items.map((item, idx) => {
+      const color = item.color || ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa'][idx % 5];
+      const pct = Math.round(((item.value || 0) / total) * 100);
+      return `<button class="legend-item" data-slice="${idx}" aria-label="${item.label}">
+                <span class="legend-dot" style="background:${color};"></span>
+                <span>${item.label}</span>
+                <span class="legend-pct">${pct}%</span>
+              </button>`;
     }).join('');
 
     el.innerHTML = `
-      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="chart-svg">
-        ${grid}
-        ${bars}
-        <text x="${padLeft}" y="${padTop}" class="chart-axis-title">Расходы, ${currency || baseCurrency}</text>
-      </svg>
+      <div class="pie-wrap">
+        <svg viewBox="0 0 ${size} ${size}" class="pie-chart" aria-label="Структура расходов">
+          ${slices.map((slice, idx) => {
+            const color = slice.item.color || ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa'][idx % 5];
+            const start = {
+              x: center + radius * Math.cos(slice.startAngle - Math.PI / 2),
+              y: center + radius * Math.sin(slice.startAngle - Math.PI / 2),
+            };
+            const end = {
+              x: center + radius * Math.cos(slice.endAngle - Math.PI / 2),
+              y: center + radius * Math.sin(slice.endAngle - Math.PI / 2),
+            };
+            const largeArc = slice.endAngle - slice.startAngle > Math.PI ? 1 : 0;
+            const d = `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+            return `<path d="${d}" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="butt"
+              data-base-stroke="16" data-slice="${idx}" class="pie-slice"></path>`;
+          }).join('')}
+          <text x="${center}" y="${center - 6}" text-anchor="middle" class="pie-total">${formatMoney(total, currencyLabel)}</text>
+          <text x="${center}" y="${center + 12}" text-anchor="middle" class="pie-muted">Всего</text>
+        </svg>
+        <div class="chart-legend grid-compact">${legend}</div>
+      </div>
     `;
+
+    // hover / focus interactions
+    const sliceEls = Array.from(el.querySelectorAll('.pie-slice'));
+    const legendEls = Array.from(el.querySelectorAll('.legend-item'));
+    const activate = (idx) => {
+      sliceEls.forEach((s, i) => {
+        const baseStroke = s.dataset.baseStroke || '18';
+        if (i === idx) {
+          s.style.opacity = '1';
+          s.style.strokeWidth = baseStroke;
+          s.style.filter = 'drop-shadow(0 0 10px rgba(79,139,255,0.3))';
+        } else {
+          s.style.opacity = '0.35';
+          s.style.strokeWidth = baseStroke;
+          s.style.filter = 'none';
+        }
+      });
+      legendEls.forEach((l, i) => l.classList.toggle('active', i === idx));
+    };
+    const reset = () => {
+      sliceEls.forEach((s) => {
+        const baseStroke = s.dataset.baseStroke || '18';
+        s.style.opacity = '1';
+        s.style.strokeWidth = baseStroke;
+        s.style.filter = 'none';
+      });
+      legendEls.forEach((l) => l.classList.remove('active'));
+    };
+    legendEls.forEach((l, idx) => {
+      l.addEventListener('mouseenter', () => activate(idx));
+      l.addEventListener('focus', () => activate(idx));
+      l.addEventListener('mouseleave', reset);
+      l.addEventListener('blur', reset);
+    });
+    sliceEls.forEach((s, idx) => {
+      s.addEventListener('mouseenter', () => activate(idx));
+      s.addEventListener('mouseleave', reset);
+    });
+  }
+
+  function bindAddAccountMenu() {
+    const btn = document.querySelector('#btn-add-account');
+    const menu = document.querySelector('#add-account-menu');
+    if (!btn || !menu) return;
+    let open = false;
+    const toggle = (state) => {
+      open = state ?? !open;
+      menu.style.display = open ? 'grid' : 'none';
+    };
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle();
+    });
+    document.addEventListener('click', (e) => {
+      if (open && !menu.contains(e.target) && e.target !== btn) {
+        toggle(false);
+      }
+    });
+    menu.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', () => toggle(false));
+    });
   }
 
   function renderSparkline(target, series, color) {
@@ -320,6 +414,7 @@
     await loadBalance();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(selectors.expenseChart, demoData.expenses, baseCurrency);
+    bindAddAccountMenu();
     renderSparkline(selectors.btcSpark, demoData.crypto.btc, '#f7931a');
     renderSparkline(selectors.ethSpark, demoData.crypto.eth, '#4f8bff');
     renderSparkline(selectors.solSpark, demoData.crypto.sol, '#10b981');
