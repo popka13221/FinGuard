@@ -105,12 +105,6 @@
             <h3 style="margin:0;">Ваши карты</h3>
             <button type="button" class="ghost" id="btn-add-account">Добавить</button>
           </div>
-          <div class="dropdown-menu" id="add-account-menu" style="display:none;">
-            <button type="button" class="dropdown-item">1</button>
-            <button type="button" class="dropdown-item">2</button>
-            <button type="button" class="dropdown-item">3</button>
-            <button type="button" class="dropdown-item">4</button>
-          </div>
           <div class="list" style="margin-top:10px;" id="accountsList">
             <div class="muted">Загружаем баланс…</div>
           </div>
@@ -168,7 +162,6 @@
             <h3 style="margin:6px 0 4px;">Структура расходов</h3>
             <div class="muted">Текущий месяц, <span id="expenseCurrency">USD</span></div>
           </div>
-          <div class="pill-soft" id="expenseTotal">Всего: 2 350</div>
         </div>
         <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
       </div>
@@ -218,6 +211,14 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+  <div id="add-account-overlay" class="overlay" style="display:none;">
+    <div class="dropdown-menu" id="add-account-menu" aria-label="Добавить счёт">
+      <button type="button" class="dropdown-item">1</button>
+      <button type="button" class="dropdown-item">2</button>
+      <button type="button" class="dropdown-item">3</button>
+      <button type="button" class="dropdown-item">4</button>
     </div>
   </div>
 

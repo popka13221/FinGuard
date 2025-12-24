@@ -341,21 +341,29 @@
   function bindAddAccountMenu() {
     const btn = document.querySelector('#btn-add-account');
     const menu = document.querySelector('#add-account-menu');
-    if (!btn || !menu) return;
+    const overlay = document.querySelector('#add-account-overlay');
+    if (!btn || !menu || !overlay) return;
     let open = false;
     const toggle = (state) => {
       open = state ?? !open;
-      menu.style.display = open ? 'grid' : 'none';
+      if (open) {
+        overlay.style.display = 'flex';
+        menu.style.display = 'grid';
+      } else {
+        overlay.style.display = 'none';
+        menu.style.display = 'none';
+      }
     };
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       toggle();
     });
     document.addEventListener('click', (e) => {
-      if (open && !menu.contains(e.target) && e.target !== btn) {
+      if (open && (!menu.contains(e.target) && !btn.contains(e.target) && !overlay.contains(e.target))) {
         toggle(false);
       }
     });
+    overlay.addEventListener('click', () => open && toggle(false));
     menu.querySelectorAll('.dropdown-item').forEach((item) => {
       item.addEventListener('click', () => toggle(false));
     });
