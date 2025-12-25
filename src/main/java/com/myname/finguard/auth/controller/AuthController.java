@@ -98,16 +98,21 @@ public class AuthController {
         String ip = clientIpResolver.resolve(httpRequest);
         AuthService.RegistrationResult result = authService.register(request, ip);
         AuthTokens tokens = result.tokens();
-        if (tokens != null && !result.verificationRequired()) {
+        String message = "Мы отправили код на ваш email. Подтвердите адрес, чтобы закончить регистрацию.";
+        if (tokens != null) {
             return ResponseEntity.status(201)
                     .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
                     .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
-                    .body(new AuthResponse(tokens.accessToken()));
+                    .body(new RegistrationResponse(
+                            result.verificationRequired(),
+                            message,
+                            tokens.accessToken()
+                    ));
         }
         return ResponseEntity.status(201)
                 .body(new RegistrationResponse(
                         result.verificationRequired(),
-                        "Мы отправили код на ваш email. Подтвердите адрес, чтобы закончить регистрацию.",
+                        message,
                         null
                 ));
     }
@@ -166,10 +171,12 @@ public class AuthController {
     @Operation(summary = "Подтверждение email", description = "Проверяет код верификации, помечает email подтвержденным и выдает токены")
     @ApiResponse(responseCode = "200", description = "Email подтвержден")
     public ResponseEntity<?> verify(@Valid @RequestBody VerifyRequest request, HttpServletRequest httpRequest) {
-        String email = request.email().trim().toLowerCase();
+        String email = request.email() == null ? "" : request.email().trim().toLowerCase();
         String ip = clientIpResolver.resolve(httpRequest);
         RateLimiterService.Result ipRes = rateLimiterService.check("verify:ip:" + ip, verifyLimit, verifyWindowMs);
-        RateLimiterService.Result emailRes = rateLimiterService.check("verify:email:" + email, verifyLimit, verifyWindowMs);
+        RateLimiterService.Result emailRes = email.isBlank()
+                ? new RateLimiterService.Result(true, 0)
+                : rateLimiterService.check("verify:email:" + email, verifyLimit, verifyWindowMs);
         if (!ipRes.allowed() || !emailRes.allowed()) {
             long retryMs = Math.max(ipRes.retryAfterMs(), emailRes.retryAfterMs());
             long retrySec = (long) Math.ceil(retryMs / 1000.0);

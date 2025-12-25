@@ -18,4 +18,6 @@ public interface UserTokenRepository extends JpaRepository<UserToken, Long> {
     java.util.List<UserToken> findByUserAndTypeAndUsedAtIsNullAndExpiresAtAfter(User user, UserTokenType type, Instant now);
 
     void deleteByTokenHash(String tokenHash);
+
+    void deleteByTokenHashAndType(String tokenHash, UserTokenType type);
 }

@@ -12,6 +12,8 @@ public interface PendingRegistrationRepository extends JpaRepository<PendingRegi
 
     Optional<PendingRegistration> findByEmail(String email);
 
+    Optional<PendingRegistration> findFirstByVerifyTokenHashOrderByUpdatedAtDesc(String verifyTokenHash);
+
     @Modifying
     @Transactional
     @Query("delete from PendingRegistration p where p.verifyExpiresAt < ?1")

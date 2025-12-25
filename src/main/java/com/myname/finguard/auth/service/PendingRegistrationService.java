@@ -63,6 +63,17 @@ public class PendingRegistrationService {
     }
 
     @Transactional
+    public Optional<PendingRegistration> findValidByToken(String rawToken) {
+        purgeExpired();
+        if (!StringUtils.hasText(rawToken)) {
+            return Optional.empty();
+        }
+        String hash = hash(rawToken);
+        return repository.findFirstByVerifyTokenHashOrderByUpdatedAtDesc(hash)
+                .filter(p -> p.getVerifyExpiresAt() != null && p.getVerifyExpiresAt().isAfter(Instant.now()));
+    }
+
+    @Transactional
     public void delete(PendingRegistration pending) {
         if (pending != null && pending.getId() != null) {
             repository.deleteById(pending.getId());

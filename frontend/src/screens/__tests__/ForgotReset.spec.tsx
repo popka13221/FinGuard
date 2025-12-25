@@ -94,10 +94,10 @@ describe('Forgot/Reset flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Отправить код/i }));
     await screen.findByLabelText(/Код из письма/i);
 
-    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '654321' } });
     fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
 
-    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: '123456' }));
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: '654321' }));
     expect(await screen.findByText(/Смена пароля/i)).toBeInTheDocument();
   });
 
@@ -112,7 +112,7 @@ describe('Forgot/Reset flow', () => {
 
   it('reset validates password strength and does not call API on validation fail', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
-    renderWithRouter('/reset?token=123456');
+    renderWithRouter('/reset?token=654321');
     await screen.findByText(/Сессия сброса активна/i);
 
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'weak' } });
@@ -125,7 +125,7 @@ describe('Forgot/Reset flow', () => {
   it('reset calls API and handles invalid session error', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
     mockedAuth.AuthApi.reset.mockResolvedValue({ ok: false, data: { code: '100005' } });
-    renderWithRouter('/reset?token=123456');
+    renderWithRouter('/reset?token=654321');
 
     await screen.findByText(/Сессия сброса активна/i);
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'StrongPass1!' } });

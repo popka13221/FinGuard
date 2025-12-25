@@ -84,7 +84,23 @@ class AccountBalanceIntegrationTest {
     @Test
     void anonymousIsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/accounts/balance"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void otherUserSeesOnlyOwnEmptyAccounts() throws Exception {
+        String otherToken = registerVerifyAndLogin("other-view@example.com", "StrongPass1!");
+        // current user has no accounts yet
+        String response = mockMvc.perform(get("/api/accounts/balance")
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode root = objectMapper.readTree(response);
+        assertThat(root.get("accounts")).isEmpty();
+        assertThat(root.get("totalsByCurrency")).isEmpty();
     }
 
     private Account account(User user, String name, String currency, BigDecimal balance, boolean archived) {
@@ -92,7 +108,7 @@ class AccountBalanceIntegrationTest {
         a.setUser(user);
         a.setName(name);
         a.setCurrency(currency);
-        a.setCurrentBalance(balance);
+        a.setCurrentBalance(balance == null ? BigDecimal.ZERO : balance);
         a.setArchived(archived);
         return a;
     }

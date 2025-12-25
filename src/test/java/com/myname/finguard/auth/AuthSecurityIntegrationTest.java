@@ -414,7 +414,7 @@ class AuthSecurityIntegrationTest {
         MailService.MailMessage message = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
         assertThat(message.to()).isEqualTo(email);
         assertThat(message.subject()).contains("Сброс пароля");
-        assertThat(message.body()).contains("123456");
+        assertThat(message.body()).contains("654321");
         assertThat(message.body()).contains("/app/reset.html");
     }
 
@@ -434,11 +434,11 @@ class AuthSecurityIntegrationTest {
                 .toList();
         assertThat(resetTokens).hasSize(1);
         UserToken token = resetTokens.get(0);
-        assertThat(token.getTokenHash()).isEqualTo(hashToken("123456"));
+        assertThat(token.getTokenHash()).isEqualTo(hashToken("654321"));
 
         assertThat(mailService.getOutbox()).hasSize(3);
         MailService.MailMessage last = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
-        assertThat(last.body()).contains("123456");
+        assertThat(last.body()).contains("654321");
     }
 
     @Test
@@ -451,16 +451,16 @@ class AuthSecurityIntegrationTest {
                 .toList();
         assertThat(verifyTokens).hasSize(1);
         UserToken token = verifyTokens.get(0);
-        assertThat(token.getTokenHash()).isEqualTo(hashToken("123456"));
+        assertThat(token.getTokenHash()).isEqualTo(hashToken("654321"));
 
         MailService.MailMessage last = latestMail();
         assertThat(last).isNotNull();
         assertThat(last.subject()).containsIgnoringCase("подтверждение");
-        assertThat(last.body()).contains("123456");
+        assertThat(last.body()).contains("654321");
         assertThat(last.body()).contains("/app/verify.html");
 
         postJson("/api/auth/verify", """
-                {"token":"123456"}
+                {"token":"654321"}
                 """)
                 .andExpect(status().isOk());
         assertThat(userRepository.findByEmail(email).orElseThrow().isEmailVerified()).isTrue();
@@ -481,10 +481,10 @@ class AuthSecurityIntegrationTest {
                 .filter(t -> t.getType() == UserTokenType.VERIFY)
                 .toList();
         assertThat(verifyTokens).hasSize(1);
-        assertThat(verifyTokens.get(0).getTokenHash()).isEqualTo(hashToken("123456"));
+        assertThat(verifyTokens.get(0).getTokenHash()).isEqualTo(hashToken("654321"));
         MailService.MailMessage last = latestMail();
         assertThat(last).isNotNull();
-        assertThat(last.body()).contains("123456");
+        assertThat(last.body()).contains("654321");
     }
 
     @Test

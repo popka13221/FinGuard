@@ -109,7 +109,6 @@ public class SecurityConfig {
                         "/"
                         ).permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
-                        .requestMatchers("/health", "/actuator/health", "/actuator/health/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

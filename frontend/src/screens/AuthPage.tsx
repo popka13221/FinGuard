@@ -228,7 +228,7 @@ const AuthPage: React.FC = () => {
                       label="Код из письма"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
-                      placeholder="123456"
+                      placeholder="654321"
                       aria-label="Код из письма"
                       error={otpError}
                     />

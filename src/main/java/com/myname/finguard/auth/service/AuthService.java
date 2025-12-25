@@ -11,7 +11,6 @@ import com.myname.finguard.auth.dto.UserProfileResponse;
 import com.myname.finguard.auth.dto.VerifyRequest;
 import com.myname.finguard.auth.dto.OtpVerifyRequest;
 import com.myname.finguard.auth.model.User;
-import com.myname.finguard.auth.model.PendingRegistration;
 import com.myname.finguard.auth.model.PasswordResetSession;
 import com.myname.finguard.auth.model.UserToken;
 import com.myname.finguard.auth.model.UserTokenType;
@@ -19,7 +18,6 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.model.Role;
 import com.myname.finguard.common.util.PasswordValidator;
-import com.myname.finguard.auth.service.PendingRegistrationService;
 import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.MailService;
 import com.myname.finguard.common.service.PwnedPasswordChecker;
@@ -43,6 +41,7 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +61,6 @@ public class AuthService {
     private final UserTokenService userTokenService;
     private final UserSessionService userSessionService;
     private final MailService mailService;
-    private final PendingRegistrationService pendingRegistrationService;
     private final PasswordResetSessionService passwordResetSessionService;
     private final RateLimiterService rateLimiterService;
     private final OtpService otpService;
@@ -93,7 +91,6 @@ public class AuthService {
                        TokenBlacklistService tokenBlacklistService,
                        UserTokenService userTokenService,
                        UserSessionService userSessionService,
-                       PendingRegistrationService pendingRegistrationService,
                        PasswordResetSessionService passwordResetSessionService,
                        RateLimiterService rateLimiterService,
                        OtpService otpService,
@@ -125,7 +122,6 @@ public class AuthService {
         this.userTokenService = userTokenService;
         this.userSessionService = userSessionService;
         this.mailService = mailService;
-        this.pendingRegistrationService = pendingRegistrationService;
         this.passwordResetSessionService = passwordResetSessionService;
         this.rateLimiterService = rateLimiterService;
         this.otpService = otpService;
@@ -170,13 +166,20 @@ public class AuthService {
         if (pwnedPasswordChecker.isPwned(request.password())) {
             throw new ApiException(ErrorCodes.AUTH_WEAK_PASSWORD, "Password is compromised. Choose another password.", HttpStatus.BAD_REQUEST);
         }
-        if (userRepository.existsByEmail(email)) {
-            throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
-        }
-        String verifyCode = userTokenService.generateVerifyCode();
-        pendingRegistrationService.createOrUpdate(email, request.password(), fullName, baseCurrency, Role.USER, verifyCode);
-        mailService.sendVerifyEmail(email, verifyCode, pendingRegistrationService.getVerifyTtl());
-        return new RegistrationResult(null, true);
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setFullName(fullName);
+        user.setBaseCurrency(baseCurrency);
+        user.setRole(Role.USER);
+        user.setEmailVerified(false);
+        User saved = userRepository.save(user);
+
+        String verifyCode = userTokenService.issue(saved, UserTokenType.VERIFY);
+        mailService.sendVerifyEmail(email, verifyCode, userTokenService.getVerifyTtl());
+
+        AuthTokens tokens = issueTokens(saved);
+        return new RegistrationResult(tokens, true);
     }
 
     public LoginOutcome login(LoginRequest request, String ip) {
@@ -283,13 +286,6 @@ public class AuthService {
         if (tokenVersion != user.getTokenVersion()) {
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Invalid refresh token", HttpStatus.UNAUTHORIZED);
         }
-        if (requireEmailVerified && !user.isEmailVerified()) {
-            throw new ApiException(
-                    ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
-                    "Email is not verified. Please check your email for the verification code.",
-                    HttpStatus.FORBIDDEN
-            );
-        }
         // revoke the old refresh token on rotation
         tokenBlacklistService.revoke(jti, jwtTokenProvider.getExpiry(refreshToken).toInstant());
         userSessionService.revoke(jti);
@@ -331,23 +327,38 @@ public class AuthService {
     }
 
     public AuthTokens verify(VerifyRequest request) {
-        String email = request.email().trim().toLowerCase();
-        PendingRegistration pending = pendingRegistrationService.findValid(email, request.token())
-                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
-        if (userRepository.existsByEmail(email)) {
-            pendingRegistrationService.delete(pending);
-            throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
+        String email = request.email() == null ? "" : request.email().trim().toLowerCase();
+        String rawToken = request.token() == null ? "" : request.token().trim();
+        if (!StringUtils.hasText(rawToken)) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
         }
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(pending.getPasswordHash());
-        user.setFullName(pending.getFullName());
-        user.setBaseCurrency(pending.getBaseCurrency());
-        user.setRole(pending.getRole() == null ? Role.USER : pending.getRole());
-        user.setEmailVerified(true);
-        User saved = userRepository.save(user);
-        pendingRegistrationService.delete(pending);
-        return issueTokens(saved);
+        Optional<UserToken> tokenOpt;
+        if (email.isBlank()) {
+            tokenOpt = userTokenService.findValid(rawToken, UserTokenType.VERIFY);
+        } else {
+            tokenOpt = userTokenService.findAnyForEmail(email, rawToken, UserTokenType.VERIFY)
+                    .filter(t -> t.getUsedAt() == null)
+                    .filter(t -> t.getExpiresAt() == null || t.getExpiresAt().isAfter(Instant.now()));
+        }
+        UserToken token = tokenOpt.orElseThrow(() ->
+                new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
+        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(Instant.now())) {
+            userTokenService.markUsed(token);
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
+        }
+        User user = token.getUser();
+        if (user == null) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
+        }
+        if (!email.isBlank() && !safe(user.getEmail()).equals(email)) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
+        }
+        if (!user.isEmailVerified()) {
+            user.setEmailVerified(true);
+            userRepository.save(user);
+        }
+        userTokenService.markUsed(token);
+        return issueTokens(user);
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {
@@ -364,8 +375,13 @@ public class AuthService {
         enforceResetConfirmLimit("reset-confirm:ip:" + safe(ip), null);
 
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
-        UserToken token = userTokenService.findAnyForEmail(email, request.token(), UserTokenType.RESET)
-                .orElseThrow(this::invalidResetCode);
+        Optional<UserToken> tokenOpt = email.isBlank()
+                ? userTokenService.findValid(request.token(), UserTokenType.RESET)
+                : userTokenService.findAnyForEmail(email, request.token(), UserTokenType.RESET);
+        if (tokenOpt.isEmpty() && email.isBlank()) {
+            tokenOpt = userTokenService.findAny(request.token(), UserTokenType.RESET);
+        }
+        UserToken token = tokenOpt.orElseThrow(this::invalidResetCode);
         if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(Instant.now())) {
             userTokenService.markUsed(token);
             passwordResetSessionService.invalidateForUser(token.getUser());
@@ -465,13 +481,6 @@ public class AuthService {
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid or expired OTP code", HttpStatus.UNAUTHORIZED));
-        if (requireEmailVerified && !user.isEmailVerified()) {
-            throw new ApiException(
-                    ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
-                    "Email is not verified. Please check your email for the verification code.",
-                    HttpStatus.FORBIDDEN
-            );
-        }
         return issueTokens(user);
     }
 
