@@ -27,14 +27,14 @@
    ```
 3) Запуск backend
    ```bash
-   ./scripts/run-local.sh      # сам поднимет Postgres через docker compose, если он доступен
+   ./scripts/run-local.sh      # поднимет backend (и Postgres через docker compose, если доступен)
    # или
    mvn spring-boot:run
    ```
 4) UI и API
    - Статика: `http://localhost:8080/app/login.html` (вход/регистрация/восстановление пароля, дашборд).
-   - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-   - Health: `http://localhost:8080/health` или `/actuator/health`
+    - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+    - Health: `http://localhost:8080/health` или `/actuator/health`
 
 ## Auth-флоу
 - Регистрация/вход: токены `FG_AUTH` и `FG_REFRESH` в httpOnly cookie (по умолчанию `secure=true`, SameSite настраивается через `app.security.jwt.cookie-samesite`); фронт хранит лишь email в `sessionStorage`.

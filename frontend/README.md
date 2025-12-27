@@ -4,9 +4,11 @@
 
 ## Запуск
 - `npm install`
-- `npm run dev` — локальная разработка
+- `npm run dev` — локальная разработка (Vite проксирует `/api`, `/health`, `/app` на бэкенд)
 - `npm run build` / `npm run preview`
 - `npm run lint`
+
+По умолчанию `./scripts/run-local.sh` поднимает только бэкенд со статическим UI (`/app/*.html`). Для SPA используйте `npm run dev` или `./scripts/run-local.sh --spa`.
 
 ## Архитектура
 - `src/theme.css` — дизайн-токены (цвета, типографика, тени, радиусы) и базовые layout-классы.

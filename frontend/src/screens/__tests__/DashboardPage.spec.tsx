@@ -56,7 +56,7 @@ describe('DashboardPage', () => {
 
     await waitFor(() => expect(screen.getByText('Main')).toBeInTheDocument());
     expect(screen.getByText('Archived')).toBeInTheDocument();
-    expect(screen.getByText(/Баланс/i).nextSibling?.textContent).toBeDefined();
+    expect(screen.getByTestId('total-balance')).toBeInTheDocument();
     expect(screen.queryByText(/Не удалось загрузить баланс/i)).not.toBeInTheDocument();
   });
 
@@ -68,9 +68,10 @@ describe('DashboardPage', () => {
 
   it('opens and closes add account menu', async () => {
     render(<DashboardPage />);
+    await screen.findByText('Main');
     const addBtn = screen.getByRole('button', { name: /Добавить/i });
     fireEvent.click(addBtn);
-    const menuItem = await screen.findByRole('button', { name: '1' });
+    const menuItem = await screen.findByRole('button', { name: /Счёт вручную/i });
     expect(menuItem).toBeInTheDocument();
     fireEvent.click(menuItem);
     await waitFor(() => {

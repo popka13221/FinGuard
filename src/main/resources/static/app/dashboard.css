@@ -1,0 +1,320 @@
+/* Dashboard-only visual redesign (legacy static UI). */
+
+body.dashboard {
+  --dash-radius: 20px;
+  --dash-radius-sm: 16px;
+  --dash-blur: 14px;
+  --dash-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dash-shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
+  --dash-shadow-soft: 0 16px 42px rgba(0, 0, 0, 0.28);
+  --dash-border: rgba(255, 255, 255, 0.08);
+
+  background: radial-gradient(1200px 800px at 18% -12%, rgba(79, 139, 255, 0.18), transparent 62%),
+    radial-gradient(900px 700px at 90% 0%, rgba(60, 199, 196, 0.16), transparent 58%),
+    radial-gradient(900px 800px at 50% 115%, rgba(249, 115, 22, 0.1), transparent 62%),
+    linear-gradient(180deg, #070910 0%, #0b0f17 45%, #090d14 100%);
+  background-color: #070910;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+body.dashboard.light {
+  --dash-shadow: 0 22px 70px rgba(59, 130, 246, 0.16);
+  --dash-shadow-soft: 0 16px 42px rgba(15, 23, 42, 0.1);
+  --dash-border: rgba(15, 23, 42, 0.12);
+
+  background: radial-gradient(1000px 700px at 18% -12%, rgba(59, 130, 246, 0.2), transparent 62%),
+    radial-gradient(900px 650px at 90% 0%, rgba(16, 185, 129, 0.18), transparent 58%),
+    linear-gradient(180deg, #f6f7fb 0%, #eef2ff 55%, #f6f7fb 100%);
+  background-color: #f6f7fb;
+}
+
+.dashboard .container {
+  max-width: 1180px;
+  padding: 24px 16px 64px;
+}
+
+.dashboard .nav {
+  position: sticky;
+  top: 14px;
+  z-index: 20;
+  border-radius: calc(var(--dash-radius) + 2px);
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, rgba(22, 25, 31, 0.78), rgba(18, 21, 27, 0.55)) padding-box,
+    linear-gradient(135deg, rgba(79, 139, 255, 0.55), rgba(60, 199, 196, 0.35), rgba(255, 255, 255, 0.1))
+      border-box;
+  backdrop-filter: blur(var(--dash-blur));
+  box-shadow: var(--dash-shadow-soft);
+  padding: 14px 16px;
+}
+
+body.dashboard.light .nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)) padding-box,
+    linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(16, 185, 129, 0.35), rgba(15, 23, 42, 0.12))
+      border-box;
+}
+
+.dashboard .brand-logo {
+  height: 34px;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.25));
+}
+
+.dashboard .chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.dashboard button.ghost {
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  transition: transform 160ms var(--dash-ease), background 200ms var(--dash-ease), border-color 200ms var(--dash-ease);
+}
+
+.dashboard.light button.ghost {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.dashboard button.ghost:hover {
+  transform: translateY(-1px);
+  background: rgba(79, 139, 255, 0.12);
+  border-color: rgba(79, 139, 255, 0.35);
+}
+
+.dashboard .grid-3 {
+  grid-template-columns: 1.25fr 1fr;
+  gap: 14px;
+}
+
+.dashboard .main-grid {
+  grid-template-columns: 1.35fr 1fr;
+  gap: 14px;
+}
+
+.dashboard .card {
+  border-radius: var(--dash-radius);
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, rgba(22, 25, 31, 0.72), rgba(18, 21, 27, 0.52)) padding-box,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(79, 139, 255, 0.22), rgba(60, 199, 196, 0.12))
+      border-box;
+  box-shadow: var(--dash-shadow-soft);
+  transition: transform 240ms var(--dash-ease), box-shadow 260ms var(--dash-ease), background 260ms var(--dash-ease);
+}
+
+body.dashboard.light .card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.74)) padding-box,
+    linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(16, 185, 129, 0.28), rgba(15, 23, 42, 0.1))
+      border-box;
+}
+
+.dashboard .card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--dash-shadow), 0 0 0 1px rgba(79, 139, 255, 0.1) inset;
+}
+
+.dashboard .grid-3 .card.stat-card {
+  background: radial-gradient(680px 240px at 12% -10%, rgba(79, 139, 255, 0.22), transparent 62%),
+    linear-gradient(180deg, rgba(22, 25, 31, 0.78), rgba(18, 21, 27, 0.56));
+  border-color: rgba(79, 139, 255, 0.24);
+}
+
+.dashboard #totalBalance {
+  font-size: 34px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%, rgba(255, 255, 255, 0.9) 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dashboard .list-item {
+  border-radius: var(--dash-radius-sm);
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)) padding-box,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(79, 139, 255, 0.14)) border-box;
+  transition: transform 180ms var(--dash-ease), box-shadow 220ms var(--dash-ease), background 220ms var(--dash-ease);
+}
+
+.dashboard .list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+}
+
+.dashboard .chart-shell {
+  border-radius: var(--dash-radius-sm);
+  background: rgba(8, 11, 17, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 12px;
+}
+
+body.dashboard.light .chart-shell {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.dashboard .chart-gridline {
+  stroke: rgba(255, 255, 255, 0.07);
+}
+
+body.dashboard.light .chart-gridline {
+  stroke: rgba(15, 23, 42, 0.08);
+}
+
+.dashboard .chart-line {
+  filter: drop-shadow(0 10px 18px rgba(79, 139, 255, 0.18));
+}
+
+.dashboard .mini-stats {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dashboard .stat-chip {
+  border-radius: var(--dash-radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard .mini-coin {
+  border-radius: var(--dash-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 180ms var(--dash-ease), box-shadow 220ms var(--dash-ease), border-color 220ms var(--dash-ease);
+}
+
+.dashboard .mini-coin:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 139, 255, 0.35);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.25);
+}
+
+.dashboard .overlay {
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px);
+  animation: dashOverlayIn 160ms var(--dash-ease) both;
+}
+
+.dashboard .dropdown-menu {
+  border-radius: calc(var(--dash-radius) + 2px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(18, 21, 27, 0.92), rgba(18, 21, 27, 0.82));
+  backdrop-filter: blur(14px);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.48);
+  animation: dashMenuIn 220ms var(--dash-ease) both;
+}
+
+.dashboard .dropdown-item {
+  border-radius: var(--dash-radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@keyframes dashOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dashMenuIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes dashFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+html[style*="visibility: visible"] .dashboard .nav {
+  animation: dashFadeUp 560ms var(--dash-ease) both;
+}
+
+html[style*="visibility: visible"] .dashboard .grid-3 > .card:nth-child(1) {
+  animation: dashFadeUp 640ms var(--dash-ease) both;
+  animation-delay: 80ms;
+}
+
+html[style*="visibility: visible"] .dashboard .grid-3 > .card:nth-child(2) {
+  animation: dashFadeUp 640ms var(--dash-ease) both;
+  animation-delay: 140ms;
+}
+
+html[style*="visibility: visible"] .dashboard .main-grid > .stack:nth-child(1) .card {
+  animation: dashFadeUp 680ms var(--dash-ease) both;
+  animation-delay: 180ms;
+}
+
+html[style*="visibility: visible"] .dashboard .main-grid > .stack:nth-child(2) .card {
+  animation: dashFadeUp 680ms var(--dash-ease) both;
+  animation-delay: 240ms;
+}
+
+html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(1) {
+  animation: dashFadeUp 720ms var(--dash-ease) both;
+  animation-delay: 300ms;
+}
+
+html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(2) {
+  animation: dashFadeUp 720ms var(--dash-ease) both;
+  animation-delay: 360ms;
+}
+
+html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(3) {
+  animation: dashFadeUp 720ms var(--dash-ease) both;
+  animation-delay: 420ms;
+}
+
+html[style*="visibility: visible"] .dashboard .chart-line {
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  animation: dashLineDraw 1.6s var(--dash-ease) forwards;
+  animation-delay: 520ms;
+}
+
+@media (max-width: 1024px) {
+  .dashboard .grid-3,
+  .dashboard .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard .nav {
+    top: 10px;
+  }
+  .dashboard #totalBalance {
+    font-size: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

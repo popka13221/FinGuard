@@ -1,28 +1,19 @@
-const themeKey = 'finguard_theme';
-
 const Theme = (() => {
-  let theme = localStorage.getItem(themeKey) || 'dark';
-
   function apply() {
-    if (theme === 'light') {
-      document.body.classList.add('light');
-    } else {
-      document.body.classList.remove('light');
+    if (document.body) document.body.classList.remove('light');
+    try {
+      localStorage.removeItem('finguard_theme');
+    } catch (_) {
+      // ignore
     }
   }
 
   function toggle() {
-    theme = theme === 'light' ? 'dark' : 'light';
-    localStorage.setItem(themeKey, theme);
     apply();
   }
 
-  function init(buttonSelector) {
+  function init() {
     apply();
-    if (buttonSelector) {
-      const btn = document.querySelector(buttonSelector);
-      if (btn) btn.addEventListener('click', toggle);
-    }
   }
 
   return { apply, toggle, init };
