@@ -50,6 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         filterChain.doFilter(request, response);
                         return;
                     }
+                    if (requireEmailVerified
+                            && userDetails instanceof com.myname.finguard.security.UserPrincipal principal
+                            && !principal.isEmailVerified()) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
