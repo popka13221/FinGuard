@@ -21,6 +21,19 @@ class RateLimiterServiceTest {
     }
 
     @Test
+    void blocksWhenLimitExceededAndAllowsAfterWindowReset() throws InterruptedException {
+        RateLimiterService limiter = new RateLimiterService(2, 20, 100);
+
+        assertThat(limiter.allow("key")).isTrue();
+        assertThat(limiter.allow("key")).isTrue();
+        assertThat(limiter.allow("key")).isFalse();
+
+        Thread.sleep(25);
+
+        assertThat(limiter.allow("key")).isTrue();
+    }
+
+    @Test
     void removesExpiredBuckets() throws InterruptedException {
         RateLimiterService limiter = new RateLimiterService(1, 10, 100);
         limiter.allow("short");
