@@ -167,7 +167,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void skipsAuthenticationWhenRequireEmailVerifiedAndNotVerified() throws Exception {
+    void authenticatesEvenWhenEmailNotVerified() throws Exception {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
@@ -190,7 +190,8 @@ class JwtAuthenticationFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal()).isEqualTo(principal);
         verify(chain).doFilter(request, response);
     }
 
@@ -233,4 +234,3 @@ class JwtAuthenticationFilterTest {
         return new UserPrincipal(user);
     }
 }
-

@@ -3,6 +3,8 @@ import { Button } from '../components/Button';
 import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
 import { AccountsApi, type AccountBalance, type CurrencyBalance } from '../api/accounts';
+import { BalanceChart } from '../components/BalanceChart';
+import { PieChart, type PieChartItem } from '../components/PieChart';
 import '../theme.css';
 import './DashboardPage.css';
 import { useTheme } from '../hooks/useTheme';
@@ -49,6 +51,16 @@ const DashboardPage: React.FC = () => {
     { id: 2, title: 'Подключён счёт «Travel»', tag: 'Счета', time: '1 час назад' },
     { id: 3, title: 'Оплачен Netflix', tag: 'Подписки', time: 'Вчера', amount: -10.99 },
   ];
+
+  const balanceTrendSeries = useMemo(() => [18200, 18750, 19340, 18900, 20200, 20950], []);
+  const expensePieItems: PieChartItem[] = useMemo(() => {
+    const colors = ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa'];
+    return breakdown.map((b, idx) => ({
+      label: b.name,
+      value: b.spent,
+      color: colors[idx % colors.length],
+    }));
+  }, [breakdown]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -275,8 +287,21 @@ const DashboardPage: React.FC = () => {
 
             <div className="card dash-surface dash-card">
               <div className="dash-card-header">
+                <h2 className="dash-card-title">Баланс · тренд</h2>
+                <div className="pill-soft">6 месяцев</div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <BalanceChart series={balanceTrendSeries} currency={primaryCurrency} />
+              </div>
+            </div>
+
+            <div className="card dash-surface dash-card">
+              <div className="dash-card-header">
                 <h2 className="dash-card-title">Расходы</h2>
                 <div className="pill-soft">Период: месяц</div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <PieChart items={expensePieItems} currency={baseCurrency} />
               </div>
               <div className="list" style={{ marginTop: 10 }}>
                 {breakdown.map((b) => {
