@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.auth.dto.ForgotPasswordRequest;
 import com.myname.finguard.auth.model.User;
+import com.myname.finguard.auth.model.PendingRegistration;
 import com.myname.finguard.auth.model.PasswordResetSession;
 import com.myname.finguard.auth.model.UserToken;
 import com.myname.finguard.auth.model.UserTokenType;
@@ -214,6 +215,62 @@ class AuthSecurityIntegrationTest {
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100002");
+    }
+
+    @Test
+    void reRegisterUpdatesPendingPasswordHash() throws Exception {
+        String email = "pending-update@" + UUID.randomUUID() + ".com";
+
+        postJson("/api/auth/register", """
+                {"email":"%s","password":"StrongPass1!","fullName":"User","baseCurrency":"USD"}
+                """.formatted(email))
+                .andExpect(status().isCreated());
+
+        postJson("/api/auth/register", """
+                {"email":"%s","password":"OtherStrong1!","fullName":"User","baseCurrency":"USD"}
+                """.formatted(email))
+                .andExpect(status().isCreated());
+
+        // Old password should be treated as invalid credentials (pending password was updated).
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isUnauthorized());
+
+        // New password matches pending registration -> "email not verified" (403) even though user does not exist yet.
+        MvcResult blocked = postJson("/api/auth/login", """
+                {"email":"%s","password":"OtherStrong1!"}
+                """.formatted(email))
+                .andExpect(status().isForbidden())
+                .andReturn();
+        JsonNode error = objectMapper.readTree(blocked.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100006");
+    }
+
+    @Test
+    void expiredPendingRegistrationCannotBeVerifiedOrUsedForNotVerifiedLogin() throws Exception {
+        String email = "pending-expired@" + UUID.randomUUID() + ".com";
+        postJson("/api/auth/register", """
+                {"email":"%s","password":"StrongPass1!","fullName":"User","baseCurrency":"USD"}
+                """.formatted(email))
+                .andExpect(status().isCreated());
+
+        PendingRegistration pending = pendingRegistrationRepository.findByEmail(email).orElseThrow();
+        pending.setVerifyExpiresAt(Instant.now().minusSeconds(5));
+        pendingRegistrationRepository.save(pending);
+
+        postJson("/api/auth/verify", """
+                {"email":"%s","token":"654321"}
+                """.formatted(email))
+                .andExpect(status().isBadRequest());
+
+        assertThat(pendingRegistrationRepository.findByEmail(email)).isEmpty();
+        assertThat(userRepository.findByEmail(email)).isEmpty();
+
+        postJson("/api/auth/login", """
+                {"email":"%s","password":"StrongPass1!"}
+                """.formatted(email))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

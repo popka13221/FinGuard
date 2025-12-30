@@ -75,4 +75,28 @@ class CsrfIntegrationTest {
                         .content("{}"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void postWithWrongXsrfHeaderIsForbidden() throws Exception {
+        MvcResult csrfRes = mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode csrfBody = objectMapper.readTree(csrfRes.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        String token = csrfBody.get("token").asText();
+        Cookie cookie = csrfRes.getResponse().getCookie("XSRF-TOKEN");
+
+        assertThat(token).isNotBlank();
+        assertThat(cookie).isNotNull();
+
+        MvcResult blocked = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(cookie)
+                        .header("X-XSRF-TOKEN", token + "x")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andReturn();
+
+        JsonNode error = objectMapper.readTree(blocked.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(error.get("code").asText()).isEqualTo("100001");
+    }
 }
