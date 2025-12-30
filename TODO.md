@@ -6,12 +6,12 @@
 
 ## P0 / Next (ближайшие задачи)
 - [ ] JaCoCo: подключить покрытие в `pom.xml` + шаг в CI (html/xml как artifact; опционально — минимальный порог).
-- [ ] Security headers: добавить `SecurityHeadersIntegrationTest` и проверить заголовки на `GET /` и `GET /api/auth/csrf`:
+- [x] Security headers: `SecurityHeadersIntegrationTest` проверяет заголовки на `GET /` и `GET /api/auth/csrf`:
   - `Content-Security-Policy` (строка из `SecurityConfig`)
   - `Referrer-Policy`
   - `Permissions-Policy`
   - `Strict-Transport-Security` (только для HTTPS запроса → в тесте нужно `secure(true)`).
-- [ ] Cookie flags: добавить тесты, что `Set-Cookie` для `FG_AUTH`/`FG_REFRESH` содержит нужные атрибуты:
+- [x] Cookie flags: тесты на `Set-Cookie` для `FG_AUTH`/`FG_REFRESH` (verify/refresh/logout) в `AuthCookieSecurityIntegrationTest`/`AuthCookieSecureFlagIntegrationTest`:
   - `HttpOnly`, `SameSite`, `Path=/`, `Max-Age`
   - `Secure` — зависит от `app.security.jwt.cookie-secure` (проверить оба режима).
   - На `/api/auth/logout` cookies реально “протухают” (`Max-Age=0`).
@@ -30,8 +30,8 @@
 
 ## Security — расширить покрытие (если хочется “как в проде”)
 - [ ] CSRF: тест на whitelist (например, что `POST /api/currencies` или “публичные” endpoints не требуют XSRF, а state-changing `/api/**` требует).
-- [ ] CORS: тесты на allow-headers/methods + что при `credentials=true` не приходит `Access-Control-Allow-Origin: *`.
-- [ ] Auth cookies: тест, что refresh принимает только `FG_REFRESH` cookie (а не `Authorization`, и не `FG_AUTH`).
+- [x] CORS: тесты на allow-headers/methods + что при `credentials=true` не приходит `Access-Control-Allow-Origin: *` (`CorsSecurityIntegrationTest`).
+- [x] Auth cookies: refresh принимает только `FG_REFRESH` cookie (а не `Authorization`, и не `FG_AUTH`) (`AuthCookieSecurityIntegrationTest`).
 
 ---
 
