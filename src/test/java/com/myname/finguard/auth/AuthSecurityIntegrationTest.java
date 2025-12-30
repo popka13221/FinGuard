@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,6 +129,12 @@ class AuthSecurityIntegrationTest {
         rateLimiterService.reset();
         loginAttemptService.reset();
         mailService.clearOutbox();
+    }
+
+    @BeforeEach
+    void cleanRateLimiter() {
+        // H2 in-memory DB is shared across Spring test contexts; reset buckets to avoid cross-test interference.
+        rateLimiterService.reset();
     }
 
     @Test

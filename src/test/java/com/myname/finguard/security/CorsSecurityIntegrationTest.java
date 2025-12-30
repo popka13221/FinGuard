@@ -37,6 +37,7 @@ class CorsSecurityIntegrationTest {
         assertThat(res.getResponse().getHeader("Access-Control-Allow-Origin")).isEqualTo(ALLOWED_ORIGIN);
         assertThat(res.getResponse().getHeader("Access-Control-Allow-Credentials")).isEqualTo("true");
         assertThat(res.getResponse().getHeader("Access-Control-Allow-Origin")).isNotEqualTo("*");
+        assertThat(res.getResponse().getHeader("Vary")).containsIgnoringCase("Origin");
     }
 
     @Test
@@ -62,6 +63,7 @@ class CorsSecurityIntegrationTest {
 
         String allowOrigin = res.getResponse().getHeader("Access-Control-Allow-Origin");
         assertThat(allowOrigin).isEqualTo(ALLOWED_ORIGIN);
+        assertThat(res.getResponse().getHeader("Access-Control-Allow-Credentials")).isEqualTo("true");
 
         String allowHeaders = res.getResponse().getHeader("Access-Control-Allow-Headers");
         assertThat(allowHeaders).isNotBlank();

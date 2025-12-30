@@ -8,8 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.auth.repository.PendingRegistrationRepository;
+import com.myname.finguard.auth.repository.PasswordResetSessionRepository;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.UserSessionRepository;
+import com.myname.finguard.auth.repository.UserTokenRepository;
 import com.myname.finguard.common.service.MailService;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
@@ -53,16 +55,25 @@ class AuthCookieSecurityIntegrationTest {
     @Autowired
     private UserSessionRepository userSessionRepository;
     @Autowired
+    private UserTokenRepository userTokenRepository;
+    @Autowired
+    private PasswordResetSessionRepository passwordResetSessionRepository;
+    @Autowired
     private PendingRegistrationRepository pendingRegistrationRepository;
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
+    @Autowired
+    private RateLimiterService rateLimiterService;
 
     @AfterEach
     void cleanup() {
+        passwordResetSessionRepository.deleteAll();
         userSessionRepository.deleteAll();
+        userTokenRepository.deleteAll();
         pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         tokenBlacklistService.clearAll();
+        rateLimiterService.reset();
         mailService.clearOutbox();
     }
 
@@ -110,6 +121,180 @@ class AuthCookieSecurityIntegrationTest {
 
         assertAuthCookieFlags(refreshed, "FG_AUTH", false);
         assertAuthCookieFlags(refreshed, "FG_REFRESH", false);
+    }
+
+    @Test
+    void registerDoesNotSetAuthCookies() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "no-cookies-" + UUID.randomUUID() + "@example.com";
+        mailService.clearOutbox();
+
+        MvcResult res = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"StrongPass1!","fullName":"User","baseCurrency":"USD"}
+                                """.formatted(email))
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        assertThat(findSetCookie(res, "FG_AUTH")).isBlank();
+        assertThat(findSetCookie(res, "FG_REFRESH")).isBlank();
+        assertThat(mailService.getOutbox()).isNotEmpty();
+    }
+
+    @Test
+    void refreshRequiresCsrfHeader() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "csrf-refresh-" + UUID.randomUUID() + "@example.com";
+        register(email, "StrongPass1!", csrf);
+        MvcResult verified = verify(email, extractLatestCode(), csrf);
+
+        Cookie refreshCookie = verified.getResponse().getCookie("FG_REFRESH");
+        assertThat(refreshCookie).isNotNull();
+
+        // CSRF cookie present but header missing -> forbidden.
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .cookie(csrf.cookie())
+                        .cookie(refreshCookie))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void verifyRequiresCsrfHeader() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "csrf-verify-" + UUID.randomUUID() + "@example.com";
+        register(email, "StrongPass1!", csrf);
+        String code = extractLatestCode();
+
+        // CSRF cookie present but header missing -> forbidden.
+        mockMvc.perform(post("/api/auth/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, code))
+                        .cookie(csrf.cookie()))
+                .andExpect(status().isForbidden());
+
+        // With header -> ok.
+        mockMvc.perform(post("/api/auth/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, code))
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void cookieAuthWorksOnProtectedEndpoint() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "cookie-auth-" + UUID.randomUUID() + "@example.com";
+        register(email, "StrongPass1!", csrf);
+        MvcResult verified = verify(email, extractLatestCode(), csrf);
+
+        Cookie accessCookie = verified.getResponse().getCookie("FG_AUTH");
+        assertThat(accessCookie).isNotNull();
+        assertThat(accessCookie.getValue()).isNotBlank();
+
+        mockMvc.perform(get("/api/accounts/balance")
+                        .cookie(accessCookie))
+                .andExpect(status().isOk());
+
+        // Wrong cookie name should not authenticate.
+        mockMvc.perform(get("/api/accounts/balance")
+                        .cookie(new Cookie("FG_REFRESH", accessCookie.getValue())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void logoutBlacklistsOldAccessCookie() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "logout-blacklist-" + UUID.randomUUID() + "@example.com";
+        register(email, "StrongPass1!", csrf);
+        MvcResult verified = verify(email, extractLatestCode(), csrf);
+
+        Cookie accessCookie = verified.getResponse().getCookie("FG_AUTH");
+        Cookie refreshCookie = verified.getResponse().getCookie("FG_REFRESH");
+        assertThat(accessCookie).isNotNull();
+        assertThat(refreshCookie).isNotNull();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .cookie(accessCookie)
+                        .cookie(refreshCookie))
+                .andExpect(status().isOk());
+
+        // Old cookie value should no longer authenticate.
+        mockMvc.perform(get("/api/accounts/balance")
+                        .cookie(new Cookie("FG_AUTH", accessCookie.getValue())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void passwordResetInvalidatesExistingCookieTokens() throws Exception {
+        Csrf csrf = fetchCsrf();
+        String email = "reset-cookie-" + UUID.randomUUID() + "@example.com";
+        register(email, "StrongPass1!", csrf);
+        MvcResult verified = verify(email, extractLatestCode(), csrf);
+
+        Cookie accessCookie = verified.getResponse().getCookie("FG_AUTH");
+        Cookie refreshCookie = verified.getResponse().getCookie("FG_REFRESH");
+        assertThat(accessCookie).isNotNull();
+        assertThat(refreshCookie).isNotNull();
+
+        mockMvc.perform(post("/api/auth/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(email))
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
+                .andExpect(status().isOk());
+
+        String resetCode = extractLatestCode();
+        MvcResult confirm = mockMvc.perform(post("/api/auth/reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, resetCode))
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
+                .andExpect(status().isOk())
+                .andReturn();
+        String resetSessionToken = objectMapper
+                .readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .get("resetSessionToken").asText();
+        assertThat(resetSessionToken).isNotBlank();
+
+        mockMvc.perform(post("/api/auth/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"resetSessionToken":"%s","password":"NewStrong1!"}
+                                """.formatted(resetSessionToken))
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
+                .andExpect(status().isOk());
+
+        // Old cookie tokens should no longer authenticate / refresh.
+        mockMvc.perform(get("/api/accounts/balance")
+                        .cookie(new Cookie("FG_AUTH", accessCookie.getValue())))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .cookie(new Cookie("FG_REFRESH", refreshCookie.getValue())))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -230,4 +415,3 @@ class AuthCookieSecurityIntegrationTest {
     private record Csrf(String token, Cookie cookie) {
     }
 }
-

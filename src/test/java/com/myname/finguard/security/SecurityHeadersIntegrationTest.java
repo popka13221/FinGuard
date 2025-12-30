@@ -34,6 +34,14 @@ class SecurityHeadersIntegrationTest {
         assertSecurityHeaders(res, true);
     }
 
+    @Test
+    void securityHeadersArePresentOnForbiddenResponses() throws Exception {
+        MvcResult res = mockMvc.perform(get("/api/accounts/balance"))
+                .andExpect(status().isForbidden())
+                .andReturn();
+        assertSecurityHeaders(res, false);
+    }
+
     private void assertSecurityHeaders(MvcResult res, boolean expectHsts) {
         assertThat(res.getResponse().getHeader("Content-Security-Policy"))
                 .isEqualTo("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self'");
