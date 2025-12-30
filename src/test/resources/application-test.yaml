@@ -71,5 +71,6 @@ app:
     cors:
       allowed-origins:
     tokens:
+      fixed-code: 654321
       reset-cooldown-seconds: 60
       reset-session-ttl-minutes: 15

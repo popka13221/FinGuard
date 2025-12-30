@@ -50,6 +50,7 @@ class AuthServiceTest {
     private final PwnedPasswordChecker pwnedPasswordChecker = mock(PwnedPasswordChecker.class);
     private final TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
     private final UserTokenService userTokenService = mock(UserTokenService.class);
+    private final PendingRegistrationService pendingRegistrationService = mock(PendingRegistrationService.class);
     private final UserSessionService userSessionService = mock(UserSessionService.class);
     private final PasswordResetSessionService passwordResetSessionService = mock(PasswordResetSessionService.class);
     private final RateLimiterService rateLimiterService = mock(RateLimiterService.class);
@@ -57,45 +58,35 @@ class AuthServiceTest {
     private final MailService mailService = mock(MailService.class);
 
     @Test
-    void registerCreatesUserIssuesVerifyTokenAndReturnsAuthTokens() {
+    void registerCreatesPendingRegistrationAndSendsVerifyEmail() {
         AuthService authService = createService(false, false);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode("StrongPass1!")).thenReturn("hash");
         when(pwnedPasswordChecker.isPwned(anyString())).thenReturn(false);
 
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(123L);
-            return u;
-        });
-
-        when(userTokenService.issue(any(User.class), eq(UserTokenType.VERIFY))).thenReturn("verify-code");
-
-        stubTokenIssuance(123L, "user@example.com", 0);
+        when(userTokenService.generateVerifyCode()).thenReturn("verify-code");
 
         RegisterRequest request = new RegisterRequest("USER@EXAMPLE.COM", "StrongPass1!", "  User  ", " usd ");
         AuthService.RegistrationResult result = authService.register(request, "10.0.0.1");
 
         assertThat(result.verificationRequired()).isTrue();
-        assertThat(result.tokens()).isNotNull();
-        assertThat(result.tokens().accessToken()).isEqualTo("access");
-        assertThat(result.tokens().refreshToken()).isEqualTo("refresh");
+        assertThat(result.tokens()).isNull();
 
-        ArgumentCaptor<User> savedCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(savedCaptor.capture());
-        User savedUser = savedCaptor.getValue();
-        assertThat(savedUser.getEmail()).isEqualTo("user@example.com");
-        assertThat(savedUser.getFullName()).isEqualTo("User");
-        assertThat(savedUser.getBaseCurrency()).isEqualTo("USD");
-        assertThat(savedUser.getRole()).isEqualTo(Role.USER);
-        assertThat(savedUser.isEmailVerified()).isFalse();
-
-        verify(userTokenService).issue(any(User.class), eq(UserTokenType.VERIFY));
+        verify(pendingRegistrationService).createOrUpdate(
+                eq("user@example.com"),
+                eq("StrongPass1!"),
+                eq("User"),
+                eq("USD"),
+                eq(Role.USER),
+                eq("verify-code")
+        );
         verify(mailService).sendVerifyEmail(eq("user@example.com"), eq("verify-code"), any());
-        verify(userSessionService).register(any(User.class), eq("jti-refresh"), any());
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(userTokenService, never()).issue(any(User.class), any());
+        verify(userSessionService, never()).register(any(User.class), anyString(), any());
     }
 
     @Test
@@ -313,6 +304,7 @@ class AuthServiceTest {
                 pwnedPasswordChecker,
                 tokenBlacklistService,
                 userTokenService,
+                pendingRegistrationService,
                 userSessionService,
                 passwordResetSessionService,
                 rateLimiterService,
@@ -357,4 +349,3 @@ class AuthServiceTest {
         return user;
     }
 }
-

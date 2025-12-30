@@ -29,6 +29,10 @@ const AuthPage: React.FC = () => {
   const [otpCode, setOtpCode] = useState<string>('');
   const [otpExpiresIn, setOtpExpiresIn] = useState<number>(0);
   const [otpError, setOtpError] = useState<string>('');
+  const [regVerifyStep, setRegVerifyStep] = useState<boolean>(false);
+  const [regVerifyCode, setRegVerifyCode] = useState<string>('');
+  const [regVerifyMessage, setRegVerifyMessage] = useState<string>('');
+  const [regVerifyError, setRegVerifyError] = useState<string>('');
   const otpStateKey = 'fg_auth_otp_state';
 
   const [values, setValues] = useState({
@@ -73,6 +77,13 @@ const AuthPage: React.FC = () => {
     sessionStorage.removeItem(otpStateKey);
   };
 
+  const clearRegVerifyState = () => {
+    setRegVerifyStep(false);
+    setRegVerifyCode('');
+    setRegVerifyMessage('');
+    setRegVerifyError('');
+  };
+
   useEffect(() => {
     let mounted = true;
     setIsLoadingCurrencies(true);
@@ -106,6 +117,7 @@ const AuthPage: React.FC = () => {
   useEffect(() => {
     clearOtpState();
     setOtpError('');
+    clearRegVerifyState();
   }, [mode, values.email]);
 
   const onChange = (field: string, val: string) => {
@@ -116,6 +128,7 @@ const AuthPage: React.FC = () => {
     if (isSubmitting) return;
     setFormError('');
     setOtpError('');
+    setRegVerifyError('');
     if (mode === 'register' && (isLoadingCurrencies || currencyError || currencies.length === 0)) {
       setFormError(currencyError || 'Валюты загружаются. Подождите и попробуйте снова.');
       return;
@@ -135,6 +148,12 @@ const AuthPage: React.FC = () => {
         : AuthApi.register(payload);
     const res = await apiCall;
     setIsSubmitting(false);
+    if (mode === 'register' && res.ok && res.data && (res.data as any).verificationRequired) {
+      setRegVerifyStep(true);
+      setRegVerifyMessage(((res.data as any).message as string) || 'Мы отправили код на ваш email.');
+      setRegVerifyError('');
+      return;
+    }
     if (mode === 'login' && res.status === 202 && res.data && (res.data as any).otpRequired) {
       setOtpStep(true);
       setOtpExpiresIn((res.data as any).expiresInSeconds || 0);
@@ -150,6 +169,32 @@ const AuthPage: React.FC = () => {
       const message = data && data.message ? data.message : undefined;
       const retryAfterSeconds = data && typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : undefined;
       applyErrorCode(code, message, retryAfterSeconds);
+    }
+  };
+
+  const submitRegVerify = async () => {
+    if (isSubmitting || !regVerifyStep) return;
+    setRegVerifyError('');
+    const email = values.email.trim().toLowerCase();
+    if (!regVerifyCode.trim()) {
+      setRegVerifyError('Введите код из письма.');
+      return;
+    }
+    setIsSubmitting(true);
+    const res = await AuthApi.verifyEmail({ email, token: regVerifyCode.trim() });
+    setIsSubmitting(false);
+    if (res.ok && res.data && (res.data as any).token) {
+      ApiClient.setEmail(email);
+      clearRegVerifyState();
+      window.location.href = '/dashboard';
+      return;
+    }
+    const data = res.data as any;
+    const code = data && data.code ? String(data.code) : '';
+    if (code === '100005') {
+      setRegVerifyError('Код недействителен или истек. Запросите новый код или повторите регистрацию.');
+    } else {
+      setRegVerifyError('Не удалось подтвердить код. Попробуйте снова.');
     }
   };
 
@@ -256,47 +301,88 @@ const AuthPage: React.FC = () => {
               </>
             ) : (
               <>
-                <Input
-                  label="Email"
-                  value={values.email}
-                  onChange={(e) => onChange('email', e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  aria-label="Email"
-                  error={errors.email}
-                />
-                <Input
-                  label="Пароль"
-                  value={values.password}
-                  onChange={(e) => onChange('password', e.target.value)}
-                  type="password"
-                  placeholder="Password"
-                  autoComplete="off"
-                  aria-label="Пароль"
-                  error={errors.password}
-                />
-                <Input
-                  label="Имя"
-                  value={values.fullName}
-                  onChange={(e) => onChange('fullName', e.target.value)}
-                  placeholder="Ваше имя"
-                  autoComplete="name"
-                  aria-label="Имя"
-                  error={errors.fullName}
-                />
-                <Select
-                  label="Базовая валюта"
-                  value={values.baseCurrency}
-                  onChange={(e) => onChange('baseCurrency', e.target.value)}
-                  aria-label="Базовая валюта"
-                  error={errors.baseCurrency || currencyError}
-                  disabled={isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}
-                  options={currencies.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))}
-                />
-                {errors.form && <div className="alert" role="alert" aria-live="polite">{errors.form}</div>}
-                <div className="actions">
-                  <Button onClick={submit} disabled={isSubmitting || isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}>Создать аккаунт</Button>
-                </div>
+                {!regVerifyStep ? (
+                  <>
+                    <Input
+                      label="Email"
+                      value={values.email}
+                      onChange={(e) => onChange('email', e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      aria-label="Email"
+                      error={errors.email}
+                    />
+                    <Input
+                      label="Пароль"
+                      value={values.password}
+                      onChange={(e) => onChange('password', e.target.value)}
+                      type="password"
+                      placeholder="Password"
+                      autoComplete="off"
+                      aria-label="Пароль"
+                      error={errors.password}
+                    />
+                    <Input
+                      label="Имя"
+                      value={values.fullName}
+                      onChange={(e) => onChange('fullName', e.target.value)}
+                      placeholder="Ваше имя"
+                      autoComplete="name"
+                      aria-label="Имя"
+                      error={errors.fullName}
+                    />
+                    <Select
+                      label="Базовая валюта"
+                      value={values.baseCurrency}
+                      onChange={(e) => onChange('baseCurrency', e.target.value)}
+                      aria-label="Базовая валюта"
+                      error={errors.baseCurrency || currencyError}
+                      disabled={isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}
+                      options={currencies.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))}
+                    />
+                    {errors.form && (
+                      <div className="alert" role="alert" aria-live="polite">
+                        {errors.form}
+                      </div>
+                    )}
+                    <div className="actions">
+                      <Button
+                        onClick={submit}
+                        disabled={isSubmitting || isLoadingCurrencies || Boolean(currencyError) || currencies.length === 0}
+                      >
+                        Создать аккаунт
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="alert" role="alert" aria-live="polite">
+                      {regVerifyMessage || 'Мы отправили код на ваш email. Введите его ниже.'}
+                    </div>
+                    <Input
+                      label="Код из письма"
+                      value={regVerifyCode}
+                      onChange={(e) => setRegVerifyCode(e.target.value)}
+                      placeholder="654321"
+                      aria-label="Код из письма"
+                      error={regVerifyError}
+                    />
+                    <div className="actions">
+                      <Button onClick={submitRegVerify} disabled={isSubmitting || !regVerifyCode.trim()}>
+                        Подтвердить email
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          clearRegVerifyState();
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        Назад
+                      </Button>
+                    </div>
+                  </>
+                )}
               </>
             )}
             <div className="muted">Токен будет храниться в httpOnly cookie; фронт токен не читает.</div>

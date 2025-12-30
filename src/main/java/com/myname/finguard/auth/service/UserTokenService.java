@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,14 +21,15 @@ import org.slf4j.LoggerFactory;
 public class UserTokenService {
 
     private static final Logger log = LoggerFactory.getLogger(UserTokenService.class);
-    // демо-код по умолчанию, бэк оставлен с фиксированным значением
-    private static final String FIXED_CODE = "654321";
+    private static final SecureRandom secureRandom = new SecureRandom();
     private final UserTokenRepository userTokenRepository;
     private final Duration verifyTtl;
     private final Duration resetTtl;
     private final Duration resetCooldown;
+    private final String fixedCode;
 
     public UserTokenService(UserTokenRepository userTokenRepository,
+                            @Value("${app.security.tokens.fixed-code:654321}") String fixedCode,
                             @Value("${app.security.tokens.verify-ttl-minutes:1440}") long verifyTtlMinutes,
                             @Value("${app.security.tokens.reset-ttl-minutes:60}") long resetTtlMinutes,
                             @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
@@ -35,6 +37,7 @@ public class UserTokenService {
         this.verifyTtl = Duration.ofMinutes(Math.max(verifyTtlMinutes, 1));
         this.resetTtl = Duration.ofMinutes(Math.max(resetTtlMinutes, 1));
         this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
+        this.fixedCode = fixedCode == null ? "" : fixedCode.trim();
     }
 
     @Transactional
@@ -122,7 +125,11 @@ public class UserTokenService {
     }
 
     private String generateToken(UserTokenType type) {
-        return FIXED_CODE;
+        if (!fixedCode.isBlank()) {
+            return fixedCode;
+        }
+        int code = secureRandom.nextInt(1_000_000);
+        return String.format("%06d", code);
     }
 
     public String generateVerifyCode() {

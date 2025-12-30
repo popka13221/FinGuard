@@ -88,9 +88,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Регистрация пользователя", description = "Создает учетную запись, выдает access/refresh JWT и ставит httpOnly cookies FG_AUTH/FG_REFRESH")
+    @Operation(summary = "Регистрация пользователя", description = "Создает запись pending registration и отправляет код на email. Пользователь и токены создаются после подтверждения через /api/auth/verify.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Пользователь создан"),
+            @ApiResponse(responseCode = "201", description = "Регистрация начата (pending registration)"),
             @ApiResponse(responseCode = "400", description = "Некорректные данные или слабый пароль", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Email уже занят", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })

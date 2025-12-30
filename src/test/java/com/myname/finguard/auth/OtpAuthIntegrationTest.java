@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.myname.finguard.auth.repository.PendingRegistrationRepository;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.UserTokenRepository;
 import com.myname.finguard.auth.repository.PasswordResetSessionRepository;
@@ -67,12 +68,15 @@ class OtpAuthIntegrationTest {
     private PasswordResetSessionRepository passwordResetSessionRepository;
     @Autowired
     private UserSessionRepository userSessionRepository;
+    @Autowired
+    private PendingRegistrationRepository pendingRegistrationRepository;
 
     @AfterEach
     void cleanup() {
         passwordResetSessionRepository.deleteAll();
         userSessionRepository.deleteAll();
         userTokenRepository.deleteAll();
+        pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         mailService.clearOutbox();
         rateLimiterService.reset();
@@ -210,10 +214,11 @@ class OtpAuthIntegrationTest {
                 {"email":"%s","password":"%s","fullName":"User","baseCurrency":"USD"}
                 """.formatted(email, password);
         MvcResult res = postJson("/api/auth/register", payload).andExpect(status().isCreated()).andReturn();
-        userRepository.findByEmail(email).ifPresent(u -> {
-            u.setEmailVerified(true);
-            userRepository.save(u);
-        });
+        MailService.MailMessage msg = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
+        String code = extractCode(msg.body());
+        postJson("/api/auth/verify", """
+                {"email":"%s","token":"%s"}
+                """.formatted(email, code)).andExpect(status().isOk());
         return res;
     }
 

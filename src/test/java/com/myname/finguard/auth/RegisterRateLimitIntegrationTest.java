@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.myname.finguard.auth.repository.PendingRegistrationRepository;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.UserSessionRepository;
 import com.myname.finguard.auth.repository.UserTokenRepository;
@@ -48,11 +49,14 @@ class RegisterRateLimitIntegrationTest {
     private UserTokenRepository userTokenRepository;
     @Autowired
     private UserSessionRepository userSessionRepository;
+    @Autowired
+    private PendingRegistrationRepository pendingRegistrationRepository;
 
     @AfterEach
     void cleanup() {
         userSessionRepository.deleteAll();
         userTokenRepository.deleteAll();
+        pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         rateLimiterService.reset();
     }

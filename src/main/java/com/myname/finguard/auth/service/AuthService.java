@@ -11,6 +11,7 @@ import com.myname.finguard.auth.dto.UserProfileResponse;
 import com.myname.finguard.auth.dto.VerifyRequest;
 import com.myname.finguard.auth.dto.OtpVerifyRequest;
 import com.myname.finguard.auth.model.User;
+import com.myname.finguard.auth.model.PendingRegistration;
 import com.myname.finguard.auth.model.PasswordResetSession;
 import com.myname.finguard.auth.model.UserToken;
 import com.myname.finguard.auth.model.UserTokenType;
@@ -59,6 +60,7 @@ public class AuthService {
     private final PwnedPasswordChecker pwnedPasswordChecker;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserTokenService userTokenService;
+    private final PendingRegistrationService pendingRegistrationService;
     private final UserSessionService userSessionService;
     private final MailService mailService;
     private final PasswordResetSessionService passwordResetSessionService;
@@ -90,6 +92,7 @@ public class AuthService {
                        PwnedPasswordChecker pwnedPasswordChecker,
                        TokenBlacklistService tokenBlacklistService,
                        UserTokenService userTokenService,
+                       PendingRegistrationService pendingRegistrationService,
                        UserSessionService userSessionService,
                        PasswordResetSessionService passwordResetSessionService,
                        RateLimiterService rateLimiterService,
@@ -120,6 +123,7 @@ public class AuthService {
         this.pwnedPasswordChecker = pwnedPasswordChecker;
         this.tokenBlacklistService = tokenBlacklistService;
         this.userTokenService = userTokenService;
+        this.pendingRegistrationService = pendingRegistrationService;
         this.userSessionService = userSessionService;
         this.mailService = mailService;
         this.passwordResetSessionService = passwordResetSessionService;
@@ -166,20 +170,18 @@ public class AuthService {
         if (pwnedPasswordChecker.isPwned(request.password())) {
             throw new ApiException(ErrorCodes.AUTH_WEAK_PASSWORD, "Password is compromised. Choose another password.", HttpStatus.BAD_REQUEST);
         }
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setFullName(fullName);
-        user.setBaseCurrency(baseCurrency);
-        user.setRole(Role.USER);
-        user.setEmailVerified(false);
-        User saved = userRepository.save(user);
-
-        String verifyCode = userTokenService.issue(saved, UserTokenType.VERIFY);
-        mailService.sendVerifyEmail(email, verifyCode, userTokenService.getVerifyTtl());
-
-        AuthTokens tokens = issueTokens(saved);
-        return new RegistrationResult(tokens, true);
+        // Create only a pending registration; real user row will be created after /verify
+        String verifyCode = userTokenService.generateVerifyCode();
+        pendingRegistrationService.createOrUpdate(
+                email,
+                request.password(),
+                fullName,
+                baseCurrency,
+                Role.USER,
+                verifyCode
+        );
+        mailService.sendVerifyEmail(email, verifyCode, pendingRegistrationService.getVerifyTtl());
+        return new RegistrationResult(null, true);
     }
 
     public LoginOutcome login(LoginRequest request, String ip) {
@@ -242,6 +244,15 @@ public class AuthService {
             long ttlSeconds = Duration.between(Instant.now(), issued.expiresAt()).getSeconds();
             return new LoginOutcome(null, true, Math.max(ttlSeconds, 1));
         } catch (AuthenticationException ex) {
+            // If user is not created yet (pending registration), return a meaningful error when the password matches.
+            PendingRegistration pending = pendingRegistrationService.findActiveByEmail(email).orElse(null);
+            if (pending != null && passwordEncoder.matches(request.password(), pending.getPasswordHash())) {
+                throw new ApiException(
+                        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+                        "Email is not verified. Please check your email for the verification code.",
+                        HttpStatus.FORBIDDEN
+                );
+            }
             loginAttemptService.recordFailure(email);
             log.warn("Login failed for email={}", email);
             throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid email or password", HttpStatus.UNAUTHORIZED);
@@ -318,6 +329,14 @@ public class AuthService {
 
     public void requestVerification(ForgotPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
+        // Pending registration flow: (re)issue code for a not-yet-created user
+        PendingRegistration pending = pendingRegistrationService.findActiveByEmail(email).orElse(null);
+        if (pending != null) {
+            String token = userTokenService.generateVerifyCode();
+            pendingRegistrationService.reissueToken(email, token);
+            mailService.sendVerifyEmail(email, token, pendingRegistrationService.getVerifyTtl());
+            return;
+        }
         userRepository.findByEmail(email).ifPresent(user -> {
             if (!user.isEmailVerified()) {
                 String token = userTokenService.issue(user, UserTokenType.VERIFY);
@@ -332,6 +351,28 @@ public class AuthService {
         if (!StringUtils.hasText(rawToken)) {
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
         }
+
+        // Preferred flow: verify a pending registration and create the real user.
+        if (!email.isBlank()) {
+            Optional<PendingRegistration> pendingOpt = pendingRegistrationService.findValid(email, rawToken);
+            if (pendingOpt.isPresent()) {
+                PendingRegistration pending = pendingOpt.get();
+                if (userRepository.existsByEmail(email)) {
+                    throw new ApiException(ErrorCodes.AUTH_EMAIL_EXISTS, "Email is already registered", HttpStatus.BAD_REQUEST);
+                }
+                User user = new User();
+                user.setEmail(email);
+                user.setPasswordHash(pending.getPasswordHash());
+                user.setFullName(pending.getFullName());
+                user.setBaseCurrency(pending.getBaseCurrency());
+                user.setRole(pending.getRole() == null ? Role.USER : pending.getRole());
+                user.setEmailVerified(true);
+                User saved = userRepository.save(user);
+                pendingRegistrationService.delete(pending);
+                return issueTokens(saved);
+            }
+        }
+
         Optional<UserToken> tokenOpt;
         if (email.isBlank()) {
             tokenOpt = userTokenService.findValid(rawToken, UserTokenType.VERIFY);

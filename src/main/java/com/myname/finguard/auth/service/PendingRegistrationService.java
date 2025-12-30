@@ -63,6 +63,36 @@ public class PendingRegistrationService {
     }
 
     @Transactional
+    public Optional<PendingRegistration> findActiveByEmail(String email) {
+        purgeExpired();
+        if (!StringUtils.hasText(email)) {
+            return Optional.empty();
+        }
+        String normalized = email.trim().toLowerCase();
+        return repository.findByEmail(normalized)
+                .filter(p -> p.getVerifyExpiresAt() != null && p.getVerifyExpiresAt().isAfter(Instant.now()));
+    }
+
+    @Transactional
+    public Optional<IssuedToken> reissueToken(String email, String rawToken) {
+        purgeExpired();
+        if (!StringUtils.hasText(email) || !StringUtils.hasText(rawToken)) {
+            return Optional.empty();
+        }
+        String normalized = email.trim().toLowerCase();
+        return repository.findByEmail(normalized)
+                .filter(p -> p.getVerifyExpiresAt() != null && p.getVerifyExpiresAt().isAfter(Instant.now()))
+                .map(p -> {
+                    p.setVerifyTokenHash(hash(rawToken));
+                    Instant expiresAt = Instant.now().plus(verifyTtl);
+                    p.setVerifyExpiresAt(expiresAt);
+                    p.setUpdatedAt(Instant.now());
+                    PendingRegistration saved = repository.save(p);
+                    return new IssuedToken(saved, expiresAt);
+                });
+    }
+
+    @Transactional
     public Optional<PendingRegistration> findValidByToken(String rawToken) {
         purgeExpired();
         if (!StringUtils.hasText(rawToken)) {

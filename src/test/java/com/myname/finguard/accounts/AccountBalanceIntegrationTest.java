@@ -143,8 +143,8 @@ class AccountBalanceIntegrationTest {
         mockMvc.perform(post("/api/auth/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"token":"%s"}
-                                """.formatted(verifyToken)))
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, verifyToken)))
                 .andExpect(status().isOk());
 
         String loginPayload = """

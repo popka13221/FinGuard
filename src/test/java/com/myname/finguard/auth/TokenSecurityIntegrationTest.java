@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.model.UserToken;
 import com.myname.finguard.auth.model.UserTokenType;
+import com.myname.finguard.auth.repository.PendingRegistrationRepository;
 import com.myname.finguard.auth.repository.PasswordResetSessionRepository;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.UserSessionRepository;
@@ -57,12 +58,15 @@ class TokenSecurityIntegrationTest {
     private UserSessionRepository userSessionRepository;
     @Autowired
     private PasswordResetSessionRepository passwordResetSessionRepository;
+    @Autowired
+    private PendingRegistrationRepository pendingRegistrationRepository;
 
     @AfterEach
     void cleanup() {
         passwordResetSessionRepository.deleteAll();
         userSessionRepository.deleteAll();
         userTokenRepository.deleteAll();
+        pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         mailService.clearOutbox();
     }
@@ -166,22 +170,19 @@ class TokenSecurityIntegrationTest {
     }
 
     private MvcResult register(String email, String password) throws Exception {
-        MvcResult res = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"%s","password":"%s","fullName":"User","baseCurrency":"USD"}
                                 """.formatted(email, password)))
                 .andExpect(status().isCreated())
                 .andReturn();
-        userRepository.findByEmail(email).ifPresent(u -> {
-            u.setEmailVerified(true);
-            userRepository.save(u);
-        });
-        return mockMvc.perform(post("/api/auth/login")
+        String verifyCode = extractCode(latestMail().body());
+        return mockMvc.perform(post("/api/auth/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"%s","password":"%s"}
-                                """.formatted(email, password)))
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, verifyCode)))
                 .andExpect(status().isOk())
                 .andReturn();
     }

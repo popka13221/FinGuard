@@ -13,6 +13,7 @@ import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.model.PasswordResetSession;
 import com.myname.finguard.auth.model.UserToken;
 import com.myname.finguard.auth.model.UserTokenType;
+import com.myname.finguard.auth.repository.PendingRegistrationRepository;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.PasswordResetSessionRepository;
 import com.myname.finguard.auth.repository.UserSessionRepository;
@@ -90,6 +91,8 @@ class AuthSecurityIntegrationTest {
     @Autowired
     private UserTokenRepository userTokenRepository;
     @Autowired
+    private PendingRegistrationRepository pendingRegistrationRepository;
+    @Autowired
     private PasswordResetSessionRepository passwordResetSessionRepository;
     @Autowired
     private UserSessionRepository userSessionRepository;
@@ -119,6 +122,7 @@ class AuthSecurityIntegrationTest {
         passwordResetSessionRepository.deleteAll();
         userSessionRepository.deleteAll();
         userTokenRepository.deleteAll();
+        pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         tokenBlacklistService.clearAll();
         rateLimiterService.reset();
@@ -134,10 +138,17 @@ class AuthSecurityIntegrationTest {
                 {"email":"%s","password":"%s","fullName":"  Test User  ","baseCurrency":"usd"}
                 """.formatted(emailRaw, password);
 
-        MvcResult register = postJson("/api/auth/register", payload)
+        postJson("/api/auth/register", payload)
                 .andExpect(status().isCreated())
                 .andReturn();
-        String access = accessToken(register);
+        String email = "user+tag@example.com";
+        String verifyCode = extractCode(latestMail().body());
+        MvcResult verified = postJson("/api/auth/verify", """
+                {"email":"%s","token":"%s"}
+                """.formatted(email, verifyCode))
+                .andExpect(status().isOk())
+                .andReturn();
+        String access = accessToken(verified);
 
         // profile reflects normalized email/currency
         JsonNode profile = getProfile(access);
@@ -188,7 +199,7 @@ class AuthSecurityIntegrationTest {
 
     @Test
     void registrationRejectsDuplicateEmailCaseInsensitive() throws Exception {
-        registerUser("dupe@example.com", "StrongPass1!");
+        registerVerifiedUser("dupe@example.com", "StrongPass1!");
         MvcResult res = postJson("/api/auth/register", """
                 {"email":"DUPE@EXAMPLE.COM","password":"StrongPass1!","fullName":"User2","baseCurrency":"USD"}
                 """)
@@ -211,7 +222,11 @@ class AuthSecurityIntegrationTest {
         JsonNode error = objectMapper.readTree(blocked.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100006");
 
-        markVerified(email);
+        String verifyCode = extractCode(latestMail().body());
+        postJson("/api/auth/verify", """
+                {"email":"%s","token":"%s"}
+                """.formatted(email, verifyCode))
+                .andExpect(status().isOk());
         postJson("/api/auth/login", """
                 {"email":"%s","password":"StrongPass1!"}
                 """.formatted(email))
@@ -221,7 +236,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void lockoutBlocksAfterMaxAttempts() throws Exception {
         String email = "lock@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
 
         String badPayload = """
                 {"email":"%s","password":"WrongPass1!"}
@@ -275,7 +290,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void refreshRotationRevokesOldTokens() throws Exception {
         String email = "refresh@" + UUID.randomUUID() + ".com";
-        MvcResult reg = registerUser(email, "StrongPass1!");
+        MvcResult reg = registerVerifiedUser(email, "StrongPass1!");
         Map<String, String> cookies = cookies(reg);
 
         MvcResult refreshed = postJsonWithCookie("/api/auth/refresh", "{}", cookies.get("FG_REFRESH"))
@@ -307,40 +322,31 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
-    void verificationFlowMarksUserVerified() throws Exception {
+    void verificationFlowCreatesUserAndClearsPending() throws Exception {
         String email = "verify@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
 
-        postJson("/api/auth/verify/request", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
-                .andExpect(status().isOk());
+        assertThat(userRepository.findByEmail(email)).isEmpty();
+        assertThat(pendingRegistrationRepository.findByEmail(email)).isPresent();
 
-        User user = userRepository.findByEmail(email).orElseThrow();
-        Long userId = user.getId();
-        String rawToken = userTokenService.issue(user, UserTokenType.VERIFY);
-        UserToken token = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.VERIFY && t.getUser().getId().equals(userId))
-                .findFirst()
-                .orElseThrow();
+        String rawToken = extractCode(latestMail().body());
+        MvcResult verified = postJson("/api/auth/verify", """
+                {"email":"%s","token":"%s"}
+                """.formatted(email, rawToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = objectMapper.readTree(verified.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertThat(body.get("token").asText()).isNotBlank();
 
+        User created = userRepository.findByEmail(email).orElseThrow();
+        assertThat(created.isEmailVerified()).isTrue();
+        assertThat(pendingRegistrationRepository.findByEmail(email)).isEmpty();
+
+        // Reuse token should fail (pending registration already consumed)
         postJson("/api/auth/verify", """
-                {"token":"%s"}
-                """.formatted(rawToken))
-                .andExpect(status().isOk());
-
-        User refreshed = userRepository.findByEmail(email).orElseThrow();
-        assertThat(refreshed.isEmailVerified()).isTrue();
-        UserToken used = userTokenRepository.findAll().stream()
-                .filter(t -> hashToken(rawToken).equals(t.getTokenHash()))
-                .findFirst()
-                .orElseThrow();
-        assertThat(used.getUsedAt()).isNotNull();
-
-        // Reuse token is a no-op and stays verified
-        postJson("/api/auth/verify", """
-                {"token":"%s"}
-                """.formatted(rawToken))
+                {"email":"%s","token":"%s"}
+                """.formatted(email, rawToken))
                 .andExpect(status().isBadRequest());
-        assertThat(userRepository.findByEmail(email).orElseThrow().isEmailVerified()).isTrue();
     }
 
     @Test
@@ -399,7 +405,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void forgotSendsResetEmailTemplateWithDevCode() throws Exception {
         String email = "mail@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         mailService.clearOutbox();
 
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
@@ -421,7 +427,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void forgotWithDevCodeCanBeRequestedMultipleTimes() throws Exception {
         String email = "multi@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         mailService.clearOutbox();
 
         for (int i = 0; i < 3; i++) {
@@ -442,16 +448,13 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
-    void verifyUsesDevCodeWhenMailDisabled() throws Exception {
+    void verifyCreatesUserFromPendingRegistration() throws Exception {
         String email = "verify-dev@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
 
-        var verifyTokens = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.VERIFY)
-                .toList();
-        assertThat(verifyTokens).hasSize(1);
-        UserToken token = verifyTokens.get(0);
-        assertThat(token.getTokenHash()).isEqualTo(hashToken("654321"));
+        var pending = pendingRegistrationRepository.findByEmail(email);
+        assertThat(pending).isPresent();
+        assertThat(pending.get().getVerifyTokenHash()).isEqualTo(hashToken("654321"));
 
         MailService.MailMessage last = latestMail();
         assertThat(last).isNotNull();
@@ -460,14 +463,22 @@ class AuthSecurityIntegrationTest {
         assertThat(last.body()).contains("/app/verify.html");
 
         postJson("/api/auth/verify", """
-                {"token":"654321"}
-                """)
+                {"email":"%s","token":"654321"}
+                """.formatted(email))
                 .andExpect(status().isOk());
+
+        assertThat(userRepository.findByEmail(email)).isPresent();
         assertThat(userRepository.findByEmail(email).orElseThrow().isEmailVerified()).isTrue();
+        assertThat(pendingRegistrationRepository.findByEmail(email)).isEmpty();
+
+        var verifyTokens = userTokenRepository.findAll().stream()
+                .filter(t -> t.getType() == UserTokenType.VERIFY)
+                .toList();
+        assertThat(verifyTokens).isEmpty();
     }
 
     @Test
-    void verifyRequestReusesDevCodeAndSingleToken() throws Exception {
+    void verifyRequestReissuesDevCodeForPendingRegistration() throws Exception {
         String email = "verify-repeat@" + UUID.randomUUID() + ".com";
         registerUser(email, "StrongPass1!");
         mailService.clearOutbox();
@@ -477,20 +488,24 @@ class AuthSecurityIntegrationTest {
                 """.formatted(email))
                 .andExpect(status().isOk());
 
-        var verifyTokens = userTokenRepository.findAll().stream()
-                .filter(t -> t.getType() == UserTokenType.VERIFY)
-                .toList();
-        assertThat(verifyTokens).hasSize(1);
-        assertThat(verifyTokens.get(0).getTokenHash()).isEqualTo(hashToken("654321"));
+        var pending = pendingRegistrationRepository.findByEmail(email);
+        assertThat(pending).isPresent();
+        assertThat(pending.get().getVerifyTokenHash()).isEqualTo(hashToken("654321"));
+
         MailService.MailMessage last = latestMail();
         assertThat(last).isNotNull();
         assertThat(last.body()).contains("654321");
+
+        var verifyTokens = userTokenRepository.findAll().stream()
+                .filter(t -> t.getType() == UserTokenType.VERIFY)
+                .toList();
+        assertThat(verifyTokens).isEmpty();
     }
 
     @Test
     void resetRejectsWeakPassword() throws Exception {
         String email = "reset-weak@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         UserToken token = latestResetToken();
@@ -574,7 +589,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void validateResetTokenEndpointWorks() throws Exception {
         String email = "check-token@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
 
@@ -769,7 +784,7 @@ class AuthSecurityIntegrationTest {
     @Test
     void expiredResetTokenRejected() throws Exception {
         String email = "expired-reset@" + UUID.randomUUID() + ".com";
-        registerUser(email, "StrongPass1!");
+        registerVerifiedUser(email, "StrongPass1!");
 
         User user = userRepository.findByEmail(email).orElseThrow();
         UserToken token = new UserToken();
@@ -851,13 +866,6 @@ class AuthSecurityIntegrationTest {
                 .orElseThrow();
     }
 
-    private void markVerified(String email) {
-        userRepository.findByEmail(email).ifPresent(u -> {
-            u.setEmailVerified(true);
-            userRepository.save(u);
-        });
-    }
-
     private String confirmResetSession(String rawToken) throws Exception {
         MvcResult res = postJson("/api/auth/reset/confirm", """
                 {"token":"%s"}
@@ -924,9 +932,13 @@ class AuthSecurityIntegrationTest {
     }
 
     private MvcResult registerVerifiedUser(String email, String password) throws Exception {
-        MvcResult res = registerUser(email, password);
-        markVerified(email);
-        return res;
+        registerUser(email, password);
+        String verifyCode = extractCode(latestMail().body());
+        return postJson("/api/auth/verify", """
+                {"email":"%s","token":"%s"}
+                """.formatted(email, verifyCode))
+                .andExpect(status().isOk())
+                .andReturn();
     }
 
     private MvcResult login(String email, String password) throws Exception {

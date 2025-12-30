@@ -37,10 +37,11 @@
     - Health: `http://localhost:8080/health` или `/actuator/health`
 
 ## Auth-флоу
-- Регистрация/вход: токены `FG_AUTH` и `FG_REFRESH` в httpOnly cookie (по умолчанию `secure=true`, SameSite настраивается через `app.security.jwt.cookie-samesite`); фронт хранит лишь email в `sessionStorage`.
-- Вход может требовать подтверждённый email (`app.security.auth.require-email-verified`, по умолчанию выключено; при включении неверифицированные получают 403, код `100006`).
+- Регистрация двухшаговая: `POST /api/auth/register` создаёт запись в `pending_registrations` и отправляет код на email; запись в `users` и токены выдаются только после `POST /api/auth/verify`.
+- Токены `FG_AUTH` и `FG_REFRESH` ставятся в httpOnly cookie после успешного `POST /api/auth/login` (или `POST /api/auth/login/otp`) и после `POST /api/auth/verify`; SameSite настраивается через `app.security.jwt.cookie-samesite`.
+- При попытке логина до подтверждения email возвращается 403, код `100006` (если пароль совпадает с pending-регистрацией).
 - Refresh: `POST /api/auth/refresh`
-- Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify` (dev-коды поддерживаются, но на проде выключайте/переопределяйте)
+- Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify` (сейчас по умолчанию код фиксированный `654321`; можно переопределить через `app.security.tokens.fixed-code`)
 - Восстановление пароля (двухшаговый, без прямой смены по коду):
   1) `POST /api/auth/forgot` — письмо/код.
   2) `POST /api/auth/reset/confirm` — принимает код, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
