@@ -8,29 +8,20 @@ echo "==> FinGuard local runner"
 
 # Options
 CHECK_ONLY=0
-BUILD_SPA=0
 
 for arg in "$@"; do
   case "$arg" in
-    --spa)
-      BUILD_SPA=1
-      ;;
     --check)
       CHECK_ONLY=1
-      ;;
-    --no-spa)
-      BUILD_SPA=0
       ;;
     --help|-h)
       cat <<'EOF'
 Usage: ./scripts/run-local.sh [options]
 
-Starts FinGuard backend (Spring Boot). By default serves the legacy static UI from `/app/*.html`.
+Starts FinGuard backend (Spring Boot) and serves the static UI from `/app/*.html`.
 
 Options:
   --check                         Start, wait until ready, then stop
-  --spa                           Build and serve the React SPA from the backend
-  --no-spa                        Do not build the SPA (default)
 EOF
       exit 0
       ;;
@@ -114,60 +105,7 @@ wait_for_http() {
   done
 }
 
-hash_file_sha256() {
-  local file="$1"
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$file" | awk '{print $1}'
-    return 0
-  fi
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$file" | awk '{print $1}'
-    return 0
-  fi
-  return 1
-}
-
 echo "-> DB: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-
-SPA_BUILT=0
-if [ "$BUILD_SPA" -eq 1 ] && [ -f "frontend/package.json" ]; then
-  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
-    NODE_MAJOR="$(node -p "Number(process.versions.node.split('.')[0])" 2>/dev/null || echo "")"
-    if [ -n "$NODE_MAJOR" ] && [ "$NODE_MAJOR" -lt 18 ]; then
-      echo "-> Node.js ${NODE_MAJOR} detected; skipping SPA build. Install Node 18+ to build the SPA."
-    else
-      LOCK_HASH=""
-      if [ -f "frontend/package-lock.json" ]; then
-        LOCK_HASH="$(hash_file_sha256 frontend/package-lock.json 2>/dev/null || true)"
-      fi
-      LOCK_MARKER="frontend/node_modules/.finguard_lock_hash"
-      NEED_INSTALL=0
-      if [ ! -d "frontend/node_modules" ]; then
-        NEED_INSTALL=1
-      elif [ -n "$LOCK_HASH" ] && [ "$(cat "$LOCK_MARKER" 2>/dev/null || true)" != "$LOCK_HASH" ]; then
-        NEED_INSTALL=1
-      fi
-      if [ "$NEED_INSTALL" -eq 1 ]; then
-        echo "-> Installing frontend dependencies (npm ci)..."
-        (cd frontend && npm ci)
-        if [ -n "$LOCK_HASH" ]; then
-          echo "$LOCK_HASH" > "$LOCK_MARKER"
-        fi
-      fi
-
-      echo "-> Building SPA (Vite)..."
-      (cd frontend && npm run build)
-      if [ -f "frontend/dist/index.html" ]; then
-        SPA_BUILT=1
-        export SPRING_WEB_RESOURCES_STATIC_LOCATIONS="file:${ROOT_DIR}/frontend/dist/,classpath:/static/"
-      else
-        echo "-> SPA build finished, but frontend/dist/index.html not found. Skipping SPA serve."
-      fi
-    fi
-  else
-    echo "-> Node.js/npm not found; skipping SPA build."
-  fi
-fi
 
 echo "-> Starting backend (Spring Boot) on ${BACKEND_URL} ..."
 mvn spring-boot:run &
@@ -178,9 +116,6 @@ echo "Backend:"
 echo "  - API:        ${BACKEND_URL}/api"
 echo "  - Static UI:  ${BACKEND_URL}/app/dashboard.html"
 echo "  - Swagger:    ${BACKEND_URL}/swagger-ui/index.html"
-if [ "$SPA_BUILT" -eq 1 ]; then
-  echo "  - SPA UI:     ${BACKEND_URL}/dashboard"
-fi
 echo
 
 READY_OK=0

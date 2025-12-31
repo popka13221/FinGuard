@@ -8,8 +8,6 @@ target/
 # local docs/notes
 docs/TODO_SPA.md
 docs/AUTH_FLOW.md
-frontend/dist/
-frontend/node_modules/
 local-notes/
 landing-notes.md
 
@@ -28,10 +26,6 @@ coverage/
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-frontend/.vite/
-frontend/.turbo/
-frontend/playwright-report/
-frontend/test-results/
 
 # Secrets/keys (не коммитим приватные ключи)
 *.pem

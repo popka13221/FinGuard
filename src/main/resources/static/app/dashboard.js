@@ -11,7 +11,10 @@
     creditValue: '#creditValue',
     totalsByCurrency: '#totalsByCurrency',
     accountsList: '#accountsList',
-    balanceError: '#balanceError'
+    balanceError: '#balanceError',
+    fxGrid: '#fxGrid',
+    fxStatus: '#fxStatus',
+    fxBase: '#fxBase'
   };
 
   const demoData = {
@@ -29,6 +32,14 @@
       sol: [128, 134, 140, 137, 143, 145]
     }
   };
+
+  const fxWatchlist = [
+    { code: 'USD', name: 'US Dollar' },
+    { code: 'EUR', name: 'Euro' },
+    { code: 'RUB', name: 'Russian Ruble' },
+    { code: 'CNY', name: 'Chinese Yuan' }
+  ];
+  const fxFallbackBase = 'USD';
 
   let baseCurrency = 'USD';
   function updateCurrencyLabels() {
@@ -66,6 +77,24 @@
     const abs = Math.abs(value || 0);
     const sign = (value || 0) < 0 ? '-' : '';
     return `${sign}${abs.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ${cur}`;
+  }
+
+  function resolveFxBase() {
+    const normalized = (baseCurrency || '').toUpperCase();
+    return fxWatchlist.some((item) => item.code === normalized) ? normalized : fxFallbackBase;
+  }
+
+  function formatFxRate(value) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+    const digits = value < 1 ? 4 : 2;
+    return value.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  function formatFxUpdated(isoValue) {
+    if (!isoValue) return '';
+    const date = new Date(isoValue);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
   function showBalanceError(message) {
@@ -132,6 +161,42 @@
     `).join('');
   }
 
+  function renderFxRates(payload) {
+    const data = payload && typeof payload === 'object' ? payload : {};
+    const base = (data.baseCurrency || resolveFxBase()).toUpperCase();
+    const rates = data.rates && typeof data.rates === 'object' ? data.rates : {};
+    const statusEl = document.querySelector(selectors.fxStatus);
+    const baseEl = document.querySelector(selectors.fxBase);
+    const grid = document.querySelector(selectors.fxGrid);
+    if (baseEl) baseEl.textContent = base;
+    if (statusEl) {
+      const updated = formatFxUpdated(data.asOf);
+      statusEl.textContent = updated ? `Обновлено ${updated}` : 'Обновлено';
+    }
+    if (!grid) return;
+    const items = fxWatchlist.filter((item) => item.code !== base);
+    if (!items.length) {
+      grid.innerHTML = '<div class="muted">Нет валют для отображения.</div>';
+      return;
+    }
+    grid.innerHTML = items.map((item) => {
+      const raw = rates[item.code];
+      const rateValue = typeof raw === 'number' ? raw : Number(raw);
+      const rateText = Number.isFinite(rateValue) ? formatFxRate(rateValue) : '—';
+      return `
+        <div class="mini-coin">
+          <div class="fx-row">
+            <div class="fx-info">
+              <div class="fx-code">${item.code}</div>
+              <div class="fx-name">${item.name}</div>
+            </div>
+            <div class="fx-rate">${rateText}<span class="fx-unit">${item.code}</span></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   async function loadBalance() {
     const list = document.querySelector(selectors.accountsList);
     if (list) {
@@ -150,6 +215,29 @@
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
     renderBalance(payload);
     renderAccountsList(payload.accounts || []);
+  }
+
+  async function loadFxRates() {
+    const grid = document.querySelector(selectors.fxGrid);
+    const statusEl = document.querySelector(selectors.fxStatus);
+    const baseEl = document.querySelector(selectors.fxBase);
+    const base = resolveFxBase();
+    if (grid) grid.innerHTML = '<div class="muted">Загружаем курсы…</div>';
+    if (statusEl) statusEl.textContent = 'Обновляем…';
+    if (baseEl) baseEl.textContent = base;
+
+    const quotes = fxWatchlist.map((item) => item.code).filter((code) => code !== base);
+    const params = new URLSearchParams();
+    params.set('base', base);
+    quotes.forEach((code) => params.append('quote', code));
+    const query = params.toString();
+    const res = await Api.call(`/api/fx/rates?${query}`, 'GET', null, false);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (grid) grid.innerHTML = '<div class="amount-negative">Не удалось загрузить курсы</div>';
+      if (statusEl) statusEl.textContent = 'Нет данных';
+      return;
+    }
+    renderFxRates(res.data);
   }
 
   function renderLineChart(target, data, currency) {
@@ -420,6 +508,7 @@
     renderProfile(res.data || {});
     bindLogout();
     await loadBalance();
+    await loadFxRates();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(selectors.expenseChart, demoData.expenses, baseCurrency);
     bindAddAccountMenu();

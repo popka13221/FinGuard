@@ -193,6 +193,48 @@ body.dashboard.light .chart-gridline {
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.25);
 }
 
+.dashboard .fx-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dashboard .fx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.dashboard .fx-info {
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard .fx-code {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.dashboard .fx-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dashboard .fx-rate {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.dashboard .fx-unit {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .dashboard .overlay {
   background: rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(10px);
@@ -287,6 +329,11 @@ html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(2) {
 html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(3) {
   animation: dashFadeUp 720ms var(--dash-ease) both;
   animation-delay: 420ms;
+}
+
+html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(4) {
+  animation: dashFadeUp 720ms var(--dash-ease) both;
+  animation-delay: 480ms;
 }
 
 html[style*="visibility: visible"] .dashboard .chart-line {

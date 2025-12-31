@@ -51,17 +51,15 @@
   2) `POST /api/auth/reset/confirm` — принимает `email+код`, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
   3) `POST /api/auth/reset` — принимает `resetSessionToken` + новый пароль, инвалидация всех refresh-сессий.
 - OTP (опционально): после успешного пароля выдаётся challenge 202; лимиты на выдачу по email+IP, повторный вход в окне действия возвращает 202 без пересылки кода.
-- CORS: задайте `ALLOWED_ORIGINS` для SPA на другом домене, включено `credentials: true`.
+- CORS: задайте `ALLOWED_ORIGINS` для фронтенда на другом домене, включено `credentials: true`.
 - Rate limit: фильтр по IP (`AuthRateLimitFilter`), доп. лимиты по email/IP в сервисе; за прокси включите `app.security.trust-proxy-headers=true` для чтения `X-Forwarded-For`.
 
 ## Frontend
 - Статический клиент (русский): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`; вкладки «Вход/Регистрация», формы для восстановления пароля, дашборд с проверкой health.
-- SPA (React+TS, Vite): аналогичный флоу; запуск — `cd frontend && npm install && npm run dev` (прокси на бэк для `/api/**`, `/health`, `/actuator`, `/swagger-ui`). Детали: `frontend/README.md`.
 
 ## Тесты и покрытие
 - Backend: `mvn test` (JaCoCo отчёт: `target/site/jacoco/index.html`).
 - В GitHub Actions отчёт загружается как artifact `jacoco-report`.
-- E2E smoke (Playwright): `cd frontend && npm run e2e` (поднимет backend с профилем `e2e` на `http://127.0.0.1:8085`).
 
 ## Статус
-Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты, перенос токена в httpOnly cookies для SPA.
+Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты.
