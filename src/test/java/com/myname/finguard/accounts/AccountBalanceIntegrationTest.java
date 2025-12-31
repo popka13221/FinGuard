@@ -167,8 +167,11 @@ class AccountBalanceIntegrationTest {
     }
 
     private String extractCode(String body) {
+        if (body == null) {
+            return "";
+        }
         for (String part : body.split("\\s+")) {
-            if (part.matches("[A-Za-z0-9\\-]{6,}")) {
+            if (part.matches("\\d{6}")) {
                 return part.trim();
             }
         }
