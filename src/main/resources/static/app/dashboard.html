@@ -104,63 +104,74 @@
         <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
       </div>
 
-      <div class="card crypto-card span-2">
+      <div class="card market-card span-2">
         <div class="card-row">
           <div>
-            <div class="badge alt">Crypto</div>
-            <h3 style="margin:6px 0 4px;">Курсы монет</h3>
-            <div class="muted">Демо-данные, USD</div>
+            <div class="badge alt">Markets</div>
+            <h3 style="margin:6px 0 4px;">Курсы и рынки</h3>
+            <div class="muted">Сводка по крипте и валютам</div>
           </div>
           <div class="pill-soft">24h</div>
         </div>
-        <div class="crypto-grid">
-          <div class="mini-coin">
-            <div class="row coin-row">
-              <img src="/crypto/btc.svg" alt="BTC" class="coin-logo">
-              <div class="coin-title">
-                <strong>BTC</strong>
-                <div class="muted" style="font-size:12px;">Bitcoin</div>
+        <div class="market-grid">
+          <div class="market-section">
+            <div class="market-header">
+              <div>
+                <div class="badge alt">Crypto</div>
+                <h4 style="margin:6px 0 4px;">Курсы монет</h4>
+                <div class="muted">Демо-данные, USD</div>
               </div>
-              <div class="amount-positive">$66 200</div>
-              <div class="mini-spark" id="btcSpark"></div>
+            </div>
+            <div class="crypto-grid">
+              <div class="mini-coin">
+                <div class="row coin-row">
+                  <img src="/crypto/btc.svg" alt="BTC" class="coin-logo">
+                  <div class="coin-title">
+                    <strong>BTC</strong>
+                    <div class="muted" style="font-size:12px;">Bitcoin</div>
+                  </div>
+                  <div class="amount-positive">$66 200</div>
+                  <div class="mini-spark" id="btcSpark"></div>
+                </div>
+              </div>
+              <div class="mini-coin">
+                <div class="row coin-row">
+                  <img src="/crypto/eth.svg" alt="ETH" class="coin-logo">
+                  <div class="coin-title">
+                    <strong>ETH</strong>
+                    <div class="muted" style="font-size:12px;">Ethereum</div>
+                  </div>
+                  <div class="amount-positive">$3 120</div>
+                  <div class="mini-spark" id="ethSpark"></div>
+                </div>
+              </div>
+              <div class="mini-coin">
+                <div class="row coin-row">
+                  <img src="/crypto/sol.svg" alt="SOL" class="coin-logo">
+                  <div class="coin-title">
+                    <strong>SOL</strong>
+                    <div class="muted" style="font-size:12px;">Solana</div>
+                  </div>
+                  <div class="amount-positive">$145</div>
+                  <div class="mini-spark" id="solSpark"></div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="mini-coin">
-            <div class="row coin-row">
-              <img src="/crypto/eth.svg" alt="ETH" class="coin-logo">
-              <div class="coin-title">
-                <strong>ETH</strong>
-                <div class="muted" style="font-size:12px;">Ethereum</div>
-              </div>
-              <div class="amount-positive">$3 120</div>
-              <div class="mini-spark" id="ethSpark"></div>
-            </div>
-          </div>
-          <div class="mini-coin">
-            <div class="row coin-row">
-              <img src="/crypto/sol.svg" alt="SOL" class="coin-logo">
-              <div class="coin-title">
-                <strong>SOL</strong>
-                <div class="muted" style="font-size:12px;">Solana</div>
-              </div>
-              <div class="amount-positive">$145</div>
-              <div class="mini-spark" id="solSpark"></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div class="card fx-card span-2">
-        <div class="card-row">
-          <div>
-            <div class="badge alt">FX</div>
-            <h3 style="margin:6px 0 4px;">Курсы валют</h3>
-            <div class="muted">База: <span id="fxBase">USD</span></div>
+          <div class="market-section">
+            <div class="market-header">
+              <div>
+                <div class="badge alt">FX</div>
+                <h4 style="margin:6px 0 4px;">Курсы валют</h4>
+                <div class="muted">База: <span id="fxBase">USD</span></div>
+              </div>
+              <div class="pill-soft" id="fxStatus">Обновляем…</div>
+            </div>
+            <div class="fx-grid" id="fxGrid">
+              <div class="muted">Загружаем курсы…</div>
+            </div>
           </div>
-          <div class="pill-soft" id="fxStatus">Обновляем…</div>
-        </div>
-        <div class="fx-grid" id="fxGrid">
-          <div class="muted">Загружаем курсы…</div>
         </div>
       </div>
     </div>

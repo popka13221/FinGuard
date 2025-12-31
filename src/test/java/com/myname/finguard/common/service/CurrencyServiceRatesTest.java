@@ -67,5 +67,17 @@ class CurrencyServiceRatesTest {
                     assertThat(api.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
                 });
     }
-}
 
+    @Test
+    void failsWhenProviderMissingAndNoCache() {
+        CurrencyService service = new CurrencyService(null, Duration.ofMinutes(10), Clock.systemUTC());
+
+        assertThatThrownBy(() -> service.latestRates("USD"))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException api = (ApiException) ex;
+                    assertThat(api.getCode()).isEqualTo(ErrorCodes.INTERNAL_ERROR);
+                    assertThat(api.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                });
+    }
+}

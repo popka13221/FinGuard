@@ -193,6 +193,33 @@ body.dashboard.light .chart-gridline {
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.25);
 }
 
+.dashboard .market-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 12px;
+}
+
+.dashboard .market-section {
+  border-radius: var(--dash-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+}
+
+body.dashboard.light .market-section {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.dashboard .market-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .dashboard .fx-grid {
   display: grid;
   gap: 10px;
@@ -205,6 +232,7 @@ body.dashboard.light .chart-gridline {
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-height: 52px;
 }
 
 .dashboard .fx-info {
@@ -227,6 +255,11 @@ body.dashboard.light .chart-gridline {
   align-items: baseline;
   gap: 6px;
   font-weight: 800;
+}
+
+.dashboard .fx-grid .mini-coin {
+  min-height: 72px;
+  align-items: center;
 }
 
 .dashboard .fx-unit {
@@ -329,11 +362,6 @@ html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(2) {
 html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(3) {
   animation: dashFadeUp 720ms var(--dash-ease) both;
   animation-delay: 420ms;
-}
-
-html[style*="visibility: visible"] .dashboard .chart-grid > .card:nth-child(4) {
-  animation: dashFadeUp 720ms var(--dash-ease) both;
-  animation-delay: 480ms;
 }
 
 html[style*="visibility: visible"] .dashboard .chart-line {

@@ -231,15 +231,16 @@
       showError('Не удалось загрузить валюты. Попробуйте позже.', selectors.errorBoxRegister);
     }
   }
-  function handleErrorCode(code) {
+  function handleErrorCode(code, context) {
     const defaultMessage = 'Ошибка запроса. Попробуйте позже.';
-    showError('');
+    const isRegister = context === 'register';
+    const box = isRegister ? selectors.errorBoxRegister : selectors.errorBox;
+    const showGeneral = (msg) => showError(msg, box);
+    showError('', selectors.errorBox);
     showError('', selectors.errorBoxRegister);
     switch (code) {
       case '100001':
-        showFieldError('email', '');
-        showFieldError('password', '');
-        showError('Неверный email или пароль');
+        showGeneral('Неверный email или пароль');
         break;
       case '100002':
         showFieldError('email', 'Такой email уже зарегистрирован');
@@ -248,14 +249,32 @@
         showFieldError('password', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол');
         break;
       case '100004':
-        showFieldError('password', 'Аккаунт временно заблокирован. Попробуйте позже.');
+        showGeneral('Аккаунт временно заблокирован. Попробуйте позже.');
         break;
-      case '429001':
+      case '100006':
+        showGeneral('Email не подтвержден. Проверьте почту.');
+        break;
+      case '429001': {
         const left = remainingLoginCooldownSeconds() || 60;
-        showError(`Слишком много попыток. Подождите ${left} сек.`);
+        showGeneral(`Слишком много попыток. Подождите ${left} сек.`);
         break;
+      }
       case '429002':
-        showError('');
+        showGeneral('');
+        break;
+      case '400000':
+        if (isRegister) {
+          showFieldError('currency', 'Укажите базовую валюту');
+        } else {
+          showGeneral(defaultMessage);
+        }
+        break;
+      case '400001':
+        if (isRegister) {
+          showFieldError('fullName', 'Введите имя');
+        } else {
+          showGeneral(defaultMessage);
+        }
         break;
       case '400002':
         showFieldError('email', 'Некорректный email');
@@ -264,7 +283,7 @@
         showFieldError('password', 'Пароль не соответствует требованиям');
         break;
       default:
-        showError(defaultMessage);
+        showGeneral(defaultMessage);
     }
   }
 
@@ -568,7 +587,7 @@ function loadLoginCooldown() {
     startOtpCooldownTimer();
   }
 
-  function showRegOtpSection(message) {
+  function showRegOtpSection() {
     const section = document.querySelector(selectors.regOtpSection);
     const input = document.querySelector(selectors.regOtpCode);
     const error = document.querySelector(selectors.regOtpError);
@@ -581,7 +600,7 @@ function loadLoginCooldown() {
     regOtpPending = true;
     if (hint) {
       const emailNote = regOtpEmail ? ` (${regOtpEmail})` : '';
-      hint.textContent = message || `Мы отправили код на ваш email${emailNote}.`;
+      hint.textContent = `Мы отправили код на ваш email${emailNote}.`;
       hint.style.display = 'block';
     }
     startRegOtpCooldownTimer();
@@ -623,6 +642,7 @@ function loadLoginCooldown() {
     const result = await Api.call('/api/auth/login/otp', 'POST', { email, code }, false);
     submitting = false;
     setSubmitting(false);
+    const errCode = result.data && result.data.code ? result.data.code : '';
     if (result.status === 429) {
       const retry = result.data && result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
       otpCooldownUntil = Date.now() + retry * 1000;
@@ -641,7 +661,14 @@ function loadLoginCooldown() {
       hideOtpSection();
       window.location.href = '/app/dashboard.html';
     } else {
-      if (otpError) { otpError.textContent = 'Код неверный или истек. Попробуйте снова.'; otpError.style.display = 'block'; }
+      if (errCode === '100001') {
+        if (otpError) {
+          otpError.textContent = 'Код неверный или истек. Попробуйте снова.';
+          otpError.style.display = 'block';
+        }
+      } else {
+        showError('Не удалось подтвердить код. Попробуйте снова.');
+      }
     }
   }
 
@@ -760,7 +787,7 @@ function loadLoginCooldown() {
       window.location.href = '/app/dashboard.html';
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
-      handleErrorCode(code);
+      handleErrorCode(code, 'login');
     }
   }
 
@@ -790,7 +817,7 @@ function loadLoginCooldown() {
     if (result.ok && result.data && result.data.verificationRequired) {
       const retry = result.data.retryAfterSeconds ? Number(result.data.retryAfterSeconds) : 60;
       regOtpCooldownUntil = Date.now() + Math.max(1, retry || 0) * 1000;
-      showRegOtpSection(result.data.message);
+      showRegOtpSection();
       startRegOtpCooldownTimer();
       return;
     }
@@ -804,7 +831,7 @@ function loadLoginCooldown() {
       showError(`Слишком много попыток. Попробуйте через ${Math.max(1, retry)} сек.`, selectors.errorBoxRegister);
     } else {
       const code = result.data && result.data.code ? result.data.code : '----';
-      handleErrorCode(code);
+      handleErrorCode(code, 'register');
     }
   }
 

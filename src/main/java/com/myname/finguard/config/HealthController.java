@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/health")
-@Tag(name = "Health", description = "Проверки готовности и доступности сервиса")
+@Tag(name = "Health", description = "Service readiness and availability checks")
 public class HealthController {
 
     @GetMapping
     @Operation(
             summary = "Health-check",
-            description = "Простой ответ с OK и timestamp."
+            description = "Simple response with OK and a timestamp."
     )
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(

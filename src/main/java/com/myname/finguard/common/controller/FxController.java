@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/fx")
-@Tag(name = "FX", description = "Курсы валют")
+@Tag(name = "FX", description = "FX rates")
 public class FxController {
 
     private final CurrencyService currencyService;
@@ -31,8 +31,9 @@ public class FxController {
     }
 
     @GetMapping("/rates")
-    @Operation(summary = "Актуальные курсы валют", description = "Возвращает курсы для base. Параметр quote позволяет ограничить список валют.")
-    @ApiResponse(responseCode = "200", description = "Курсы получены")
+    @Operation(summary = "Latest FX rates", description = "Returns rates for the base currency. "
+            + "The quote parameter limits which currencies are returned.")
+    @ApiResponse(responseCode = "200", description = "Rates returned")
     public ResponseEntity<FxRatesResponse> latestRates(
             @RequestParam String base,
             @RequestParam(required = false) List<String> quote

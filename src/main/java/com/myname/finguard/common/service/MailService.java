@@ -33,9 +33,9 @@ public class MailService {
 
     public MailService(@Value("${app.mail.enabled:false}") boolean enabled,
                        @Value("${app.mail.from:no-reply@finguard.local}") String from,
-                       @Value("${app.mail.reset-subject:Сброс пароля FinGuard}") String resetSubject,
-                       @Value("${app.mail.verify-subject:Подтверждение email FinGuard}") String verifySubject,
-                       @Value("${app.mail.otp-subject:Код входа FinGuard}") String otpSubject,
+                       @Value("${app.mail.reset-subject:FinGuard password reset}") String resetSubject,
+                       @Value("${app.mail.verify-subject:FinGuard email verification}") String verifySubject,
+                       @Value("${app.mail.otp-subject:FinGuard sign-in code}") String otpSubject,
                        @Value("${app.frontend.base-url:http://localhost:8080}") String frontendBaseUrl,
                        @Autowired(required = false) JavaMailSender mailSender) {
         this.enabled = enabled;
@@ -53,14 +53,14 @@ public class MailService {
         }
         String link = frontendBaseUrl + "/app/reset.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
         String body = """
-                Привет!
+                Hi!
 
-                Вы запросили смену пароля в FinGuard.
-                Код для ввода: %s
-                Ссылка: %s
-                Код действует примерно %s минут. Он одноразовый.
+                You requested a password reset for FinGuard.
+                Reset code: %s
+                Link: %s
+                The code is valid for about %s minutes and can be used once.
 
-                Если запрос сделали не вы — просто игнорируйте письмо.
+                If you did not request this, you can ignore this email.
                 """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, resetSubject, body, Instant.now());
@@ -88,12 +88,12 @@ public class MailService {
             return;
         }
         String body = """
-                Привет!
+                Hi!
 
-                Ваш код для входа в FinGuard: %s
-                Код действует примерно %s минут.
+                Your FinGuard sign-in code: %s
+                The code is valid for about %s minutes.
 
-                Если запрос сделали не вы — игнорируйте письмо.
+                If you did not request this, you can ignore this email.
                 """.formatted(code, ttl == null ? "5" : String.valueOf(ttl.toMinutes()));
         MailMessage message = new MailMessage(to, otpSubject, body, Instant.now());
         outbox.add(message);
@@ -121,14 +121,14 @@ public class MailService {
         }
         String link = frontendBaseUrl + "/app/verify.html?token=" + urlEncode(token) + "&email=" + urlEncode(to);
         String body = """
-                Привет!
+                Hi!
 
-                Подтвердите ваш email для FinGuard.
-                Код: %s
-                Ссылка: %s
-                Код действует примерно %s минут.
+                Please verify your email for FinGuard.
+                Verification code: %s
+                Link: %s
+                The code is valid for about %s minutes.
 
-                Если запрос сделали не вы — игнорируйте письмо.
+                If you did not request this, you can ignore this email.
                 """.formatted(token, link, ttl == null ? "60" : String.valueOf(ttl.toMinutes()));
 
         MailMessage message = new MailMessage(to, verifySubject, body, Instant.now());

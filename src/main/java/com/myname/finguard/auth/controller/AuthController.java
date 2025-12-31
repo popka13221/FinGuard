@@ -48,7 +48,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Auth", description = "Регистрация, логин, refresh и управление сессиями")
+@Tag(name = "Auth", description = "Registration, login, refresh, and session management")
 public class AuthController {
 
     private final AuthService authService;
@@ -88,17 +88,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Регистрация пользователя", description = "Создает запись pending registration и отправляет код на email. Пользователь и токены создаются после подтверждения через /api/auth/verify.")
+    @Operation(summary = "Register user", description = "Creates a pending registration and sends a verification code by email. "
+            + "User and tokens are created after /api/auth/verify confirms the email.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Регистрация начата (pending registration)"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные или слабый пароль", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "Email уже занят", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "201", description = "Registration started (pending registration)"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or weak password", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Email already in use", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
         AuthService.RegistrationResult result = authService.register(request, ip);
         AuthTokens tokens = result.tokens();
-        String message = "Мы отправили код на ваш email. Подтвердите адрес, чтобы закончить регистрацию.";
+        String message = "We've sent a verification code to your email. Verify it to finish registration.";
         if (tokens != null) {
             return ResponseEntity.status(201)
                     .header(HttpHeaders.SET_COOKIE, buildAccessCookie(tokens.accessToken()).toString())
@@ -118,12 +119,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Вход", description = "Проверяет email/пароль, выдает access/refresh JWT и ставит httpOnly cookies")
+    @Operation(summary = "Login", description = "Validates email and password, issues access/refresh JWT, and sets httpOnly cookies.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Успешный вход"),
-            @ApiResponse(responseCode = "202", description = "Требуется OTP"),
-            @ApiResponse(responseCode = "401", description = "Неверные учетные данные", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "429", description = "Аккаунт временно заблокирован", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "202", description = "OTP required"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "429", description = "Too many attempts", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
@@ -140,8 +141,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Профиль текущего пользователя", description = "Возвращает email, имя, базовую валюту и роль")
-    @ApiResponse(responseCode = "200", description = "Профиль получен")
+    @Operation(summary = "Current user profile", description = "Returns email, name, base currency, and role.")
+    @ApiResponse(responseCode = "200", description = "Profile returned")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<UserProfileResponse> me(Authentication authentication) {
         UserProfileResponse profile = authService.profile(authentication.getName());
@@ -149,8 +150,8 @@ public class AuthController {
     }
 
     @PostMapping("/verify/request")
-    @Operation(summary = "Запрос кода верификации email", description = "Отправляет письмо с кодом для подтверждения адреса")
-    @ApiResponse(responseCode = "200", description = "Письмо отправлено")
+    @Operation(summary = "Request email verification code", description = "Sends a verification email with a confirmation code.")
+    @ApiResponse(responseCode = "200", description = "Verification email sent")
     public ResponseEntity<?> requestVerification(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
         String email = request.email().trim().toLowerCase();
         String ip = clientIpResolver.resolve(httpRequest);
@@ -168,8 +169,8 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    @Operation(summary = "Подтверждение email", description = "Проверяет код верификации, помечает email подтвержденным и выдает токены")
-    @ApiResponse(responseCode = "200", description = "Email подтвержден")
+    @Operation(summary = "Verify email", description = "Validates the verification code, marks email as verified, and issues tokens.")
+    @ApiResponse(responseCode = "200", description = "Email verified")
     public ResponseEntity<?> verify(@Valid @RequestBody VerifyRequest request, HttpServletRequest httpRequest) {
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
         String ip = clientIpResolver.resolve(httpRequest);
@@ -192,10 +193,10 @@ public class AuthController {
     }
 
     @PostMapping("/login/otp")
-    @Operation(summary = "Завершение входа по OTP", description = "Принимает email+OTP код, выдает access/refresh JWT и ставит cookies")
+    @Operation(summary = "Complete login with OTP", description = "Accepts email and OTP code, issues access/refresh JWT, and sets cookies.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Вход завершен"),
-            @ApiResponse(responseCode = "401", description = "Неверный или истекший OTP", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "200", description = "Login completed"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired OTP", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
@@ -207,10 +208,10 @@ public class AuthController {
     }
 
     @PostMapping("/forgot")
-    @Operation(summary = "Запрос кода для сброса пароля", description = "Отправляет код на email. Ограничено rate limit по IP и email.")
+    @Operation(summary = "Request password reset code", description = "Sends a reset code to email. Rate limited by IP and email.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Код отправлен"),
-            @ApiResponse(responseCode = "429", description = "Слишком много попыток", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "200", description = "Reset code sent"),
+            @ApiResponse(responseCode = "429", description = "Too many attempts", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
         String email = request.email().trim().toLowerCase();
@@ -241,7 +242,7 @@ public class AuthController {
     }
 
     @PostMapping({"/reset/confirm", "/reset/check"})
-    @Operation(summary = "Подтверждение кода сброса", description = "Принимает код из письма, возвращает resetSessionToken с TTL")
+    @Operation(summary = "Confirm reset code", description = "Validates the email code and returns resetSessionToken with TTL.")
     public ResponseEntity<ResetSessionResponse> confirmReset(@Valid @RequestBody ValidateResetTokenRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
         ResetSessionResponse response = authService.confirmResetToken(request, ip, httpRequest.getHeader("User-Agent"));
@@ -249,7 +250,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset")
-    @Operation(summary = "Смена пароля по resetSessionToken", description = "Принимает resetSessionToken и новый пароль. Инвалидирует refresh-сессии пользователя.")
+    @Operation(summary = "Reset password with resetSessionToken", description = "Accepts resetSessionToken and a new password. Invalidates refresh sessions.")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest httpRequest) {
         String ip = clientIpResolver.resolve(httpRequest);
         authService.resetPassword(request, ip, httpRequest.getHeader("User-Agent"));
@@ -257,10 +258,10 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Обновление access/refresh", description = "Берет refresh из cookie FG_REFRESH, выдает новый набор токенов и ставит cookies")
+    @Operation(summary = "Refresh tokens", description = "Uses the refresh cookie FG_REFRESH to issue a new token set and set cookies.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Токены обновлены"),
-            @ApiResponse(responseCode = "401", description = "Refresh отсутствует или невалиден", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "200", description = "Tokens refreshed"),
+            @ApiResponse(responseCode = "401", description = "Refresh token is missing or invalid", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> refresh(HttpServletRequest request) {
@@ -276,8 +277,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Выход", description = "Стирает cookie FG_AUTH/FG_REFRESH, ревокирует токены/сессии")
-    @ApiResponse(responseCode = "200", description = "Выход выполнен")
+    @Operation(summary = "Logout", description = "Clears FG_AUTH/FG_REFRESH cookies and revokes tokens/sessions.")
+    @ApiResponse(responseCode = "200", description = "Logout completed")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String access = readCookie(request, "FG_AUTH");
@@ -296,7 +297,7 @@ public class AuthController {
     }
 
     @GetMapping("/csrf")
-    @Operation(summary = "CSRF токен", description = "Возвращает CSRF токен и устанавливает cookie XSRF-TOKEN")
+    @Operation(summary = "CSRF token", description = "Returns CSRF token and sets the XSRF-TOKEN cookie.")
     public ResponseEntity<Map<String, String>> csrf(@Nullable CsrfToken token) {
         String value = token == null ? "" : token.getToken();
         return ResponseEntity.ok(Map.of("token", value));

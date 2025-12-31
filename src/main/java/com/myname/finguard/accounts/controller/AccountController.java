@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/accounts")
-@Tag(name = "Accounts", description = "Работа со счетами и балансом")
+@Tag(name = "Accounts", description = "Accounts and balances")
 public class AccountController {
 
     private final AccountService accountService;
@@ -34,9 +34,9 @@ public class AccountController {
 
     @GetMapping("/balance")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Баланс пользователя", description = "Возвращает баланс по счетам текущего пользователя. "
-            + "Архивные счета не учитываются в агрегированном значении.")
-    @ApiResponse(responseCode = "200", description = "Баланс получен")
+    @Operation(summary = "User balance", description = "Returns the current user's account balances. "
+            + "Archived accounts are excluded from the aggregate.")
+    @ApiResponse(responseCode = "200", description = "Balance returned")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<UserBalanceResponse> balance(Authentication authentication) {
         Long userId = resolveUserId(authentication);

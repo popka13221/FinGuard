@@ -482,7 +482,7 @@ class AuthSecurityIntegrationTest {
         assertThat(mailService.getOutbox()).isNotEmpty();
         MailService.MailMessage message = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
         assertThat(message.to()).isEqualTo(email);
-        assertThat(message.subject()).contains("Сброс пароля");
+        assertThat(message.subject()).containsIgnoringCase("password reset");
         assertThat(message.body()).contains("654321");
         assertThat(message.body()).contains("/app/reset.html");
     }
@@ -525,7 +525,7 @@ class AuthSecurityIntegrationTest {
 
         MailService.MailMessage last = latestMail();
         assertThat(last).isNotNull();
-        assertThat(last.subject()).containsIgnoringCase("подтверждение");
+        assertThat(last.subject()).containsIgnoringCase("verification");
         assertThat(last.body()).contains("654321");
         assertThat(last.body()).contains("/app/verify.html");
 
@@ -962,10 +962,12 @@ class AuthSecurityIntegrationTest {
             if (line.matches("^[0-9a-fA-F-]{6,}$")) {
                 return line;
             }
-            if (line.toLowerCase().startsWith("код для ввода") || line.toLowerCase().startsWith("код:")) {
-                String[] parts = line.split(":");
-                if (parts.length > 1) {
-                    return parts[1].trim();
+            String lower = line.toLowerCase();
+            if (lower.contains("code:")) {
+                int idx = lower.indexOf("code:");
+                String tail = line.substring(Math.min(idx + 5, line.length())).trim();
+                if (!tail.isBlank()) {
+                    return tail.split("\\s+")[0].trim();
                 }
             }
         }

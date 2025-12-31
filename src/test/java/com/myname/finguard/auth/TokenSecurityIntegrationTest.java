@@ -251,10 +251,12 @@ class TokenSecurityIntegrationTest {
             if (line.matches("^[0-9a-fA-F-]{6,}$")) {
                 return line;
             }
-            if (line.toLowerCase().startsWith("код для ввода") || line.toLowerCase().startsWith("код:")) {
-                String[] parts = line.split(":");
-                if (parts.length > 1) {
-                    return parts[1].trim();
+            String lower = line.toLowerCase();
+            if (lower.contains("code:")) {
+                int idx = lower.indexOf("code:");
+                String tail = line.substring(Math.min(idx + 5, line.length())).trim();
+                if (!tail.isBlank()) {
+                    return tail.split("\\s+")[0].trim();
                 }
             }
         }

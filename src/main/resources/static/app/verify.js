@@ -67,7 +67,14 @@
     if (res.ok) {
       setStatus('Если email существует и не подтвержден — отправили код. Проверьте почту.', true);
     } else {
-      setStatus('Не удалось отправить код. Попробуйте позже.');
+      const code = res.data && res.data.code ? res.data.code : '';
+      if (code === '429001') {
+        setStatus('Слишком много попыток. Попробуйте позже.', false);
+      } else if (code === '400002') {
+        showFieldError(selectors.email, 'Введите корректный email');
+      } else {
+        setStatus('Не удалось отправить код. Попробуйте позже.', false);
+      }
     }
   }
 
@@ -97,6 +104,8 @@
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
         setStatus('Код недействителен или истек. Запросите новый.', false);
+      } else if (code === '429001') {
+        setStatus('Слишком много попыток. Попробуйте позже.', false);
       } else {
         setStatus('Не удалось подтвердить код. Попробуйте снова.', false);
       }

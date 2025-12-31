@@ -16,13 +16,14 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .description("JWT в httpOnly cookie; для Swagger используйте Authorization: Bearer <token>")))
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+                        .description("JWT is stored in httpOnly cookie; for Swagger use Authorization: Bearer <token>")))
                 .info(new Info()
                         .title("FinGuard API")
-                        .description("Финансовый помощник: авторизация, профили, справочники валют и health-check. Авторизация через JWT в httpOnly cookie.")
+                        .description("Financial assistant: auth, profiles, currency reference data, and health checks. "
+                                + "Auth uses JWT stored in httpOnly cookies.")
                         .version("0.0.1")
                         .contact(new Contact().name("FinGuard Team").email("support@finguard.local")));
     }

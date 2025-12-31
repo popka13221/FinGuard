@@ -41,9 +41,9 @@ app:
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:no-reply@finguard.local}
-    reset-subject: ${MAIL_RESET_SUBJECT:Сброс пароля FinGuard}
-    verify-subject: ${MAIL_VERIFY_SUBJECT:Подтверждение email FinGuard}
-    otp-subject: ${MAIL_OTP_SUBJECT:Код входа FinGuard}
+    reset-subject: ${MAIL_RESET_SUBJECT:FinGuard password reset}
+    verify-subject: ${MAIL_VERIFY_SUBJECT:FinGuard email verification}
+    otp-subject: ${MAIL_OTP_SUBJECT:FinGuard sign-in code}
   security:
     csrf:
       enabled: ${CSRF_ENABLED:true}

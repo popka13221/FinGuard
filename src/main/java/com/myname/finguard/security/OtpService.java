@@ -17,7 +17,7 @@ import org.springframework.util.StringUtils;
 public class OtpService {
 
     private static final Logger log = LoggerFactory.getLogger(OtpService.class);
-    // демо-код оставлен фиксированным
+    // Keep a fixed demo code for local flows.
     private static final String FIXED_CODE = "654321";
 
     private final OtpCodeRepository otpCodeRepository;

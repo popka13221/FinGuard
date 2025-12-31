@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/currencies")
-@Tag(name = "Lookup", description = "Справочники и вспомогательные данные")
+@Tag(name = "Lookup", description = "Reference data and helpers")
 public class CurrencyController {
 
     private final CurrencyService currencyService;
@@ -23,8 +23,8 @@ public class CurrencyController {
     }
 
     @GetMapping
-    @Operation(summary = "Список поддерживаемых валют", description = "Возвращает список кодов/названий валют, которые можно выбрать при регистрации")
-    @ApiResponse(responseCode = "200", description = "Успешный ответ")
+    @Operation(summary = "Supported currencies", description = "Returns a list of currency codes and names available at registration.")
+    @ApiResponse(responseCode = "200", description = "Success")
     public ResponseEntity<List<CurrencyDto>> list() {
         return ResponseEntity.ok(currencyService.supportedCurrencies());
     }

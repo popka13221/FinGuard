@@ -349,6 +349,8 @@
       const code = result.data && result.data.code ? result.data.code : '';
       if (code === '400002') {
         showFieldError('fpEmail', 'Введите корректный email');
+      } else if (code === '429001') {
+        setAlert(selectors.forgotStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
       } else {
         setAlert(selectors.forgotStatus, 'Не получилось отправить письмо. Попробуйте ещё раз позже.');
       }
