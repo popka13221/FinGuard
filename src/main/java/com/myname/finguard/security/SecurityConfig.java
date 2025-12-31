@@ -84,6 +84,7 @@ public class SecurityConfig {
                         "/api/auth/refresh",
                         "/api/auth/logout",
                         "/api/currencies",
+                        "/api/fx/rates",
                         "/favicon.ico",
                         "/favicon.svg",
                         "/playground",

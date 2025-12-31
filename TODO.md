@@ -16,9 +16,7 @@
   - `Secure` — зависит от `app.security.jwt.cookie-secure` (проверить оба режима).
   - На `/api/auth/logout` cookies реально “протухают” (`Max-Age=0`).
 - [ ] Email codes: убрать фиксированный код `654321` из “прод” режима (оставить только для тестов/локалки) + обновить тесты/README.
-- [ ] Определиться с политикой `app.security.auth.require-email-verified=true`:
-  - [ ] либо блокировать доступ к `/api/**` для unverified (кроме `/api/auth/**`),
-  - [ ] либо оставить как есть, но явно задокументировать “что можно делать без верификации” + покрыть тестами.
+- [x] Зафиксировать, что регистрация считается завершённой после `/api/auth/verify` (зафиксировано в README).
 - [x] E2E smoke (Playwright): happy-path `register → verify(654321) → login → dashboard` (`frontend: npm run e2e`).
 
 ## Infra / GitHub

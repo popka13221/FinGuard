@@ -59,7 +59,7 @@ class AuthServiceTest {
 
     @Test
     void registerCreatesPendingRegistrationAndSendsVerifyEmail() {
-        AuthService authService = createService(false, false);
+        AuthService authService = createService(false);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -91,7 +91,7 @@ class AuthServiceTest {
 
     @Test
     void registerRejectsDuplicateEmail() {
-        AuthService authService = createService(false, false);
+        AuthService authService = createService(false);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -111,7 +111,7 @@ class AuthServiceTest {
 
     @Test
     void registerRejectsWeakPassword() {
-        AuthService authService = createService(false, false);
+        AuthService authService = createService(false);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -130,7 +130,7 @@ class AuthServiceTest {
 
     @Test
     void loginIssuesTokensWhenOtpDisabled() {
-        AuthService authService = createService(false, true);
+        AuthService authService = createService(false);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -157,7 +157,7 @@ class AuthServiceTest {
 
     @Test
     void loginReturnsOtpChallengeWhenEnabledAndNoActiveCode() {
-        AuthService authService = createService(true, false);
+        AuthService authService = createService(true);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -187,7 +187,7 @@ class AuthServiceTest {
 
     @Test
     void loginDoesNotReissueOtpWhenActiveCodeExists() {
-        AuthService authService = createService(true, false);
+        AuthService authService = createService(true);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -215,30 +215,8 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginRejectsWhenRequireEmailVerifiedAndNotVerified() {
-        AuthService authService = createService(false, true);
-
-        when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
-                .thenReturn(new RateLimiterService.Result(true, 0));
-        when(loginAttemptService.isLocked("user@example.com")).thenReturn(false);
-
-        User user = user(99L, "user@example.com", false, 0);
-        Authentication auth = new UsernamePasswordAuthenticationToken(new com.myname.finguard.security.UserPrincipal(user), null);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
-        when(userRepository.findById(99L)).thenReturn(Optional.of(user));
-
-        assertThatThrownBy(() -> authService.login(new LoginRequest("user@example.com", "StrongPass1!"), "10.0.0.1"))
-                .isInstanceOf(ApiException.class)
-                .satisfies(ex -> {
-                    ApiException api = (ApiException) ex;
-                    assertThat(api.getCode()).isEqualTo(ErrorCodes.AUTH_EMAIL_NOT_VERIFIED);
-                    assertThat(api.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
-                });
-    }
-
-    @Test
     void verifyOtpReturnsTokensWhenCodeIsValid() {
-        AuthService authService = createService(true, false);
+        AuthService authService = createService(true);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -254,7 +232,7 @@ class AuthServiceTest {
 
     @Test
     void verifyOtpRejectsInvalidCode() {
-        AuthService authService = createService(true, false);
+        AuthService authService = createService(true);
 
         when(rateLimiterService.check(anyString(), anyInt(), anyLong()))
                 .thenReturn(new RateLimiterService.Result(true, 0));
@@ -271,7 +249,7 @@ class AuthServiceTest {
 
     @Test
     void revokeTokenDoesNothingWhenInvalid() {
-        AuthService authService = createService(false, false);
+        AuthService authService = createService(false);
         when(jwtTokenProvider.isValid("bad")).thenReturn(false);
 
         authService.revokeToken("bad");
@@ -282,7 +260,7 @@ class AuthServiceTest {
 
     @Test
     void revokeTokenBlacklistsAndRevokesSessionWhenValid() {
-        AuthService authService = createService(false, false);
+        AuthService authService = createService(false);
         when(jwtTokenProvider.isValid("good")).thenReturn(true);
         when(jwtTokenProvider.getJti("good")).thenReturn("jti-1");
         when(jwtTokenProvider.getExpiry("good")).thenReturn(Date.from(Instant.now().plusSeconds(60)));
@@ -293,7 +271,7 @@ class AuthServiceTest {
         verify(userSessionService).revoke("jti-1");
     }
 
-    private AuthService createService(boolean otpEnabled, boolean requireEmailVerified) {
+    private AuthService createService(boolean otpEnabled) {
         return new AuthService(
                 userRepository,
                 passwordEncoder,
@@ -324,7 +302,6 @@ class AuthServiceTest {
                 300_000,
                 5,
                 300_000,
-                requireEmailVerified,
                 otpEnabled
         );
     }

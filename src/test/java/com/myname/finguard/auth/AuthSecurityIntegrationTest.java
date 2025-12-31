@@ -73,7 +73,6 @@ import org.springframework.test.web.servlet.ResultActions;
         "app.security.rate-limit.login-email.limit=3",
         "app.security.rate-limit.login-email.window-ms=60000",
         "app.security.trust-proxy-headers=true",
-        "app.security.auth.require-email-verified=true",
         "app.security.lockout.max-attempts=2",
         "app.security.lockout.lock-minutes=60",
         "app.security.sessions.max-per-user=2",

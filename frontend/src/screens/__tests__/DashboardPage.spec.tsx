@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import DashboardPage from '../DashboardPage';
 import * as AuthApi from '../../api/auth';
 import * as AccountsApi from '../../api/accounts';
+import * as FxApi from '../../api/fx';
 
 vi.mock('../../api/auth', async (importOriginal) => {
   const actual = (await importOriginal()) as typeof import('../../api/auth');
@@ -27,6 +28,17 @@ vi.mock('../../api/accounts', async (importOriginal) => {
   };
 });
 
+vi.mock('../../api/fx', async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof import('../../api/fx');
+  return {
+    ...actual,
+    FxApi: {
+      ...actual.FxApi,
+      latestRates: vi.fn(),
+    },
+  };
+});
+
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -42,6 +54,14 @@ describe('DashboardPage', () => {
           { id: 2, name: 'Archived', currency: 'USD', balance: 5, archived: true },
         ],
         totalsByCurrency: [{ currency: 'USD', total: 10.5 }],
+      },
+    });
+    (FxApi as any).FxApi.latestRates.mockResolvedValue({
+      ok: true,
+      data: {
+        baseCurrency: 'USD',
+        asOf: '2024-01-01T00:00:00Z',
+        rates: { EUR: 0.9, RUB: 90, CNY: 7.1 },
       },
     });
   });

@@ -29,7 +29,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -47,7 +47,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer bad");
@@ -68,7 +68,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer refreshToken");
@@ -90,7 +90,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer token");
@@ -114,7 +114,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer token");
@@ -143,7 +143,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer token");
@@ -171,7 +171,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer token");
@@ -200,7 +200,7 @@ class JwtAuthenticationFilterTest {
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class);
         CustomUserDetailsService userDetailsService = mock(CustomUserDetailsService.class);
         TokenBlacklistService tokenBlacklistService = mock(TokenBlacklistService.class);
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService, true);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, tokenBlacklistService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setCookies(new Cookie("FG_AUTH", "token"));

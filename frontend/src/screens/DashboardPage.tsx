@@ -3,6 +3,7 @@ import { Button } from '../components/Button';
 import { AuthApi } from '../api/auth';
 import { ApiClient } from '../api/client';
 import { AccountsApi, type AccountBalance, type CurrencyBalance } from '../api/accounts';
+import { FxApi } from '../api/fx';
 import { BalanceChart } from '../components/BalanceChart';
 import { PieChart, type PieChartItem } from '../components/PieChart';
 import '../theme.css';
@@ -13,6 +14,15 @@ type Breakdown = { id: number; name: string; spent: number; limit: number };
 type Goal = { id: number; title: string; progress: number; target: string };
 type Payment = { id: number; title: string; amount: number; due: string };
 type Activity = { id: number; title: string; tag: string; time: string; amount?: number };
+type FxWatchItem = { code: string; name: string };
+
+const fxWatchlist: FxWatchItem[] = [
+  { code: 'USD', name: 'US Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'RUB', name: 'Russian Ruble' },
+  { code: 'CNY', name: 'Chinese Yuan' },
+];
+const fxFallbackBase = 'USD';
 
 const DashboardPage: React.FC = () => {
   const [email, setEmail] = useState<string>('user');
@@ -22,6 +32,10 @@ const DashboardPage: React.FC = () => {
   const [totalsByCurrency, setTotalsByCurrency] = useState<CurrencyBalance[]>([]);
   const [balanceError, setBalanceError] = useState<string>('');
   const [balanceLoading, setBalanceLoading] = useState<boolean>(true);
+  const [fxRates, setFxRates] = useState<Record<string, number>>({});
+  const [fxAsOf, setFxAsOf] = useState<string>('');
+  const [fxError, setFxError] = useState<string>('');
+  const [fxLoading, setFxLoading] = useState<boolean>(true);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState<boolean>(false);
   const isMountedRef = useRef<boolean>(false);
   const addMenuLastFocusRef = useRef<HTMLElement | null>(null);
@@ -93,6 +107,30 @@ const DashboardPage: React.FC = () => {
     }
   }, []);
 
+  const loadFxRates = useCallback(async (base: string, quotes: string[]) => {
+    if (!isMountedRef.current) return;
+    setFxLoading(true);
+    setFxError('');
+    try {
+      const res = await FxApi.latestRates(base, quotes);
+      if (!isMountedRef.current) return;
+      if (res.ok && res.data) {
+        setFxRates(res.data.rates || {});
+        setFxAsOf(res.data.asOf || '');
+        setFxError('');
+      } else {
+        setFxError('Не удалось загрузить курсы');
+      }
+    } catch {
+      if (!isMountedRef.current) return;
+      setFxError('Не удалось загрузить курсы');
+    } finally {
+      if (isMountedRef.current) {
+        setFxLoading(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const loadProfile = async () => {
       const res = await AuthApi.profile();
@@ -125,6 +163,28 @@ const DashboardPage: React.FC = () => {
       minimumFractionDigits: 2,
     })} ${currency || baseCurrency}`;
 
+  const fxBase = useMemo(
+    () => (fxWatchlist.some((item) => item.code === baseCurrency) ? baseCurrency : fxFallbackBase),
+    [baseCurrency]
+  );
+  const fxQuotes = useMemo(
+    () => fxWatchlist.map((item) => item.code).filter((code) => code !== fxBase),
+    [fxBase]
+  );
+  const formatFxRate = (value?: number) => {
+    if (typeof value !== 'number') return '—';
+    const digits = value < 1 ? 4 : 2;
+    return value.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  };
+  const fxUpdatedLabel = fxAsOf
+    ? new Date(fxAsOf).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  useEffect(() => {
+    if (!fxBase) return;
+    loadFxRates(fxBase, fxQuotes);
+  }, [fxBase, fxQuotes, loadFxRates]);
+
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.archived), [accounts]);
   const archivedCount = accounts.length - activeAccounts.length;
   const creditUsed = activeAccounts.filter((c) => c.balance < 0).reduce((acc, c) => acc + Math.abs(c.balance), 0);
@@ -135,6 +195,20 @@ const DashboardPage: React.FC = () => {
   const primaryTotal = baseTotal?.total ?? totalsByCurrency[0]?.total ?? activeAccounts.reduce((acc, item) => acc + item.balance, 0);
   const primaryCurrency = baseTotal?.currency ?? totalsByCurrency[0]?.currency ?? baseCurrency;
   const balanceStatusText = balanceLoading ? 'Обновляем данные…' : balanceError ? 'Ошибка обновления.' : 'Данные обновлены.';
+  const fxItems = useMemo(
+    () => fxQuotes.map((code) => {
+      const meta = fxWatchlist.find((item) => item.code === code);
+      return { code, name: meta?.name || code, rate: fxRates[code] };
+    }),
+    [fxQuotes, fxRates]
+  );
+  const fxStatusText = fxLoading
+    ? 'Обновляем…'
+    : fxError
+      ? 'Нет данных'
+      : fxUpdatedLabel
+        ? `Обновлено ${fxUpdatedLabel}`
+        : 'Обновлено';
 
   const closeAddMenu = useCallback(() => {
     setIsAddMenuOpen(false);
@@ -349,6 +423,39 @@ const DashboardPage: React.FC = () => {
                         className="progress-fill"
                         style={{ ['--pct' as any]: g.progress / 100 } as React.CSSProperties}
                       />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="card dash-surface dash-card dash-fx-card">
+              <div className="dash-card-header">
+                <div>
+                  <div className="badge">FX</div>
+                  <h2 className="dash-card-title" style={{ marginTop: 6 }}>Курсы валют</h2>
+                  <div className="muted">База: {fxBase}</div>
+                </div>
+                <div className="pill-soft">{fxStatusText}</div>
+              </div>
+              <div className="dash-fx-grid">
+                {fxLoading && (
+                  <div className="dash-skeleton-list" aria-hidden="true">
+                    <div className="dash-skeleton-item" />
+                    <div className="dash-skeleton-item" />
+                    <div className="dash-skeleton-item" />
+                  </div>
+                )}
+                {!fxLoading && fxError && <div className="amount-negative">{fxError}</div>}
+                {!fxLoading && !fxError && fxItems.map((item) => (
+                  <div key={item.code} className="dash-fx-row">
+                    <div className="dash-fx-info">
+                      <div className="dash-fx-code">{item.code}</div>
+                      <div className="dash-fx-name">{item.name}</div>
+                    </div>
+                    <div className="dash-fx-rate">
+                      {formatFxRate(item.rate)}
+                      <span className="dash-fx-unit">{item.code}</span>
                     </div>
                   </div>
                 ))}

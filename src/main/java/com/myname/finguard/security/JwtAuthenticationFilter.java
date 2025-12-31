@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -21,16 +20,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
-    private final boolean requireEmailVerified;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider,
                                    CustomUserDetailsService userDetailsService,
-                                   TokenBlacklistService tokenBlacklistService,
-                                   @Value("${app.security.auth.require-email-verified:true}") boolean requireEmailVerified) {
+                                   TokenBlacklistService tokenBlacklistService) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
-        this.requireEmailVerified = requireEmailVerified;
     }
 
     @Override

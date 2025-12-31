@@ -152,6 +152,55 @@ button.icon-btn:hover {
   margin-top: 10px;
 }
 
+.dash-fx-card {
+  overflow: hidden;
+}
+
+.dash-fx-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dash-fx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+}
+
+.dash-fx-info {
+  display: grid;
+  gap: 2px;
+}
+
+.dash-fx-code {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.dash-fx-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dash-fx-rate {
+  font-weight: 800;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.dash-fx-unit {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .dash-list-item {
   transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
 }
@@ -327,4 +376,3 @@ button.dash-option:hover {
   button.dash-option:hover { transform: none; }
   .progress-fill { animation: none; transform: scaleX(var(--pct, 0)); }
 }
-

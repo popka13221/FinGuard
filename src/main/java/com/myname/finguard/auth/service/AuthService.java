@@ -81,7 +81,6 @@ public class AuthService {
     private final long registerIpWindowMs;
     private final int registerEmailLimit;
     private final long registerEmailWindowMs;
-    private final boolean requireEmailVerified;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -112,7 +111,6 @@ public class AuthService {
                        @Value("${app.security.rate-limit.register-ip.window-ms:300000}") long registerIpWindowMs,
                        @Value("${app.security.rate-limit.register-email.limit:5}") int registerEmailLimit,
                        @Value("${app.security.rate-limit.register-email.window-ms:300000}") long registerEmailWindowMs,
-                       @Value("${app.security.auth.require-email-verified:true}") boolean requireEmailVerified,
                        @Value("${app.security.otp.enabled:false}") boolean otpEnabled) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -143,7 +141,6 @@ public class AuthService {
         this.registerIpWindowMs = registerIpWindowMs;
         this.registerEmailLimit = registerEmailLimit;
         this.registerEmailWindowMs = registerEmailWindowMs;
-        this.requireEmailVerified = requireEmailVerified;
         this.otpEnabled = otpEnabled;
     }
 
@@ -206,14 +203,6 @@ public class AuthService {
             }
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
-            if (requireEmailVerified && !user.isEmailVerified()) {
-                log.warn("Login blocked: email not verified email={}", email);
-                throw new ApiException(
-                        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
-                        "Email is not verified. Please check your email for the verification code.",
-                        HttpStatus.FORBIDDEN
-                );
-            }
             loginAttemptService.recordSuccess(email);
             if (!otpEnabled) {
                 AuthTokens tokens = issueTokens(user);

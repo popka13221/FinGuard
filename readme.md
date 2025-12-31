@@ -40,7 +40,8 @@
     - Health: `http://localhost:8080/health` или `/actuator/health`
 
 ## Auth-флоу
-- Регистрация двухшаговая: `POST /api/auth/register` создаёт запись в `pending_registrations` и отправляет код на email; запись в `users` и токены выдаются только после `POST /api/auth/verify`.
+- Регистрация двухшаговая: `POST /api/auth/register` создаёт запись в `pending_registrations` и отправляет код на email; запись в `users` и токены выдаются только после `POST /api/auth/verify` (регистрация считается завершённой только после verify).
+- До verify пользователя в `users` нет, поэтому доступ к защищённым `/api/**` невозможен по определению.
 - Токены `FG_AUTH` и `FG_REFRESH` ставятся в httpOnly cookie после успешного `POST /api/auth/login` (или `POST /api/auth/login/otp`) и после `POST /api/auth/verify`; SameSite настраивается через `app.security.jwt.cookie-samesite`.
 - При попытке логина до подтверждения email возвращается 403, код `100006` (если пароль совпадает с pending-регистрацией).
 - Refresh: `POST /api/auth/refresh`
