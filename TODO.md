@@ -5,7 +5,7 @@
 - `readme.md` — запуск/статус/настройки.
 
 ## P0 / Next (ближайшие задачи)
-- [ ] JaCoCo: подключить покрытие в `pom.xml` + шаг в CI (html/xml как artifact; опционально — минимальный порог).
+- [x] JaCoCo: подключить покрытие в `pom.xml` + шаг в CI (artifact `jacoco-report`; html/xml).
 - [x] Security headers: `SecurityHeadersIntegrationTest` проверяет заголовки на `GET /` и `GET /api/auth/csrf`:
   - `Content-Security-Policy` (строка из `SecurityConfig`)
   - `Referrer-Policy`

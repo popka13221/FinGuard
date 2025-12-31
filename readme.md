@@ -57,5 +57,9 @@
 - Статический клиент (русский): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`; вкладки «Вход/Регистрация», формы для восстановления пароля, дашборд с проверкой health.
 - SPA (React+TS, Vite): аналогичный флоу; запуск — `cd frontend && npm install && npm run dev` (прокси на бэк для `/api/**`, `/health`, `/actuator`, `/swagger-ui`). Детали: `frontend/README.md`.
 
+## Тесты и покрытие
+- Backend: `mvn test` (JaCoCo отчёт: `target/site/jacoco/index.html`).
+- В GitHub Actions отчёт загружается как artifact `jacoco-report`.
+
 ## Статус
 Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты, перенос токена в httpOnly cookies для SPA.

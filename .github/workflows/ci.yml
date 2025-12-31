@@ -28,6 +28,14 @@ jobs:
       - name: Run tests
         run: mvn -B test
 
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+          if-no-files-found: warn
+
   frontend:
     name: Frontend (build + test)
     runs-on: ubuntu-latest
