@@ -373,25 +373,17 @@ public class AuthService {
             }
         }
 
-        Optional<UserToken> tokenOpt;
-        if (email.isBlank()) {
-            tokenOpt = userTokenService.findValid(rawToken, UserTokenType.VERIFY);
-        } else {
-            tokenOpt = userTokenService.findAnyForEmail(email, rawToken, UserTokenType.VERIFY)
-                    .filter(t -> t.getUsedAt() == null)
-                    .filter(t -> t.getExpiresAt() == null || t.getExpiresAt().isAfter(Instant.now()));
-        }
-        UserToken token = tokenOpt.orElseThrow(() ->
+        UserToken token = userTokenService.findAnyForEmail(email, rawToken, UserTokenType.VERIFY).orElseThrow(() ->
                 new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST));
+        if (token.getUsedAt() != null) {
+            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
+        }
         if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(Instant.now())) {
             userTokenService.markUsed(token);
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
         }
         User user = token.getUser();
         if (user == null) {
-            throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
-        }
-        if (!email.isBlank() && !safe(user.getEmail()).equals(email)) {
             throw new ApiException(ErrorCodes.AUTH_REFRESH_INVALID, "Verification token is invalid or expired", HttpStatus.BAD_REQUEST);
         }
         if (!user.isEmailVerified()) {
@@ -416,13 +408,8 @@ public class AuthService {
         enforceResetConfirmLimit("reset-confirm:ip:" + safe(ip), null);
 
         String email = request.email() == null ? "" : request.email().trim().toLowerCase();
-        Optional<UserToken> tokenOpt = email.isBlank()
-                ? userTokenService.findValid(request.token(), UserTokenType.RESET)
-                : userTokenService.findAnyForEmail(email, request.token(), UserTokenType.RESET);
-        if (tokenOpt.isEmpty() && email.isBlank()) {
-            tokenOpt = userTokenService.findAny(request.token(), UserTokenType.RESET);
-        }
-        UserToken token = tokenOpt.orElseThrow(this::invalidResetCode);
+        UserToken token = userTokenService.findAnyForEmail(email, request.token(), UserTokenType.RESET)
+                .orElseThrow(this::invalidResetCode);
         if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(Instant.now())) {
             userTokenService.markUsed(token);
             passwordResetSessionService.invalidateForUser(token.getUser());

@@ -43,11 +43,9 @@ public class UserTokenService {
     @Transactional
     public String issue(User user, UserTokenType type) {
         Duration ttl = type == UserTokenType.VERIFY ? verifyTtl : resetTtl;
+        invalidateActive(user, type);
         String tokenValue = generateToken(type);
         String hashed = hashToken(tokenValue);
-        // уникальный фиксированный код требует очистки предыдущих записей
-        userTokenRepository.deleteByTokenHash(hashed);
-        userTokenRepository.flush();
         UserToken token = new UserToken();
         token.setUser(user);
         token.setTokenHash(hashed);
@@ -63,28 +61,40 @@ public class UserTokenService {
     @Transactional(readOnly = true)
     public Optional<UserToken> findValid(String token, UserTokenType type) {
         String hashed = hashToken(token);
-        if (hashed.isEmpty()) {
+        if (hashed.isEmpty() || type == null) {
             return Optional.empty();
         }
-        return userTokenRepository.findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(
+        java.util.List<UserToken> matches = userTokenRepository.findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(
                 hashed, type, Instant.now()
         );
+        if (matches.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(matches.get(0));
     }
 
     @Transactional(readOnly = true)
     public Optional<UserToken> findAny(String token, UserTokenType type) {
         String hashed = hashToken(token);
-        if (hashed.isEmpty()) {
+        if (hashed.isEmpty() || type == null) {
             return Optional.empty();
         }
-        return userTokenRepository.findByTokenHashAndType(hashed, type);
+        java.util.List<UserToken> matches = userTokenRepository.findByTokenHashAndType(hashed, type);
+        if (matches.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(matches.get(0));
     }
 
     @Transactional(readOnly = true)
     public Optional<UserToken> findAnyForEmail(String email, String token, UserTokenType type) {
         String normalizedEmail = normalizeEmail(email);
-        return findAny(token, type)
-                .filter(t -> t.getUser() != null && normalizedEmail.equals(normalizeEmail(t.getUser().getEmail())));
+        String hashed = hashToken(token);
+        if (normalizedEmail.isBlank() || hashed.isEmpty() || type == null) {
+            return Optional.empty();
+        }
+        return userTokenRepository.findFirstByUserEmailIgnoreCaseAndTokenHashAndTypeOrderByCreatedAtDesc(
+                normalizedEmail, hashed, type);
     }
 
     @Transactional

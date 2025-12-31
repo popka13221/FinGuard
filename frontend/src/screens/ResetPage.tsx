@@ -88,6 +88,11 @@ const ResetPage: React.FC = () => {
       setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
       return;
     }
+    const email = (sessionStorage.getItem('spa_reset_email') || searchParams.get('email') || '').trim().toLowerCase();
+    if (!email) {
+      setErrors({ form: 'Не найден email. Начните сброс пароля заново.' });
+      return;
+    }
     if (isConfirming) return;
     setSuccess('');
     setInfo('');
@@ -104,7 +109,7 @@ const ResetPage: React.FC = () => {
     }
     setErrors({});
     setIsConfirming(true);
-    const res = await AuthApi.confirmReset({ token: value });
+    const res = await AuthApi.confirmReset({ email, token: value });
     setIsConfirming(false);
     if (res.ok && res.data && res.data.resetSessionToken) {
       setAttempts(0);

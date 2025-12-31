@@ -24,7 +24,7 @@ public class UserToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true, name = "token_hash", length = 128)
+    @Column(nullable = false, name = "token_hash", length = 128)
     private String tokenHash;
 
     @Enumerated(EnumType.STRING)

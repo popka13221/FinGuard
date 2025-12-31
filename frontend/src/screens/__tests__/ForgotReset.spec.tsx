@@ -78,7 +78,7 @@ describe('Forgot/Reset flow', () => {
     fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: 'badtoken' } });
     fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
 
-    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ email: 'user@example.com', token: 'badtoken' }));
     expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
     expect(screen.getByText(/Забыли пароль/i)).toBeInTheDocument();
   });
@@ -97,7 +97,7 @@ describe('Forgot/Reset flow', () => {
     fireEvent.change(screen.getByLabelText(/Код из письма/i), { target: { value: '654321' } });
     fireEvent.click(screen.getByRole('button', { name: /Ввести код/i }));
 
-    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: '654321' }));
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ email: 'user@example.com', token: '654321' }));
     expect(await screen.findByText(/Смена пароля/i)).toBeInTheDocument();
   });
 
@@ -105,14 +105,14 @@ describe('Forgot/Reset flow', () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: false, data: { code: '100005' } });
     renderWithRouter('/reset?token=badtoken&email=user@example.com');
 
-    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ token: 'badtoken' }));
+    await waitFor(() => expect(mockedAuth.AuthApi.confirmReset).toHaveBeenCalledWith({ email: 'user@example.com', token: 'badtoken' }));
     expect(await screen.findByText(/Код неверный или устарел/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Код из письма/i)).toHaveValue('badtoken');
   });
 
   it('reset validates password strength and does not call API on validation fail', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
-    renderWithRouter('/reset?token=654321');
+    renderWithRouter('/reset?token=654321&email=user@example.com');
     await screen.findByText(/Сессия сброса активна/i);
 
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'weak' } });
@@ -125,7 +125,7 @@ describe('Forgot/Reset flow', () => {
   it('reset calls API and handles invalid session error', async () => {
     mockedAuth.AuthApi.confirmReset.mockResolvedValue({ ok: true, data: { resetSessionToken: 'session-token', expiresInSeconds: 120 } });
     mockedAuth.AuthApi.reset.mockResolvedValue({ ok: false, data: { code: '100005' } });
-    renderWithRouter('/reset?token=654321');
+    renderWithRouter('/reset?token=654321&email=user@example.com');
 
     await screen.findByText(/Сессия сброса активна/i);
     fireEvent.change(screen.getByLabelText(/Новый пароль/i), { target: { value: 'StrongPass1!' } });

@@ -16,6 +16,7 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.auth.repository.UserSessionRepository;
 import com.myname.finguard.auth.repository.UserTokenRepository;
 import com.myname.finguard.common.service.MailService;
+import com.myname.finguard.security.RateLimiterService;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -40,7 +41,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.security.otp.enabled=false",
-        "app.security.tokens.reset-cooldown-seconds=0"
+        "app.security.tokens.reset-cooldown-seconds=0",
+        "app.security.tokens.fixed-code=654321"
 })
 class TokenSecurityIntegrationTest {
 
@@ -60,6 +62,8 @@ class TokenSecurityIntegrationTest {
     private PasswordResetSessionRepository passwordResetSessionRepository;
     @Autowired
     private PendingRegistrationRepository pendingRegistrationRepository;
+    @Autowired
+    private RateLimiterService rateLimiterService;
 
     @AfterEach
     void cleanup() {
@@ -69,6 +73,7 @@ class TokenSecurityIntegrationTest {
         pendingRegistrationRepository.deleteAll();
         userRepository.deleteAll();
         mailService.clearOutbox();
+        rateLimiterService.reset();
     }
 
     @Test
@@ -167,6 +172,46 @@ class TokenSecurityIntegrationTest {
                 .andReturn();
         JsonNode loginBody = objectMapper.readTree(login.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(loginBody.get("token").asText()).isNotBlank();
+    }
+
+    @Test
+    void issuingResetForAnotherUserDoesNotInvalidateExistingResetToken() throws Exception {
+        String emailA = "reset-a-" + UUID.randomUUID() + "@example.com";
+        String emailB = "reset-b-" + UUID.randomUUID() + "@example.com";
+        register(emailA, "StrongPass1!");
+        register(emailB, "StrongPass1!");
+        mailService.clearOutbox();
+
+        mockMvc.perform(post("/api/auth/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(emailA)))
+                .andExpect(status().isOk());
+
+        User userA = userRepository.findByEmail(emailA).orElseThrow();
+        Optional<UserToken> tokenA = userTokenRepository.findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+                userA, UserTokenType.RESET, java.time.Instant.now());
+        assertThat(tokenA).isPresent();
+
+        mockMvc.perform(post("/api/auth/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(emailB)))
+                .andExpect(status().isOk());
+
+        User userB = userRepository.findByEmail(emailB).orElseThrow();
+        Optional<UserToken> tokenB = userTokenRepository.findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+                userB, UserTokenType.RESET, java.time.Instant.now());
+        assertThat(tokenB).isPresent();
+        assertThat(tokenB.get().getTokenHash()).isEqualTo(tokenA.get().getTokenHash());
+
+        // user A token must still exist after issuing a token for user B
+        Optional<UserToken> tokenAAgain = userTokenRepository.findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+                userA, UserTokenType.RESET, java.time.Instant.now());
+        assertThat(tokenAAgain).isPresent();
+        assertThat(tokenAAgain.get().getId()).isEqualTo(tokenA.get().getId());
     }
 
     private MvcResult register(String email, String password) throws Exception {

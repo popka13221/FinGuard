@@ -428,7 +428,7 @@ class AuthSecurityIntegrationTest {
         List<com.myname.finguard.auth.model.UserSession> sessionsBefore = userSessionRepository.findByUserId(token.getUser().getId());
         assertThat(sessionsBefore).isNotEmpty();
         String resetCode = extractCode(latestMail().body());
-        String resetSessionToken = confirmResetSession(resetCode);
+        String resetSessionToken = confirmResetSession(email, resetCode);
         String resetJti = jwtTokenProvider.getJti(resetSessionToken);
         String resetTokenHash = passwordResetSessionService.hashToken(resetJti);
         PasswordResetSession resetSession = passwordResetSessionRepository.findByTokenHash(resetTokenHash).orElseThrow();
@@ -502,8 +502,12 @@ class AuthSecurityIntegrationTest {
         var resetTokens = userTokenRepository.findAll().stream()
                 .filter(t -> t.getType() == UserTokenType.RESET)
                 .toList();
-        assertThat(resetTokens).hasSize(1);
-        UserToken token = resetTokens.get(0);
+        assertThat(resetTokens).hasSize(3);
+        assertThat(resetTokens.stream().filter(t -> t.getUsedAt() == null)).hasSize(1);
+        UserToken token = resetTokens.stream()
+                .filter(t -> t.getUsedAt() == null)
+                .findFirst()
+                .orElseThrow();
         assertThat(token.getTokenHash()).isEqualTo(hashToken("654321"));
 
         assertThat(mailService.getOutbox()).hasSize(3);
@@ -573,7 +577,7 @@ class AuthSecurityIntegrationTest {
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         UserToken token = latestResetToken();
-        String resetSessionToken = confirmResetSession(latestResetCode());
+        String resetSessionToken = confirmResetSession(email, latestResetCode());
 
         MvcResult res = postJson("/api/auth/reset", """
                 {"resetSessionToken":"%s","password":"password1"}
@@ -607,8 +611,8 @@ class AuthSecurityIntegrationTest {
         UserToken token = latestResetToken();
 
         MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(latestResetCode()), "10.0.0.1", "TestUA/1.0")
+                {"email":"%s","token":"%s"}
+                """.formatted(email, latestResetCode()), "10.0.0.1", "TestUA/1.0")
                 .andExpect(status().isOk())
                 .andReturn();
         String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
@@ -629,8 +633,8 @@ class AuthSecurityIntegrationTest {
         UserToken token = latestResetToken();
 
         MvcResult confirm = postJsonFromIpAndUa("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(latestResetCode()), "10.0.0.1", "TestUA/1.0")
+                {"email":"%s","token":"%s"}
+                """.formatted(email, latestResetCode()), "10.0.0.1", "TestUA/1.0")
                 .andExpect(status().isOk())
                 .andReturn();
         String resetSessionToken = objectMapper.readTree(confirm.getResponse().getContentAsString(StandardCharsets.UTF_8))
@@ -658,16 +662,16 @@ class AuthSecurityIntegrationTest {
                 .andExpect(status().isOk());
 
         MvcResult okRes = postJson("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(latestResetCode()))
+                {"email":"%s","token":"%s"}
+                """.formatted(email, latestResetCode()))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode okBody = objectMapper.readTree(okRes.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(okBody.get("resetSessionToken").asText()).isNotBlank();
 
         MvcResult res = postJson("/api/auth/reset/confirm", """
-                {"token":"invalid-token"}
-                """)
+                {"email":"%s","token":"invalid-token"}
+                """.formatted(email))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -683,21 +687,23 @@ class AuthSecurityIntegrationTest {
             postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                     .andExpect(status().isOk());
             postJsonFromIp("/api/auth/reset/confirm", """
-                    {"token":"%s"}
-                    """.formatted(latestResetCode()), "127.0.0." + (10 + i))
+                    {"email":"%s","token":"%s"}
+                    """.formatted(email, latestResetCode()), "127.0.0." + (10 + i))
                     .andExpect(status().isOk());
         }
 
         postJson("/api/auth/forgot", objectMapper.writeValueAsString(new ForgotPasswordRequest(email)))
                 .andExpect(status().isOk());
         MvcResult limited = postJsonFromIp("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(latestResetCode()), "127.0.0.50")
+                {"email":"%s","token":"%s"}
+                """.formatted(email, latestResetCode()), "127.0.0.50")
                 .andExpect(status().isTooManyRequests())
                 .andReturn();
         JsonNode error = objectMapper.readTree(limited.getResponse().getContentAsString(StandardCharsets.UTF_8));
         assertThat(error.get("code").asText()).isEqualTo("100005");
-        assertThat(userTokenService.findValid(latestResetCode(), UserTokenType.RESET)).isEmpty();
+        assertThat(userTokenService.findAnyForEmail(email, latestResetCode(), UserTokenType.RESET)
+                .filter(t -> t.getUsedAt() == null)
+                .filter(t -> t.getExpiresAt() != null && t.getExpiresAt().isAfter(Instant.now()))).isEmpty();
     }
 
     @Test
@@ -837,8 +843,8 @@ class AuthSecurityIntegrationTest {
         userTokenRepository.save(token);
 
         postJson("/api/auth/verify", """
-                {"token":"%s"}
-                """.formatted(rawToken))
+                {"email":"%s","token":"%s"}
+                """.formatted(email, rawToken))
                 .andExpect(status().isBadRequest());
 
         User fresh = userRepository.findByEmail(email).orElseThrow();
@@ -860,8 +866,8 @@ class AuthSecurityIntegrationTest {
         userTokenRepository.save(token);
 
         MvcResult res = postJson("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(rawToken))
+                {"email":"%s","token":"%s"}
+                """.formatted(email, rawToken))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         JsonNode error = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -930,10 +936,10 @@ class AuthSecurityIntegrationTest {
                 .orElseThrow();
     }
 
-    private String confirmResetSession(String rawToken) throws Exception {
+    private String confirmResetSession(String email, String rawToken) throws Exception {
         MvcResult res = postJson("/api/auth/reset/confirm", """
-                {"token":"%s"}
-                """.formatted(rawToken))
+                {"email":"%s","token":"%s"}
+                """.formatted(email, rawToken))
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode node = objectMapper.readTree(res.getResponse().getContentAsString(StandardCharsets.UTF_8));

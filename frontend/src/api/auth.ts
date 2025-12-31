@@ -20,7 +20,7 @@ export const AuthApi = {
   logout: () => ApiClient.request<void>('/api/auth/logout', { method: 'POST' }),
   forgot: (body: { email: string }) =>
     ApiClient.request<void>('/api/auth/forgot', { method: 'POST', body: JSON.stringify(body) }),
-  confirmReset: (body: { token: string }) =>
+  confirmReset: (body: { email: string; token: string }) =>
     ApiClient.request<{ resetSessionToken: string; expiresInSeconds: number }>('/api/auth/reset/confirm', {
       method: 'POST',
       body: JSON.stringify(body),

@@ -105,6 +105,7 @@ const ForgotPage: React.FC = () => {
       setErrors({ form: 'Слишком много неверных попыток. Запросите новый код.' });
       return;
     }
+    if (!validateEmail()) return;
     if (!token.trim()) {
       setErrors({ token: 'Введите код из письма' });
       return;
@@ -115,7 +116,7 @@ const ForgotPage: React.FC = () => {
     }
     setErrors({});
     setIsChecking(true);
-    const res = await AuthApi.confirmReset({ token: token.trim() });
+    const res = await AuthApi.confirmReset({ email: email.trim().toLowerCase(), token: token.trim() });
     setIsChecking(false);
     if (res.ok && res.data) {
       setAttempts(0);

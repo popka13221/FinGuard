@@ -8,14 +8,17 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserTokenRepository extends JpaRepository<UserToken, Long> {
-    Optional<UserToken> findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(String tokenHash, UserTokenType type, Instant now);
+    java.util.List<UserToken> findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(String tokenHash, UserTokenType type, Instant now);
 
-    Optional<UserToken> findByTokenHashAndType(String tokenHash, UserTokenType type);
+    java.util.List<UserToken> findByTokenHashAndType(String tokenHash, UserTokenType type);
 
     Optional<UserToken> findFirstByUserAndTypeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
             User user, UserTokenType type, Instant now);
 
     java.util.List<UserToken> findByUserAndTypeAndUsedAtIsNullAndExpiresAtAfter(User user, UserTokenType type, Instant now);
+
+    Optional<UserToken> findFirstByUserEmailIgnoreCaseAndTokenHashAndTypeOrderByCreatedAtDesc(
+            String email, String tokenHash, UserTokenType type);
 
     void deleteByTokenHash(String tokenHash);
 
