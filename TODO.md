@@ -25,9 +25,10 @@
 - [x] GitHub Actions CI: `mvn test` + `npm ci/build/test` — `.github/workflows/ci.yml`.
 - [x] Подчистить статику: удалить дубли из `src/main/resources/static/app/assets/`, урезать `src/main/resources/static/crypto/` до реально используемых иконок.
 - [x] Добавить `npm run lint` в CI (и при желании `mvn -B verify` вместо `test`).
-- [x] Добавить Dependabot (`.github/dependabot.yml`) для Maven + npm.
+- [ ] Dependabot (version updates) — сейчас отключено (удалён `.github/dependabot.yml`), включить при желании.
 - [x] Добавить CodeQL (`.github/workflows/codeql.yml`) для Java + TS.
 - [x] Добавить Dependency Review (`.github/workflows/dependency-review.yml`) для PR.
+- [ ] Включить GitHub Dependency graph (Settings → Security & analysis), иначе Dependency Review падает.
 - [x] Добавить CI/CodeQL badge в `readme.md`.
 
 ## Security — расширить покрытие (если хочется “как в проде”)
