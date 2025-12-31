@@ -87,8 +87,9 @@ const DashboardPage: React.FC = () => {
       if (!isMountedRef.current) return;
       setBalanceError('Не удалось загрузить баланс');
     } finally {
-      if (!isMountedRef.current) return;
-      setBalanceLoading(false);
+      if (isMountedRef.current) {
+        setBalanceLoading(false);
+      }
     }
   }, []);
 

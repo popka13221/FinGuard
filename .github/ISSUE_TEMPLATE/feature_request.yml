@@ -1,0 +1,32 @@
+name: Feature request
+description: Предложить улучшение/идею
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees:
+  - popka13221
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Идеи приветствуются. Лучше коротко и по делу.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Проблема
+      description: Что болит/чего не хватает?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Предложение
+      description: Как ты видишь решение?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Альтернативы
+      description: Какие ещё варианты рассматривались?
+    validations:
+      required: false

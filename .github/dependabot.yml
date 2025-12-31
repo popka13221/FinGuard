@@ -7,6 +7,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    assignees:
+      - "popka13221"
+    reviewers:
+      - "popka13221"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -15,3 +19,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    assignees:
+      - "popka13221"
+    reviewers:
+      - "popka13221"

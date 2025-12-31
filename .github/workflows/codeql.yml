@@ -54,7 +54,7 @@ jobs:
 
       - name: Build backend (skip tests)
         if: matrix.language == 'java-kotlin'
-        run: mvn -B -DskipTests package
+        run: mvn -B -Dmaven.test.skip=true package
 
       - name: Install frontend deps
         if: matrix.language == 'javascript-typescript'

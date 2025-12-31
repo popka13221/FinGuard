@@ -24,7 +24,7 @@
 ## Infra / GitHub
 - [x] GitHub Actions CI: `mvn test` + `npm ci/build/test` — `.github/workflows/ci.yml`.
 - [x] Подчистить статику: удалить дубли из `src/main/resources/static/app/assets/`, урезать `src/main/resources/static/crypto/` до реально используемых иконок.
-- [ ] Добавить `npm run lint` в CI (и при желании `mvn -B verify` вместо `test`).
+- [x] Добавить `npm run lint` в CI (и при желании `mvn -B verify` вместо `test`).
 - [x] Добавить Dependabot (`.github/dependabot.yml`) для Maven + npm.
 - [x] Добавить CodeQL (`.github/workflows/codeql.yml`) для Java + TS.
 - [x] Добавить Dependency Review (`.github/workflows/dependency-review.yml`) для PR.

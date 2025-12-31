@@ -1,0 +1,49 @@
+name: Bug report
+description: Сообщить о воспроизводимом баге
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - popka13221
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо! Чем точнее шаги/логи — тем быстрее фиксим.
+  - type: input
+    id: env
+    attributes:
+      label: Окружение
+      description: OS / Java / браузер / commit SHA
+      placeholder: "macOS 14, Java 17, Chrome 131, abcdef1"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактическое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи/скриншоты
+      description: Вставь релевантный кусок (без секретов)
+      render: shell
+    validations:
+      required: false
