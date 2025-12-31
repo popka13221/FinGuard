@@ -1,5 +1,8 @@
 # FinGuard — Personal Finance & Alerts Platform
 
+[![CI](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml)
+
 Платформа для учёта личных финансов, целей и алертов по тратам/курсам/активам. Цель — показать продуманную доменную модель, работу с деньгами/датами/валютами, фоновые задачи и интеграции.
 
 ## Что внутри
@@ -44,7 +47,7 @@
 - Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify` (сейчас по умолчанию код фиксированный `654321`; можно переопределить через `app.security.tokens.fixed-code`)
 - Восстановление пароля (двухшаговый, без прямой смены по коду):
   1) `POST /api/auth/forgot` — письмо/код.
-  2) `POST /api/auth/reset/confirm` — принимает код, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
+  2) `POST /api/auth/reset/confirm` — принимает `email+код`, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
   3) `POST /api/auth/reset` — принимает `resetSessionToken` + новый пароль, инвалидация всех refresh-сессий.
 - OTP (опционально): после успешного пароля выдаётся challenge 202; лимиты на выдачу по email+IP, повторный вход в окне действия возвращает 202 без пересылки кода.
 - CORS: задайте `ALLOWED_ORIGINS` для SPA на другом домене, включено `credentials: true`.
