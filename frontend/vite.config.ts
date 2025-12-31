@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { loadEnv } from 'vite';
@@ -30,6 +30,12 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './vitest.setup.ts',
       globals: true,
+      exclude: [
+        ...configDefaults.exclude,
+        '**/e2e/**',
+        '**/playwright-report/**',
+        '**/test-results/**',
+      ],
     },
   };
 });
