@@ -30,6 +30,8 @@ yarn-error.log*
 pnpm-debug.log*
 frontend/.vite/
 frontend/.turbo/
+frontend/playwright-report/
+frontend/test-results/
 
 # Secrets/keys (не коммитим приватные ключи)
 *.pem

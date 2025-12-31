@@ -19,7 +19,7 @@
 - [ ] Определиться с политикой `app.security.auth.require-email-verified=true`:
   - [ ] либо блокировать доступ к `/api/**` для unverified (кроме `/api/auth/**`),
   - [ ] либо оставить как есть, но явно задокументировать “что можно делать без верификации” + покрыть тестами.
-- [ ] E2E smoke (Playwright/Cypress): хотя бы один happy-path `register → verify → login → dashboard`.
+- [x] E2E smoke (Playwright): happy-path `register → verify(654321) → login → dashboard` (`frontend: npm run e2e`).
 
 ## Infra / GitHub
 - [x] GitHub Actions CI: `mvn test` + `npm ci/build/test` — `.github/workflows/ci.yml`.

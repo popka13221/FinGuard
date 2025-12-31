@@ -60,6 +60,7 @@
 ## Тесты и покрытие
 - Backend: `mvn test` (JaCoCo отчёт: `target/site/jacoco/index.html`).
 - В GitHub Actions отчёт загружается как artifact `jacoco-report`.
+- E2E smoke (Playwright): `cd frontend && npm run e2e` (поднимет backend с профилем `e2e` на `http://127.0.0.1:8085`).
 
 ## Статус
 Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты, перенос токена в httpOnly cookies для SPA.
