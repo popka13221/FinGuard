@@ -8,6 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.common.service.MailService;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -99,11 +103,19 @@ class AuthIntegrationTest {
         if (body == null) {
             return "";
         }
-        for (String part : body.split("\\s+")) {
-            if (part.matches("\\d{6}")) {
-                return part.trim();
-            }
+        Matcher tokenParam = Pattern.compile("token=([^&\\s]+)").matcher(body);
+        if (tokenParam.find()) {
+            return URLDecoder.decode(tokenParam.group(1), StandardCharsets.UTF_8);
         }
-        return "";
+        Matcher codeLine = Pattern.compile("(?i)code:\\s*([A-Za-z0-9-]{6,})").matcher(body);
+        if (codeLine.find()) {
+            return codeLine.group(1).trim();
+        }
+        Matcher digits = Pattern.compile("\\b\\d{6}\\b").matcher(body);
+        if (digits.find()) {
+            return digits.group().trim();
+        }
+        Matcher hex = Pattern.compile("\\b(?=[0-9a-fA-F-]*\\d)[0-9a-fA-F-]{6,}\\b").matcher(body);
+        return hex.find() ? hex.group().trim() : "";
     }
 }
