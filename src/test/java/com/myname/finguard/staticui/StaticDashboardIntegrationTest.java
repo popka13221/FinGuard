@@ -38,8 +38,9 @@ class StaticDashboardIntegrationTest {
                 .getContentAsString(StandardCharsets.UTF_8);
 
         assertThat(html).contains("Курсы монет");
-        assertThat(html).contains("Курсы валют");
-        assertThat(html).contains("fxGrid");
+        assertThat(html).contains("FX Radar");
+        assertThat(html).contains("fxTopVolatile");
+        assertThat(html).contains("fxDetail");
         assertThat(html).contains("btcSpark");
     }
 }

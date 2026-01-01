@@ -98,7 +98,7 @@ class StaticUiFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(result -> {
                     String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-                    assertThat(html).contains("Курсы валют");
+                    assertThat(html).contains("FX Radar");
                     assertThat(html).contains("Курсы монет");
                 });
 

@@ -12,9 +12,21 @@
     totalsByCurrency: '#totalsByCurrency',
     accountsList: '#accountsList',
     balanceError: '#balanceError',
-    fxGrid: '#fxGrid',
     fxStatus: '#fxStatus',
-    fxBase: '#fxBase'
+    fxBase: '#fxBase',
+    fxTopVolatile: '#fxTopVolatile',
+    fxList: '#fxList',
+    fxBrowse: '#fxBrowse',
+    fxSearch: '#fxSearch',
+    fxBaseSelect: '#fxBaseSelect',
+    fxDetail: '#fxDetail',
+    fxDetailCode: '#fxDetailCode',
+    fxDetailName: '#fxDetailName',
+    fxDetailRate: '#fxDetailRate',
+    fxDetailChange: '#fxDetailChange',
+    fxDetailChart: '#fxDetailChart',
+    fxToggleList: '#fxToggleList',
+    fxSortButtons: '.fx-sort button'
   };
 
   const demoData = {
@@ -33,13 +45,21 @@
     }
   };
 
-  const fxWatchlist = [
+  const fxFallbackCurrencies = [
     { code: 'USD', name: 'US Dollar' },
     { code: 'EUR', name: 'Euro' },
     { code: 'RUB', name: 'Russian Ruble' },
     { code: 'CNY', name: 'Chinese Yuan' }
   ];
   const fxFallbackBase = 'USD';
+  const fxExcluded = new Set(['BTC', 'ETH']);
+  const fxSortModes = { volatility: 'volatility', alpha: 'alpha' };
+  let fxCurrencies = fxFallbackCurrencies.slice();
+  let fxBase = '';
+  let fxSortMode = fxSortModes.volatility;
+  let fxSearchQuery = '';
+  let fxSelectedCode = '';
+  let fxItems = [];
 
   let baseCurrency = 'USD';
   function updateCurrencyLabels() {
@@ -80,8 +100,8 @@
   }
 
   function resolveFxBase() {
-    const normalized = (baseCurrency || '').toUpperCase();
-    return fxWatchlist.some((item) => item.code === normalized) ? normalized : fxFallbackBase;
+    const normalized = (fxBase || baseCurrency || '').toUpperCase();
+    return fxCurrencies.some((item) => item.code === normalized) ? normalized : fxFallbackBase;
   }
 
   function formatFxRate(value) {
@@ -161,40 +181,258 @@
     `).join('');
   }
 
-  function renderFxRates(payload) {
-    const data = payload && typeof payload === 'object' ? payload : {};
-    const base = (data.baseCurrency || resolveFxBase()).toUpperCase();
-    const rates = data.rates && typeof data.rates === 'object' ? data.rates : {};
-    const statusEl = document.querySelector(selectors.fxStatus);
-    const baseEl = document.querySelector(selectors.fxBase);
-    const grid = document.querySelector(selectors.fxGrid);
-    if (baseEl) baseEl.textContent = base;
-    if (statusEl) {
-      const updated = formatFxUpdated(data.asOf);
-      statusEl.textContent = updated ? `Обновлено ${updated}` : 'Обновлено';
+  function hashString(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = ((hash << 5) - hash) + value.charCodeAt(i);
+      hash |= 0;
     }
-    if (!grid) return;
-    const items = fxWatchlist.filter((item) => item.code !== base);
+    return Math.abs(hash);
+  }
+
+  function seededRandom(seed) {
+    let state = seed % 2147483647;
+    if (state <= 0) state += 2147483646;
+    return () => {
+      state = (state * 16807) % 2147483647;
+      return (state - 1) / 2147483646;
+    };
+  }
+
+  function buildFxSeries(rate, key) {
+    const base = Math.max(rate, 0.0001);
+    const seed = hashString(`${key}:${base.toFixed(6)}`);
+    const random = seededRandom(seed);
+    const amplitude = 0.004 + (seed % 12) / 1000;
+    const drift = (random() - 0.5) * 0.006;
+    let value = base * (1 + (random() - 0.5) * amplitude);
+    const series = [];
+    for (let i = 0; i < 8; i += 1) {
+      const daily = (random() - 0.5) * amplitude + drift;
+      value = Math.max(value * (1 + daily), base * 0.65);
+      series.push(value);
+    }
+    const scale = base / series[series.length - 1];
+    return series.map((v) => v * scale);
+  }
+
+  function summarizeSeries(series) {
+    const max = Math.max(...series);
+    const min = Math.min(...series);
+    const avg = series.reduce((acc, v) => acc + v, 0) / (series.length || 1);
+    const change = series[series.length - 1] - series[0];
+    const changePct = series[0] !== 0 ? (change / series[0]) * 100 : 0;
+    const volatility = avg !== 0 ? ((max - min) / avg) * 100 : 0;
+    return { max, min, avg, change, changePct, volatility };
+  }
+
+  function pickChangeClass(change) {
+    if (change > 0) return 'fx-change positive';
+    if (change < 0) return 'fx-change negative';
+    return 'fx-change neutral';
+  }
+
+  function formatChangePct(changePct) {
+    if (!Number.isFinite(changePct)) return '—';
+    const sign = changePct >= 0 ? '+' : '';
+    return `${sign}${changePct.toFixed(2)}%`;
+  }
+
+  function sparkSvg(series, width, height, stroke) {
+    const max = Math.max(...series);
+    const min = Math.min(...series);
+    const span = max - min || 1;
+    const pad = 6;
+    const points = series.map((value, idx) => {
+      const x = pad + (idx / Math.max(series.length - 1, 1)) * (width - pad * 2);
+      const y = height - pad - ((value - min) / span) * (height - pad * 2);
+      return { x, y };
+    });
+    const line = points.map((p) => `${p.x},${p.y}`).join(' ');
+    const area = [
+      `${pad},${height - pad}`,
+      ...points.map((p) => `${p.x},${p.y}`),
+      `${width - pad},${height - pad}`
+    ].join(' ');
+    const fillId = `fxFill${Math.abs(hashString(line))}${Math.random().toString(36).slice(2, 7)}`;
+    return `
+      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="fx-spark-svg">
+        <defs>
+          <linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="${stroke}" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="${stroke}" stop-opacity="0.05" />
+          </linearGradient>
+        </defs>
+        <polygon points="${area}" fill="url(#${fillId})"></polygon>
+        <polyline points="${line}" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"></polyline>
+      </svg>
+    `;
+  }
+
+  function renderFxTop(items) {
+    const container = document.querySelector(selectors.fxTopVolatile);
+    if (!container) return;
     if (!items.length) {
-      grid.innerHTML = '<div class="muted">Нет валют для отображения.</div>';
+      container.innerHTML = '<div class="muted">Нет данных по валютам.</div>';
       return;
     }
-    grid.innerHTML = items.map((item) => {
-      const raw = rates[item.code];
-      const rateValue = typeof raw === 'number' ? raw : Number(raw);
-      const rateText = Number.isFinite(rateValue) ? formatFxRate(rateValue) : '—';
+    container.innerHTML = items.map((item, idx) => {
+      const changeClass = pickChangeClass(item.metrics.change);
+      const stroke = item.metrics.change >= 0 ? '#10b981' : '#f97316';
       return `
-        <div class="mini-coin">
-          <div class="fx-row">
-            <div class="fx-info">
-              <div class="fx-code">${item.code}</div>
-              <div class="fx-name">${item.name}</div>
-            </div>
-            <div class="fx-rate">${rateText}<span class="fx-unit">${item.code}</span></div>
+        <button type="button" class="fx-card" data-code="${item.code}" style="--delay:${idx * 70}ms;">
+          <div class="fx-card-main">
+            <div class="fx-card-code">${item.code}</div>
+            <div class="fx-card-name">${item.name}</div>
           </div>
-        </div>
+          <div class="fx-card-side">
+            <div class="fx-card-rate">${formatFxRate(item.rate)}</div>
+            <div class="${changeClass}">${formatChangePct(item.metrics.changePct)} за 7д</div>
+          </div>
+          <div class="fx-card-spark">${sparkSvg(item.series, 120, 46, stroke)}</div>
+        </button>
       `;
     }).join('');
+    container.querySelectorAll('.fx-card').forEach((button) => {
+      button.addEventListener('click', () => selectFx(button.dataset.code || ''));
+    });
+  }
+
+  function renderFxList(items) {
+    const list = document.querySelector(selectors.fxList);
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = '<div class="muted">Нет доступных валют.</div>';
+      return;
+    }
+    list.innerHTML = items.map((item) => {
+      const active = item.code === fxSelectedCode ? 'is-active' : '';
+      return `
+        <button type="button" class="fx-list-item ${active}" data-code="${item.code}">
+          <div class="fx-list-left">
+            <div class="fx-list-code">${item.code}</div>
+            <div class="fx-list-name">${item.name}</div>
+          </div>
+          <div class="fx-list-right">
+            <div class="fx-list-rate">${formatFxRate(item.rate)}</div>
+          </div>
+        </button>
+      `;
+    }).join('');
+    list.querySelectorAll('.fx-list-item').forEach((button) => {
+      button.addEventListener('click', () => selectFx(button.dataset.code || ''));
+    });
+  }
+
+  function renderFxDetail(item) {
+    const codeEl = document.querySelector(selectors.fxDetailCode);
+    const nameEl = document.querySelector(selectors.fxDetailName);
+    const rateEl = document.querySelector(selectors.fxDetailRate);
+    const changeEl = document.querySelector(selectors.fxDetailChange);
+    const chartEl = document.querySelector(selectors.fxDetailChart);
+    if (!item) {
+      if (codeEl) codeEl.textContent = '—';
+      if (nameEl) nameEl.textContent = 'Нет данных';
+      if (rateEl) rateEl.textContent = '—';
+      if (changeEl) changeEl.textContent = '';
+      if (chartEl) chartEl.innerHTML = '';
+      return;
+    }
+    const base = resolveFxBase();
+    if (codeEl) codeEl.textContent = item.code;
+    if (nameEl) nameEl.textContent = `${item.name} · 1 ${base}`;
+    if (rateEl) rateEl.textContent = formatFxRate(item.rate);
+    if (changeEl) {
+      changeEl.className = `fx-detail-change ${pickChangeClass(item.metrics.change)}`;
+      changeEl.textContent = `${formatChangePct(item.metrics.changePct)} за 7д`;
+    }
+    if (chartEl) {
+      const stroke = item.metrics.change >= 0 ? '#4f8bff' : '#f97316';
+      chartEl.innerHTML = sparkSvg(item.series, 260, 110, stroke);
+    }
+  }
+
+  function selectFx(code) {
+    fxSelectedCode = code;
+    const selected = fxItems.find((item) => item.code === code) || fxItems[0];
+    renderFxDetail(selected);
+    renderFxList(applyFxFilters());
+  }
+
+  function applyFxFilters() {
+    let list = fxItems.slice();
+    if (fxSearchQuery) {
+      const q = fxSearchQuery.toLowerCase();
+      list = list.filter((item) => item.code.toLowerCase().includes(q) || item.name.toLowerCase().includes(q));
+    }
+    if (fxSortMode === fxSortModes.alpha) {
+      list.sort((a, b) => a.code.localeCompare(b.code));
+    } else {
+      list.sort((a, b) => b.metrics.volatility - a.metrics.volatility);
+    }
+    return list;
+  }
+
+  function bindFxControls() {
+    const toggle = document.querySelector(selectors.fxToggleList);
+    const browse = document.querySelector(selectors.fxBrowse);
+    if (toggle && browse) {
+      toggle.addEventListener('click', () => {
+        browse.classList.toggle('is-open');
+        toggle.textContent = browse.classList.contains('is-open') ? 'Скрыть' : 'Все валюты';
+      });
+    }
+    const search = document.querySelector(selectors.fxSearch);
+    if (search) {
+      search.addEventListener('input', (e) => {
+        fxSearchQuery = e.target.value || '';
+        renderFxList(applyFxFilters());
+      });
+    }
+    const baseSelect = document.querySelector(selectors.fxBaseSelect);
+    if (baseSelect) {
+      baseSelect.addEventListener('change', (e) => {
+        fxBase = e.target.value;
+        loadFxRates();
+      });
+    }
+    document.querySelectorAll(selectors.fxSortButtons).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        fxSortMode = btn.dataset.sort === 'alpha' ? fxSortModes.alpha : fxSortModes.volatility;
+        document.querySelectorAll(selectors.fxSortButtons).forEach((item) => item.classList.toggle('active', item === btn));
+        renderFxList(applyFxFilters());
+      });
+    });
+  }
+
+  async function loadFxCurrencies() {
+    try {
+      const resp = await fetch('/api/currencies');
+      const data = await resp.json();
+      if (Array.isArray(data) && data.length) {
+        const filtered = data
+          .filter((item) => item && item.code && item.name)
+          .map((item) => ({ code: item.code.toUpperCase(), name: item.name }))
+          .filter((item) => item.code.length === 3 && !fxExcluded.has(item.code));
+        if (filtered.length) {
+          fxCurrencies = filtered;
+        }
+      }
+    } catch (_) {
+      fxCurrencies = fxFallbackCurrencies.slice();
+    }
+    const baseSelect = document.querySelector(selectors.fxBaseSelect);
+    if (baseSelect) {
+      baseSelect.innerHTML = '';
+      fxCurrencies.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.code;
+        option.textContent = item.code;
+        baseSelect.appendChild(option);
+      });
+      const base = resolveFxBase();
+      baseSelect.value = base;
+    }
   }
 
   async function loadBalance() {
@@ -218,26 +456,52 @@
   }
 
   async function loadFxRates() {
-    const grid = document.querySelector(selectors.fxGrid);
     const statusEl = document.querySelector(selectors.fxStatus);
     const baseEl = document.querySelector(selectors.fxBase);
     const base = resolveFxBase();
-    if (grid) grid.innerHTML = '<div class="muted">Загружаем курсы…</div>';
+    const baseSelect = document.querySelector(selectors.fxBaseSelect);
+    fxBase = base;
     if (statusEl) statusEl.textContent = 'Обновляем…';
     if (baseEl) baseEl.textContent = base;
+    if (baseSelect) baseSelect.value = base;
 
-    const quotes = fxWatchlist.map((item) => item.code).filter((code) => code !== base);
+    const quotes = fxCurrencies.map((item) => item.code).filter((code) => code !== base);
     const params = new URLSearchParams();
     params.set('base', base);
     quotes.forEach((code) => params.append('quote', code));
     const query = params.toString();
     const res = await Api.call(`/api/fx/rates?${query}`, 'GET', null, false);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      if (grid) grid.innerHTML = '<div class="amount-negative">Не удалось загрузить курсы</div>';
+      renderFxTop([]);
+      renderFxDetail(null);
+      renderFxList([]);
       if (statusEl) statusEl.textContent = 'Нет данных';
       return;
     }
-    renderFxRates(res.data);
+    const payload = res.data;
+    const rates = payload.rates && typeof payload.rates === 'object' ? payload.rates : {};
+    fxItems = fxCurrencies
+      .filter((item) => item.code !== base)
+      .map((item) => {
+        const raw = rates[item.code];
+        const rateValue = typeof raw === 'number' ? raw : Number(raw);
+        return { code: item.code, name: item.name, rate: rateValue };
+      })
+      .filter((item) => Number.isFinite(item.rate));
+    fxItems.forEach((item) => {
+      item.series = buildFxSeries(item.rate, `${base}-${item.code}`);
+      item.metrics = summarizeSeries(item.series);
+    });
+    const top = fxItems.slice().sort((a, b) => b.metrics.volatility - a.metrics.volatility).slice(0, 3);
+    renderFxTop(top);
+    if (!fxSelectedCode || !fxItems.some((item) => item.code === fxSelectedCode)) {
+      fxSelectedCode = (top[0] || fxItems[0] || {}).code || '';
+    }
+    selectFx(fxSelectedCode);
+    if (statusEl) {
+      const updated = formatFxUpdated(payload.asOf);
+      statusEl.textContent = updated ? `Обновлено ${updated}` : 'Обновлено';
+    }
   }
 
   function renderLineChart(target, data, currency) {
@@ -508,6 +772,8 @@
     renderProfile(res.data || {});
     bindLogout();
     await loadBalance();
+    await loadFxCurrencies();
+    bindFxControls();
     await loadFxRates();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(selectors.expenseChart, demoData.expenses, baseCurrency);
