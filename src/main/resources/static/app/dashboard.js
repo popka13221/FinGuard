@@ -289,7 +289,7 @@
             <div class="fx-card-rate">${formatFxRate(item.rate)}</div>
             <div class="${changeClass}">${formatChangePct(item.metrics.changePct)} за 7д</div>
           </div>
-          <div class="fx-card-spark">${sparkSvg(item.series, 120, 46, stroke)}</div>
+          <div class="fx-card-spark">${sparkSvg(item.series, 160, 28, stroke)}</div>
         </button>
       `;
     }).join('');
@@ -348,7 +348,9 @@
     }
     if (chartEl) {
       const stroke = item.metrics.change >= 0 ? '#4f8bff' : '#f97316';
-      chartEl.innerHTML = sparkSvg(item.series, 260, 110, stroke);
+      const width = Math.max(chartEl.clientWidth || 140, 140);
+      const height = Math.max(48, Math.min(90, Math.round(width / 2.4)));
+      chartEl.innerHTML = sparkSvg(item.series, width, height, stroke);
     }
   }
 

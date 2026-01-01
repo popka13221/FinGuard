@@ -173,40 +173,42 @@
             </div>
 
             <div class="fx-shell">
-              <div class="fx-left">
+              <div class="fx-top">
                 <div class="fx-vol-title">Самые волатильные</div>
                 <div class="fx-vol-grid" id="fxTopVolatile">
                   <div class="muted">Загружаем курсы…</div>
                 </div>
-
-                <div class="fx-browse" id="fxBrowse">
-                  <div class="fx-browse-header">
-                    <div class="fx-inputs">
-                      <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты">
-                      <select id="fxBaseSelect" aria-label="Базовая валюта"></select>
-                    </div>
-                    <div class="fx-sort">
-                      <button type="button" class="chip active" data-sort="volatility">Волатильность</button>
-                      <button type="button" class="chip" data-sort="alpha">A-Z</button>
-                    </div>
-                  </div>
-                  <div class="fx-list" id="fxList"></div>
-                </div>
               </div>
 
               <div class="fx-detail" id="fxDetail">
-                <div class="fx-detail-header">
-                  <div>
-                    <div class="fx-detail-code" id="fxDetailCode">—</div>
-                    <div class="muted" id="fxDetailName">Выберите валюту для деталей</div>
+                <div class="fx-detail-info">
+                  <div class="fx-detail-header">
+                    <div>
+                      <div class="fx-detail-code" id="fxDetailCode">—</div>
+                      <div class="muted" id="fxDetailName">Выберите валюту для деталей</div>
+                    </div>
                   </div>
-                </div>
-                <div class="fx-detail-rate">
-                  <div class="fx-detail-price" id="fxDetailRate">—</div>
-                  <div class="fx-detail-change" id="fxDetailChange">—</div>
+                  <div class="fx-detail-rate">
+                    <div class="fx-detail-price" id="fxDetailRate">—</div>
+                    <div class="fx-detail-change" id="fxDetailChange">—</div>
+                  </div>
                 </div>
                 <div class="fx-detail-chart" id="fxDetailChart"></div>
               </div>
+            </div>
+
+            <div class="fx-browse" id="fxBrowse">
+              <div class="fx-browse-header">
+                <div class="fx-inputs">
+                  <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты">
+                  <select id="fxBaseSelect" aria-label="Базовая валюта"></select>
+                </div>
+                <div class="fx-sort">
+                  <button type="button" class="chip active" data-sort="volatility">Волатильность</button>
+                  <button type="button" class="chip" data-sort="alpha">A-Z</button>
+                </div>
+              </div>
+              <div class="fx-list" id="fxList"></div>
             </div>
           </div>
         </div>
