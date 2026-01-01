@@ -289,7 +289,7 @@
             <div class="fx-card-rate">${formatFxRate(item.rate)}</div>
             <div class="${changeClass}">${formatChangePct(item.metrics.changePct)} за 7д</div>
           </div>
-          <div class="fx-card-spark">${sparkSvg(item.series, 160, 28, stroke)}</div>
+          <div class="fx-card-spark">${sparkSvg(item.series, 160, 22, stroke)}</div>
         </button>
       `;
     }).join('');

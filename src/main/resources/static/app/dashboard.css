@@ -264,17 +264,18 @@ body.dashboard.light .market-section {
 
 .dashboard .fx-card {
   width: 100%;
-  position: relative;
-  overflow: hidden;
   border-radius: var(--dash-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: linear-gradient(180deg, rgba(18, 21, 27, 0.7), rgba(18, 21, 27, 0.4));
-  padding: 10px 12px 28px;
+  padding: 10px 12px;
   display: grid;
   grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "main side"
+    "spark spark";
   gap: 10px;
   align-content: start;
-  min-height: 88px;
+  min-height: 78px;
   text-align: left;
   color: inherit;
   cursor: pointer;
@@ -304,6 +305,7 @@ body.dashboard.light .fx-card {
   display: grid;
   gap: 2px;
   min-width: 0;
+  grid-area: main;
 }
 
 .dashboard .fx-card-code {
@@ -324,6 +326,7 @@ body.dashboard.light .fx-card {
   display: grid;
   justify-items: end;
   gap: 4px;
+  grid-area: side;
 }
 
 .dashboard .fx-card-rate {
@@ -332,12 +335,10 @@ body.dashboard.light .fx-card {
 }
 
 .dashboard .fx-card-spark {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 6px;
-  height: 24px;
-  opacity: 0.45;
+  grid-area: spark;
+  height: 22px;
+  margin-top: 2px;
+  opacity: 0.6;
   pointer-events: none;
 }
 
