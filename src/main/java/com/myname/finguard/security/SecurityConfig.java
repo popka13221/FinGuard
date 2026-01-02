@@ -46,6 +46,7 @@ public class SecurityConfig {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
+                            "/api/crypto/rates",
                             "/api/currencies",
                             "/app/**",
                             "/playground/**",
@@ -83,6 +84,7 @@ public class SecurityConfig {
                         "/api/auth/verify/request",
                         "/api/auth/refresh",
                         "/api/auth/logout",
+                        "/api/crypto/rates",
                         "/api/currencies",
                         "/api/fx/rates",
                         "/favicon.ico",

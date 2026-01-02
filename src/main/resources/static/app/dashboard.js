@@ -7,6 +7,11 @@
     btcSpark: '#btcSpark',
     ethSpark: '#ethSpark',
     solSpark: '#solSpark',
+    btcPrice: '#btcPrice',
+    ethPrice: '#ethPrice',
+    solPrice: '#solPrice',
+    cryptoStatus: '#cryptoStatus',
+    cryptoBase: '#cryptoBase',
     totalBalance: '#totalBalance',
     creditValue: '#creditValue',
     totalsByCurrency: '#totalsByCurrency',
@@ -44,6 +49,12 @@
       sol: [128, 134, 140, 137, 143, 145]
     }
   };
+
+  const cryptoAssets = [
+    { code: 'BTC', name: 'Bitcoin', priceSelector: selectors.btcPrice, sparkSelector: selectors.btcSpark, color: '#f7931a', fallbackSeries: demoData.crypto.btc },
+    { code: 'ETH', name: 'Ethereum', priceSelector: selectors.ethPrice, sparkSelector: selectors.ethSpark, color: '#4f8bff', fallbackSeries: demoData.crypto.eth },
+    { code: 'SOL', name: 'Solana', priceSelector: selectors.solPrice, sparkSelector: selectors.solSpark, color: '#10b981', fallbackSeries: demoData.crypto.sol }
+  ];
 
   const fxFallbackCurrencies = [
     { code: 'USD', name: 'US Dollar' },
@@ -97,6 +108,22 @@
     const abs = Math.abs(value || 0);
     const sign = (value || 0) < 0 ? '-' : '';
     return `${sign}${abs.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ${cur}`;
+  }
+
+  function formatCryptoPrice(value, currency) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+    const cur = (currency || 'USD').toUpperCase();
+    const digits = value < 1 ? 6 : 2;
+    try {
+      return value.toLocaleString('ru-RU', {
+        style: 'currency',
+        currency: cur,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+    } catch (_) {
+      return `${value.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
+    }
   }
 
   function resolveFxBase() {
@@ -506,6 +533,88 @@
     }
   }
 
+  function sampleSeries(series, maxPoints) {
+    if (!Array.isArray(series) || series.length === 0) return [];
+    if (!maxPoints || series.length <= maxPoints) return series.slice();
+    const step = (series.length - 1) / (maxPoints - 1);
+    return Array.from({ length: maxPoints }, (_, idx) => series[Math.round(idx * step)]);
+  }
+
+  function updateCryptoCard(asset, price, changePct, series, base) {
+    const priceEl = document.querySelector(asset.priceSelector);
+    if (priceEl) {
+      const changeValue = Number.isFinite(changePct) ? changePct : 0;
+      priceEl.textContent = formatCryptoPrice(price, base);
+      priceEl.classList.remove('amount-positive', 'amount-negative');
+      priceEl.classList.add(changeValue < 0 ? 'amount-negative' : 'amount-positive');
+      priceEl.title = Number.isFinite(changePct) ? `${formatChangePct(changePct)} за 24ч` : '';
+    }
+    const normalized = sampleSeries(series, 14);
+    renderSparkline(asset.sparkSelector, normalized, asset.color);
+  }
+
+  function renderCryptoFallback(base) {
+    cryptoAssets.forEach((asset) => {
+      const fallbackSeries = Array.isArray(asset.fallbackSeries) ? asset.fallbackSeries : [];
+      const last = fallbackSeries[fallbackSeries.length - 1];
+      updateCryptoCard(asset, typeof last === 'number' ? last : NaN, 0, fallbackSeries, base);
+    });
+  }
+
+  async function loadCryptoRates() {
+    const statusEl = document.querySelector(selectors.cryptoStatus);
+    const baseEl = document.querySelector(selectors.cryptoBase);
+    const base = (baseCurrency || 'USD').toUpperCase();
+    if (statusEl) statusEl.textContent = 'Обновляем…';
+    if (baseEl) baseEl.textContent = base;
+
+    const params = new URLSearchParams();
+    params.set('base', base);
+    const res = await Api.call(`/api/crypto/rates?${params}`, 'GET', null, false);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      renderCryptoFallback(base);
+      if (statusEl) statusEl.textContent = 'Демо-данные';
+      return;
+    }
+    const payload = res.data;
+    const rates = Array.isArray(payload.rates) ? payload.rates : [];
+    if (!rates.length) {
+      renderCryptoFallback(base);
+      if (statusEl) statusEl.textContent = 'Нет данных';
+      return;
+    }
+    const baseCode = typeof payload.baseCurrency === 'string' && payload.baseCurrency ? payload.baseCurrency : base;
+    if (baseEl) baseEl.textContent = baseCode;
+
+    const byCode = new Map();
+    rates.forEach((item) => {
+      const code = item && item.code ? String(item.code).toUpperCase() : '';
+      if (code) byCode.set(code, item);
+    });
+
+    let hasAny = false;
+    cryptoAssets.forEach((asset) => {
+      const item = byCode.get(asset.code);
+      const priceValue = item ? Number(item.price) : NaN;
+      const changeValue = item ? Number(item.changePct24h) : NaN;
+      const sparklineRaw = item && Array.isArray(item.sparkline)
+        ? item.sparkline.map(Number).filter(Number.isFinite)
+        : [];
+      if (Number.isFinite(priceValue)) {
+        updateCryptoCard(asset, priceValue, changeValue, sparklineRaw.length ? sparklineRaw : asset.fallbackSeries, baseCode);
+        hasAny = true;
+      } else {
+        const fallbackSeries = asset.fallbackSeries || [];
+        updateCryptoCard(asset, fallbackSeries[fallbackSeries.length - 1], 0, fallbackSeries, baseCode);
+      }
+    });
+
+    if (statusEl) {
+      const updated = formatFxUpdated(payload.asOf);
+      statusEl.textContent = updated ? `Обновлено ${updated}` : (hasAny ? 'Обновлено' : 'Нет данных');
+    }
+  }
+
   function renderLineChart(target, data, currency) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el || !Array.isArray(data) || data.length === 0) return;
@@ -777,12 +886,10 @@
     await loadFxCurrencies();
     bindFxControls();
     await loadFxRates();
+    await loadCryptoRates();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(selectors.expenseChart, demoData.expenses, baseCurrency);
     bindAddAccountMenu();
-    renderSparkline(selectors.btcSpark, demoData.crypto.btc, '#f7931a');
-    renderSparkline(selectors.ethSpark, demoData.crypto.eth, '#4f8bff');
-    renderSparkline(selectors.solSpark, demoData.crypto.sol, '#10b981');
     if (root) root.style.visibility = 'visible';
   });
 })();
