@@ -13,26 +13,27 @@
     <header class="nav">
       <div class="brand">
         <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" class="brand-logo">
-        <div><strong>Личный кабинет</strong></div>
+        <div><strong data-i18n="dashboard_title">Личный кабинет</strong></div>
       </div>
       <div class="actions">
         <div class="chip" id="userEmail">—</div>
-        <button type="button" class="ghost" id="btn-logout">Выйти</button>
+        <button type="button" class="ghost" id="btn-lang">EN</button>
+        <button type="button" class="ghost" id="btn-logout" data-i18n="logout">Выйти</button>
       </div>
     </header>
 
     <div class="grid-3" style="margin-top:16px;">
       <div class="card stat-card">
-        <div class="muted">Баланс</div>
+        <div class="muted" data-i18n="balance">Баланс</div>
         <div class="stat-value" id="totalBalance">—</div>
-        <div class="muted" id="creditValue">Кредит: —</div>
+        <div class="muted" id="creditValue" data-i18n="credit_placeholder">Кредит: —</div>
         <div class="muted" id="totalsByCurrency" style="margin-top:4px; display:none;"></div>
         <div class="amount-negative" id="balanceError" style="margin-top:6px; display:none;"></div>
       </div>
       <div class="card stat-card">
-        <div class="muted">Доход / Расход (мес.)</div>
+        <div class="muted" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
         <div class="stat-value">1 850.00 USD</div>
-        <div class="muted">Доход: 4 200 · Расход: 2 350</div>
+        <div class="muted" data-i18n="income_expense_details">Доход: 4 200 · Расход: 2 350</div>
       </div>
     </div>
 
@@ -40,11 +41,11 @@
       <div class="stack">
         <div class="card">
           <div class="row" style="justify-content: space-between; align-items: center;">
-            <h3 style="margin:0;">Ваши карты</h3>
-            <button type="button" class="ghost" id="btn-add-account">Добавить</button>
+            <h3 style="margin:0;" data-i18n="your_cards">Ваши карты</h3>
+            <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
           </div>
           <div class="list" style="margin-top:10px;" id="accountsList">
-            <div class="muted">Загружаем баланс…</div>
+            <div class="muted" data-i18n="loading_balance">Загружаем баланс…</div>
           </div>
         </div>
 
@@ -52,26 +53,26 @@
 
       <div class="stack">
         <div class="card">
-          <h3 style="margin-top:0;">Ближайшие платежи</h3>
+          <h3 style="margin-top:0;" data-i18n="upcoming_payments">Ближайшие платежи</h3>
           <div class="list" style="margin-top:10px;">
             <div class="list-item">
               <div>
-                <div style="font-weight:700;">Аренда</div>
-                <small>Срок: 15 янв</small>
+                <div style="font-weight:700;" data-i18n="payment_rent">Аренда</div>
+                <small data-i18n="payment_due_jan15">Срок: 15 янв</small>
               </div>
               <div class="amount-negative">-700 USD</div>
             </div>
             <div class="list-item">
               <div>
                 <div style="font-weight:700;">Spotify</div>
-                <small>Срок: 19 янв</small>
+                <small data-i18n="payment_due_jan19">Срок: 19 янв</small>
               </div>
               <div class="amount-negative">-4.99 USD</div>
             </div>
             <div class="list-item">
               <div>
-                <div style="font-weight:700;">Мобильная связь</div>
-                <small>Срок: 22 янв</small>
+                <div style="font-weight:700;" data-i18n="payment_mobile">Мобильная связь</div>
+                <small data-i18n="payment_due_jan22">Срок: 22 янв</small>
               </div>
               <div class="amount-negative">-15 USD</div>
             </div>
@@ -84,32 +85,32 @@
       <div class="card">
         <div class="card-row">
           <div>
-            <div class="badge alt">Демо</div>
-            <h3 style="margin:6px 0 4px;">Динамика баланса</h3>
-            <div class="muted">Последние 6 месяцев, <span id="balanceCurrency">USD</span></div>
+            <div class="badge alt" data-i18n="demo">Демо</div>
+            <h3 style="margin:6px 0 4px;" data-i18n="balance_trend_title">Динамика баланса</h3>
+            <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
           </div>
-          <div class="pill-soft">Тренд: +9.2%</div>
+          <div class="pill-soft"><span data-i18n="trend_label">Тренд:</span> +9.2%</div>
         </div>
-        <div id="balanceChart" class="chart-shell" aria-label="График баланса"></div>
+        <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria"></div>
       </div>
 
       <div class="card">
         <div class="card-row">
           <div>
-            <div class="badge alt">Демо</div>
-            <h3 style="margin:6px 0 4px;">Структура расходов</h3>
-            <div class="muted">Текущий месяц, <span id="expenseCurrency">USD</span></div>
+            <div class="badge alt" data-i18n="demo">Демо</div>
+            <h3 style="margin:6px 0 4px;" data-i18n="expense_breakdown_title">Структура расходов</h3>
+            <div class="muted"><span data-i18n="current_month">Текущий месяц,</span> <span id="expenseCurrency">USD</span></div>
           </div>
         </div>
-        <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов"></div>
+        <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов" data-i18n-aria="expense_chart_aria"></div>
       </div>
 
       <div class="card market-card span-2">
         <div class="card-row">
           <div>
             <div class="badge alt">Markets</div>
-            <h3 style="margin:6px 0 4px;">Курсы и рынки</h3>
-            <div class="muted">Сводка по крипте и валютам</div>
+            <h3 style="margin:6px 0 4px;" data-i18n="markets_title">Курсы и рынки</h3>
+            <div class="muted" data-i18n="markets_subtitle">Сводка по крипте и валютам</div>
           </div>
           <div class="pill-soft">24h</div>
         </div>
@@ -118,8 +119,8 @@
             <div class="market-header">
               <div>
                 <div class="badge alt">Crypto</div>
-                <h4 style="margin:6px 0 4px;">Курсы монет</h4>
-                <div class="muted"><span id="cryptoStatus">Загрузка…</span> · <span id="cryptoBase">USD</span></div>
+                <h4 style="margin:6px 0 4px;" data-i18n="coin_rates">Курсы монет</h4>
+                <div class="muted"><span id="cryptoStatus" data-i18n="loading">Загрузка…</span> · <span id="cryptoBase">USD</span></div>
               </div>
             </div>
             <div class="crypto-grid">
@@ -164,19 +165,19 @@
               <div>
                 <div class="badge alt">FX</div>
                 <h4 style="margin:6px 0 4px;">FX Radar</h4>
-                <div class="muted">База: <span id="fxBase">USD</span></div>
+                <div class="muted"><span data-i18n="base_label">База:</span> <span id="fxBase">USD</span></div>
               </div>
               <div class="fx-header-actions">
-                <div class="pill-soft" id="fxStatus">Обновляем…</div>
-                <button type="button" class="ghost fx-toggle" id="fxToggleList">Все валюты</button>
+                <div class="pill-soft" id="fxStatus" data-i18n="updating">Обновляем…</div>
+                <button type="button" class="ghost fx-toggle" id="fxToggleList" data-i18n="all_currencies">Все валюты</button>
               </div>
             </div>
 
             <div class="fx-shell">
               <div class="fx-top">
-                <div class="fx-vol-title">Самые волатильные</div>
+                <div class="fx-vol-title" data-i18n="most_volatile">Самые волатильные</div>
                 <div class="fx-vol-grid" id="fxTopVolatile">
-                  <div class="muted">Загружаем курсы…</div>
+                  <div class="muted" data-i18n="loading_rates">Загружаем курсы…</div>
                 </div>
               </div>
 
@@ -185,7 +186,7 @@
                   <div class="fx-detail-header">
                     <div>
                       <div class="fx-detail-code" id="fxDetailCode">—</div>
-                      <div class="muted" id="fxDetailName">Выберите валюту для деталей</div>
+                      <div class="muted" id="fxDetailName" data-i18n="select_currency_details">Выберите валюту для деталей</div>
                     </div>
                   </div>
                   <div class="fx-detail-rate">
@@ -200,11 +201,11 @@
             <div class="fx-browse" id="fxBrowse">
               <div class="fx-browse-header">
                 <div class="fx-inputs">
-                  <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты">
-                  <select id="fxBaseSelect" aria-label="Базовая валюта"></select>
+                  <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты" data-i18n-placeholder="search_currency_placeholder" data-i18n-aria="search_currency_aria">
+                  <select id="fxBaseSelect" aria-label="Базовая валюта" data-i18n-aria="base_currency_aria"></select>
                 </div>
                 <div class="fx-sort">
-                  <button type="button" class="chip active" data-sort="volatility">Волатильность</button>
+                  <button type="button" class="chip active" data-sort="volatility" data-i18n="volatility">Волатильность</button>
                   <button type="button" class="chip" data-sort="alpha">A-Z</button>
                 </div>
               </div>
@@ -216,7 +217,7 @@
     </div>
   </div>
   <div id="add-account-overlay" class="overlay" style="display:none;">
-    <div class="dropdown-menu" id="add-account-menu" aria-label="Добавить счёт">
+    <div class="dropdown-menu" id="add-account-menu" aria-label="Добавить счёт" data-i18n-aria="add_account_menu_aria">
       <button type="button" class="dropdown-item">1</button>
       <button type="button" class="dropdown-item">2</button>
       <button type="button" class="dropdown-item">3</button>

@@ -2,6 +2,7 @@
   const selectors = {
     userEmail: '#userEmail',
     logoutBtn: '#btn-logout',
+    langBtn: '#btn-lang',
     balanceChart: '#balanceChart',
     expenseChart: '#expenseChart',
     btcSpark: '#btcSpark',
@@ -34,14 +35,239 @@
     fxSortButtons: '.fx-sort button'
   };
 
+  const LANG_STORAGE_KEY = 'finguard:lang';
+  const I18N = {
+    ru: {
+      dashboard_title: 'Личный кабинет',
+      logout: 'Выйти',
+      balance: 'Баланс',
+      credit: 'Кредит',
+      credit_placeholder: 'Кредит: —',
+      income_expense_month: 'Доход / Расход (мес.)',
+      income_expense_details: 'Доход: 4 200 · Расход: 2 350',
+      your_cards: 'Ваши карты',
+      add: 'Добавить',
+      loading_balance: 'Загружаем баланс…',
+      upcoming_payments: 'Ближайшие платежи',
+      payment_rent: 'Аренда',
+      payment_due_jan15: 'Срок: 15 янв',
+      payment_due_jan19: 'Срок: 19 янв',
+      payment_mobile: 'Мобильная связь',
+      payment_due_jan22: 'Срок: 22 янв',
+      demo: 'Демо',
+      balance_trend_title: 'Динамика баланса',
+      last_6_months: 'Последние 6 месяцев,',
+      trend_label: 'Тренд:',
+      balance_chart_aria: 'График баланса',
+      expense_breakdown_title: 'Структура расходов',
+      current_month: 'Текущий месяц,',
+      expense_chart_aria: 'Диаграмма расходов',
+      markets_title: 'Курсы и рынки',
+      markets_subtitle: 'Сводка по крипте и валютам',
+      coin_rates: 'Курсы монет',
+      loading: 'Загрузка…',
+      updating: 'Обновляем…',
+      demo_data: 'Демо-данные',
+      no_data: 'Нет данных',
+      updated: 'Обновлено',
+      updated_at: 'Обновлено {value}',
+      base_label: 'База:',
+      all_currencies: 'Все валюты',
+      hide: 'Скрыть',
+      most_volatile: 'Самые волатильные',
+      loading_rates: 'Загружаем курсы…',
+      select_currency_details: 'Выберите валюту для деталей',
+      search_currency_placeholder: 'Поиск валюты',
+      search_currency_aria: 'Поиск валюты',
+      base_currency_aria: 'Базовая валюта',
+      volatility: 'Волатильность',
+      add_account_menu_aria: 'Добавить счёт',
+      total: 'Всего',
+      balance_by_currency: 'Баланс по валютам',
+      no_accounts: 'Счета пока не добавлены.',
+      account: 'Счет',
+      archived: 'Архив',
+      balance_load_failed: 'Не удалось загрузить баланс.',
+      balance_load_failed_short: 'Не удалось загрузить баланс',
+      fx_no_data: 'Нет данных по валютам.',
+      fx_no_currencies: 'Нет доступных валют.',
+      period_7d: 'за 7д',
+      period_24h: 'за 24ч',
+      min: 'Мин',
+      max: 'Макс',
+      change: 'Изменение',
+      average: 'Среднее',
+      trend_pct: 'Тренд %',
+      expense_housing: 'Жильё',
+      expense_food: 'Еда',
+      expense_transport: 'Транспорт',
+      expense_subscriptions: 'Подписки',
+      expense_other: 'Прочее'
+    },
+    en: {
+      dashboard_title: 'Dashboard',
+      logout: 'Log out',
+      balance: 'Balance',
+      credit: 'Credit',
+      credit_placeholder: 'Credit: —',
+      income_expense_month: 'Income / Expense (mo.)',
+      income_expense_details: 'Income: 4 200 · Expense: 2 350',
+      your_cards: 'Your cards',
+      add: 'Add',
+      loading_balance: 'Loading balance…',
+      upcoming_payments: 'Upcoming payments',
+      payment_rent: 'Rent',
+      payment_due_jan15: 'Due: Jan 15',
+      payment_due_jan19: 'Due: Jan 19',
+      payment_mobile: 'Mobile service',
+      payment_due_jan22: 'Due: Jan 22',
+      demo: 'Demo',
+      balance_trend_title: 'Balance trend',
+      last_6_months: 'Last 6 months,',
+      trend_label: 'Trend:',
+      balance_chart_aria: 'Balance chart',
+      expense_breakdown_title: 'Expense breakdown',
+      current_month: 'Current month,',
+      expense_chart_aria: 'Expense chart',
+      markets_title: 'Rates & markets',
+      markets_subtitle: 'Crypto & FX summary',
+      coin_rates: 'Coin rates',
+      loading: 'Loading…',
+      updating: 'Updating…',
+      demo_data: 'Demo data',
+      no_data: 'No data',
+      updated: 'Updated',
+      updated_at: 'Updated {value}',
+      base_label: 'Base:',
+      all_currencies: 'All currencies',
+      hide: 'Hide',
+      most_volatile: 'Most volatile',
+      loading_rates: 'Loading rates…',
+      select_currency_details: 'Select a currency for details',
+      search_currency_placeholder: 'Search currency',
+      search_currency_aria: 'Search currency',
+      base_currency_aria: 'Base currency',
+      volatility: 'Volatility',
+      add_account_menu_aria: 'Add account',
+      total: 'Total',
+      balance_by_currency: 'Balance by currency',
+      no_accounts: 'No accounts added yet.',
+      account: 'Account',
+      archived: 'Archived',
+      balance_load_failed: 'Failed to load balance.',
+      balance_load_failed_short: 'Failed to load balance',
+      fx_no_data: 'No FX data.',
+      fx_no_currencies: 'No currencies available.',
+      period_7d: 'in 7d',
+      period_24h: 'in 24h',
+      min: 'Min',
+      max: 'Max',
+      change: 'Change',
+      average: 'Average',
+      trend_pct: 'Trend %',
+      expense_housing: 'Housing',
+      expense_food: 'Food',
+      expense_transport: 'Transport',
+      expense_subscriptions: 'Subscriptions',
+      expense_other: 'Other'
+    }
+  };
+
+  function loadLang() {
+    try {
+      const stored = localStorage.getItem(LANG_STORAGE_KEY);
+      return stored === 'en' || stored === 'ru' ? stored : 'ru';
+    } catch (_) {
+      return 'ru';
+    }
+  }
+
+  let currentLang = loadLang();
+
+  function t(key, vars) {
+    const langTable = I18N[currentLang] || I18N.ru;
+    let value = langTable[key] ?? I18N.ru[key] ?? key;
+    if (vars && typeof value === 'string') {
+      Object.entries(vars).forEach(([name, raw]) => {
+        value = value.replaceAll(`{${name}}`, String(raw));
+      });
+    }
+    return value;
+  }
+
+  function getLocale() {
+    return currentLang === 'en' ? 'en-US' : 'ru-RU';
+  }
+
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.dataset.i18n;
+      if (!key) return;
+      el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+      const key = el.dataset.i18nPlaceholder;
+      if (!key) return;
+      el.setAttribute('placeholder', t(key));
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+      const key = el.dataset.i18nAria;
+      if (!key) return;
+      el.setAttribute('aria-label', t(key));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+      const key = el.dataset.i18nTitle;
+      if (!key) return;
+      el.setAttribute('title', t(key));
+    });
+  }
+
+  function updateLangToggle() {
+    const btn = document.querySelector(selectors.langBtn);
+    if (!btn) return;
+    if (currentLang === 'en') {
+      btn.textContent = 'RU';
+      btn.setAttribute('title', 'Русский');
+      btn.setAttribute('aria-label', 'Switch language to Russian');
+    } else {
+      btn.textContent = 'EN';
+      btn.setAttribute('title', 'English');
+      btn.setAttribute('aria-label', 'Переключить язык на английский');
+    }
+  }
+
+  function applyLanguage(lang) {
+    currentLang = lang === 'en' ? 'en' : 'ru';
+    document.documentElement.lang = currentLang;
+    applyTranslations();
+    updateLangToggle();
+  }
+
+  function bindLangToggle() {
+    const btn = document.querySelector(selectors.langBtn);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const next = currentLang === 'en' ? 'ru' : 'en';
+      try {
+        localStorage.setItem(LANG_STORAGE_KEY, next);
+      } catch (_) {
+        // ignore
+      }
+      window.location.reload();
+    });
+  }
+
+  applyLanguage(currentLang);
+  bindLangToggle();
+
   const demoData = {
     balance: [18200, 18750, 19340, 18900, 20200, 20950],
     expenses: [
-      { label: 'Жильё', value: 720, color: '#4f8bff' },
-      { label: 'Еда', value: 540, color: '#10b981' },
-      { label: 'Транспорт', value: 310, color: '#f97316' },
-      { label: 'Подписки', value: 260, color: '#3cc7c4' },
-      { label: 'Прочее', value: 520, color: '#9aa0aa' }
+      { labelKey: 'expense_housing', value: 720, color: '#4f8bff' },
+      { labelKey: 'expense_food', value: 540, color: '#10b981' },
+      { labelKey: 'expense_transport', value: 310, color: '#f97316' },
+      { labelKey: 'expense_subscriptions', value: 260, color: '#3cc7c4' },
+      { labelKey: 'expense_other', value: 520, color: '#9aa0aa' }
     ],
     crypto: {
       btc: [61200, 61850, 62500, 61900, 64000, 66200],
@@ -79,7 +305,7 @@
     if (bal) bal.textContent = baseCurrency;
     if (exp) exp.textContent = baseCurrency;
     const totalExpense = document.querySelector('#expenseTotal');
-    if (totalExpense) totalExpense.textContent = `Всего: ${formatMoney(2350, baseCurrency)}`;
+    if (totalExpense) totalExpense.textContent = `${t('total')}: ${formatMoney(2350, baseCurrency)}`;
   }
 
   function renderProfile(profile) {
@@ -107,7 +333,7 @@
     const cur = currency || baseCurrency || 'USD';
     const abs = Math.abs(value || 0);
     const sign = (value || 0) < 0 ? '-' : '';
-    return `${sign}${abs.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ${cur}`;
+    return `${sign}${abs.toLocaleString(getLocale(), { minimumFractionDigits: 2 })} ${cur}`;
   }
 
   function formatCryptoPrice(value, currency) {
@@ -115,14 +341,14 @@
     const cur = (currency || 'USD').toUpperCase();
     const digits = value < 1 ? 6 : 2;
     try {
-      return value.toLocaleString('ru-RU', {
+      return value.toLocaleString(getLocale(), {
         style: 'currency',
         currency: cur,
         minimumFractionDigits: digits,
         maximumFractionDigits: digits
       });
     } catch (_) {
-      return `${value.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
+      return `${value.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
     }
   }
 
@@ -134,14 +360,14 @@
   function formatFxRate(value) {
     if (typeof value !== 'number' || Number.isNaN(value)) return '—';
     const digits = value < 1 ? 4 : 2;
-    return value.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    return value.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   }
 
   function formatFxUpdated(isoValue) {
     if (!isoValue) return '';
     const date = new Date(isoValue);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
   function showBalanceError(message) {
@@ -180,12 +406,12 @@
     }, {});
     const creditParts = Object.entries(creditByCurrency).map(([cur, sum]) => formatMoney(sum, cur));
     if (creditEl) {
-      creditEl.textContent = `Кредит: ${creditParts.length ? creditParts.join(' · ') : formatMoney(0)}`;
+      creditEl.textContent = `${t('credit')}: ${creditParts.length ? creditParts.join(' · ') : formatMoney(0)}`;
     }
 
     const totalsText = totals.length ? totals.map((t) => formatMoney(t.total || 0, t.currency)).join(' · ') : '';
     if (totalsLineEl) {
-      totalsLineEl.textContent = totalsText ? `Баланс по валютам: ${totalsText}` : '';
+      totalsLineEl.textContent = totalsText ? `${t('balance_by_currency')}: ${totalsText}` : '';
       totalsLineEl.style.display = totalsText ? 'block' : 'none';
     }
   }
@@ -194,14 +420,14 @@
     const list = document.querySelector(selectors.accountsList);
     if (!list) return;
     if (!accounts || accounts.length === 0) {
-      list.innerHTML = '<div class="muted">Счета пока не добавлены.</div>';
+      list.innerHTML = `<div class="muted">${t('no_accounts')}</div>`;
       return;
     }
     list.innerHTML = accounts.map((acc) => `
       <div class="list-item">
         <div>
-          <div style="font-weight:800;">${acc.name || 'Счет'}</div>
-          <small>${acc.currency || baseCurrency}${acc.archived ? ' · Архив' : ''}</small>
+          <div style="font-weight:800;">${acc.name || t('account')}</div>
+          <small>${acc.currency || baseCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
         </div>
         <div class="${(acc.balance || 0) >= 0 ? 'amount-positive' : 'amount-negative'}">${formatMoney(acc.balance || 0, acc.currency)}</div>
       </div>
@@ -300,7 +526,7 @@
     const container = document.querySelector(selectors.fxTopVolatile);
     if (!container) return;
     if (!items.length) {
-      container.innerHTML = '<div class="muted">Нет данных по валютам.</div>';
+      container.innerHTML = `<div class="muted">${t('fx_no_data')}</div>`;
       return;
     }
     container.innerHTML = items.map((item, idx) => {
@@ -314,7 +540,7 @@
           </div>
           <div class="fx-card-side">
             <div class="fx-card-rate">${formatFxRate(item.rate)}</div>
-            <div class="${changeClass}">${formatChangePct(item.metrics.changePct)} за 7д</div>
+            <div class="${changeClass}">${formatChangePct(item.metrics.changePct)} ${t('period_7d')}</div>
           </div>
           <div class="fx-card-spark">${sparkSvg(item.series, 160, 22, stroke)}</div>
         </button>
@@ -329,7 +555,7 @@
     const list = document.querySelector(selectors.fxList);
     if (!list) return;
     if (!items.length) {
-      list.innerHTML = '<div class="muted">Нет доступных валют.</div>';
+      list.innerHTML = `<div class="muted">${t('fx_no_currencies')}</div>`;
       return;
     }
     list.innerHTML = items.map((item) => {
@@ -359,7 +585,7 @@
     const chartEl = document.querySelector(selectors.fxDetailChart);
     if (!item) {
       if (codeEl) codeEl.textContent = '—';
-      if (nameEl) nameEl.textContent = 'Нет данных';
+      if (nameEl) nameEl.textContent = t('no_data');
       if (rateEl) rateEl.textContent = '—';
       if (changeEl) changeEl.textContent = '';
       if (chartEl) chartEl.innerHTML = '';
@@ -371,7 +597,7 @@
     if (rateEl) rateEl.textContent = formatFxRate(item.rate);
     if (changeEl) {
       changeEl.className = `fx-detail-change ${pickChangeClass(item.metrics.change)}`;
-      changeEl.textContent = `${formatChangePct(item.metrics.changePct)} за 7д`;
+      changeEl.textContent = `${formatChangePct(item.metrics.changePct)} ${t('period_7d')}`;
     }
     if (chartEl) {
       const stroke = item.metrics.change >= 0 ? '#4f8bff' : '#f97316';
@@ -408,7 +634,7 @@
     if (toggle && browse) {
       toggle.addEventListener('click', () => {
         browse.classList.toggle('is-open');
-        toggle.textContent = browse.classList.contains('is-open') ? 'Скрыть' : 'Все валюты';
+        toggle.textContent = browse.classList.contains('is-open') ? t('hide') : t('all_currencies');
       });
     }
     const search = document.querySelector(selectors.fxSearch);
@@ -467,16 +693,16 @@
   async function loadBalance() {
     const list = document.querySelector(selectors.accountsList);
     if (list) {
-      list.innerHTML = '<div class="muted">Загружаем баланс…</div>';
+      list.innerHTML = `<div class="muted">${t('loading_balance')}</div>`;
     }
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
-    if (totalBalanceEl) totalBalanceEl.textContent = 'Загрузка…';
+    if (totalBalanceEl) totalBalanceEl.textContent = t('loading');
     showBalanceError('');
 
     const res = await Api.call('/api/accounts/balance', 'GET', null, true);
     if (!res.ok) {
-      showBalanceError('Не удалось загрузить баланс.');
-      if (list) list.innerHTML = '<div class="amount-negative">Не удалось загрузить баланс</div>';
+      showBalanceError(t('balance_load_failed'));
+      if (list) list.innerHTML = `<div class="amount-negative">${t('balance_load_failed_short')}</div>`;
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
@@ -490,7 +716,7 @@
     const base = resolveFxBase();
     const baseSelect = document.querySelector(selectors.fxBaseSelect);
     fxBase = base;
-    if (statusEl) statusEl.textContent = 'Обновляем…';
+    if (statusEl) statusEl.textContent = t('updating');
     if (baseEl) baseEl.textContent = base;
     if (baseSelect) baseSelect.value = base;
 
@@ -504,7 +730,7 @@
       renderFxTop([]);
       renderFxDetail(null);
       renderFxList([]);
-      if (statusEl) statusEl.textContent = 'Нет данных';
+      if (statusEl) statusEl.textContent = t('no_data');
       return;
     }
     const payload = res.data;
@@ -529,7 +755,7 @@
     selectFx(fxSelectedCode);
     if (statusEl) {
       const updated = formatFxUpdated(payload.asOf);
-      statusEl.textContent = updated ? `Обновлено ${updated}` : 'Обновлено';
+      statusEl.textContent = updated ? t('updated_at', { value: updated }) : t('updated');
     }
   }
 
@@ -547,7 +773,7 @@
       priceEl.textContent = formatCryptoPrice(price, base);
       priceEl.classList.remove('amount-positive', 'amount-negative');
       priceEl.classList.add(changeValue < 0 ? 'amount-negative' : 'amount-positive');
-      priceEl.title = Number.isFinite(changePct) ? `${formatChangePct(changePct)} за 24ч` : '';
+      priceEl.title = Number.isFinite(changePct) ? `${formatChangePct(changePct)} ${t('period_24h')}` : '';
     }
     const normalized = sampleSeries(series, 14);
     renderSparkline(asset.sparkSelector, normalized, asset.color);
@@ -565,7 +791,7 @@
     const statusEl = document.querySelector(selectors.cryptoStatus);
     const baseEl = document.querySelector(selectors.cryptoBase);
     const base = (baseCurrency || 'USD').toUpperCase();
-    if (statusEl) statusEl.textContent = 'Обновляем…';
+    if (statusEl) statusEl.textContent = t('updating');
     if (baseEl) baseEl.textContent = base;
 
     const params = new URLSearchParams();
@@ -573,14 +799,14 @@
     const res = await Api.call(`/api/crypto/rates?${params}`, 'GET', null, false);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
       renderCryptoFallback(base);
-      if (statusEl) statusEl.textContent = 'Демо-данные';
+      if (statusEl) statusEl.textContent = t('demo_data');
       return;
     }
     const payload = res.data;
     const rates = Array.isArray(payload.rates) ? payload.rates : [];
     if (!rates.length) {
       renderCryptoFallback(base);
-      if (statusEl) statusEl.textContent = 'Нет данных';
+      if (statusEl) statusEl.textContent = t('no_data');
       return;
     }
     const baseCode = typeof payload.baseCurrency === 'string' && payload.baseCurrency ? payload.baseCurrency : base;
@@ -611,7 +837,7 @@
 
     if (statusEl) {
       const updated = formatFxUpdated(payload.asOf);
-      statusEl.textContent = updated ? `Обновлено ${updated}` : (hasAny ? 'Обновлено' : 'Нет данных');
+      statusEl.textContent = updated ? t('updated_at', { value: updated }) : (hasAny ? t('updated') : t('no_data'));
     }
   }
 
@@ -621,7 +847,7 @@
     const labels = Array.from({ length: data.length }, (_, idx) => {
       const d = new Date();
       d.setMonth(d.getMonth() - (data.length - 1 - idx));
-      return d.toLocaleString('ru-RU', { month: 'short' });
+      return d.toLocaleString(getLocale(), { month: 'short' });
     });
 
     const width = Math.max(el.clientWidth || 520, 520);
@@ -686,23 +912,23 @@
       </svg>
       <div class="mini-stats">
         <div class="stat-chip">
-          <div class="muted">Мин</div>
+          <div class="muted">${t('min')}</div>
           <div class="stat-value">${formatMoney(min, currency || baseCurrency)}</div>
         </div>
         <div class="stat-chip">
-          <div class="muted">Макс</div>
+          <div class="muted">${t('max')}</div>
           <div class="stat-value">${formatMoney(max, currency || baseCurrency)}</div>
         </div>
         <div class="stat-chip">
-          <div class="muted">Изменение</div>
+          <div class="muted">${t('change')}</div>
           <div class="stat-value">${formatMoney(delta, currency || baseCurrency)}</div>
         </div>
         <div class="stat-chip">
-          <div class="muted">Среднее</div>
+          <div class="muted">${t('average')}</div>
           <div class="stat-value">${formatMoney(avg, currency || baseCurrency)}</div>
         </div>
         <div class="stat-chip">
-          <div class="muted">Тренд %</div>
+          <div class="muted">${t('trend_pct')}</div>
           <div class="stat-value">${formatPercent(deltaPct)}</div>
         </div>
       </div>
@@ -739,7 +965,7 @@
 
     el.innerHTML = `
       <div class="pie-wrap">
-        <svg viewBox="0 0 ${size} ${size}" class="pie-chart" aria-label="Структура расходов">
+        <svg viewBox="0 0 ${size} ${size}" class="pie-chart" aria-label="${t('expense_breakdown_title')}">
           ${slices.map((slice, idx) => {
             const color = slice.item.color || ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa'][idx % 5];
             const start = {
@@ -756,7 +982,7 @@
               data-base-stroke="16" data-slice="${idx}" class="pie-slice"></path>`;
           }).join('')}
           <text x="${center}" y="${center - 6}" text-anchor="middle" class="pie-total">${formatMoney(total, currencyLabel)}</text>
-          <text x="${center}" y="${center + 12}" text-anchor="middle" class="pie-muted">Всего</text>
+          <text x="${center}" y="${center + 12}" text-anchor="middle" class="pie-muted">${t('total')}</text>
         </svg>
         <div class="chart-legend grid-compact">${legend}</div>
       </div>
@@ -888,7 +1114,11 @@
     await loadFxRates();
     await loadCryptoRates();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
-    renderBarChart(selectors.expenseChart, demoData.expenses, baseCurrency);
+    renderBarChart(
+      selectors.expenseChart,
+      demoData.expenses.map((item) => ({ ...item, label: t(item.labelKey) })),
+      baseCurrency
+    );
     bindAddAccountMenu();
     if (root) root.style.visibility = 'visible';
   });
