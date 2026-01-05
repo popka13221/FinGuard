@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.myname.finguard.accounts.controller.AccountController;
+import com.myname.finguard.accounts.dto.CreateAccountRequest;
 import com.myname.finguard.accounts.dto.UserBalanceResponse;
 import com.myname.finguard.accounts.service.AccountService;
 import com.myname.finguard.auth.model.User;
@@ -13,6 +14,7 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.model.Role;
 import com.myname.finguard.security.UserPrincipal;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,6 +76,50 @@ class AccountControllerTest {
     void throwsUnauthorizedForAnonymous() {
         Authentication auth = new UsernamePasswordAuthenticationToken("anonymousUser", null, Collections.emptyList());
         assertThatThrownBy(() -> controller.balance(auth))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("User is not authenticated");
+    }
+
+    @Test
+    void createUsesUserPrincipalIdAndReturnsCreated() {
+        User user = user(10L, "user@example.com");
+        UserPrincipal principal = new UserPrincipal(user);
+        Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+
+        CreateAccountRequest request = new CreateAccountRequest("Visa", "USD", new BigDecimal("10.00"));
+        UserBalanceResponse.AccountBalance created = new UserBalanceResponse.AccountBalance(
+                123L, "Visa", "USD", new BigDecimal("10.00"), false
+        );
+        when(accountService.createAccount(10L, request)).thenReturn(created);
+
+        var response = controller.create(request, auth);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(response.getBody()).isSameAs(created);
+        verify(accountService).createAccount(10L, request);
+    }
+
+    @Test
+    void createResolvesUserIdFromUserDetailsEmail() {
+        UserDetails principal = new org.springframework.security.core.userdetails.User(
+                "details@example.com", "pwd", Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")));
+        Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        User user = user(99L, "details@example.com");
+        when(userRepository.findByEmail("details@example.com")).thenReturn(Optional.of(user));
+
+        CreateAccountRequest request = new CreateAccountRequest("Cash", "USD", BigDecimal.ZERO);
+        UserBalanceResponse.AccountBalance created = new UserBalanceResponse.AccountBalance(1L, "Cash", "USD", BigDecimal.ZERO, false);
+        when(accountService.createAccount(99L, request)).thenReturn(created);
+
+        controller.create(request, auth);
+
+        verify(accountService).createAccount(99L, request);
+    }
+
+    @Test
+    void createThrowsUnauthorizedForAnonymous() {
+        Authentication auth = new UsernamePasswordAuthenticationToken("anonymousUser", null, Collections.emptyList());
+        assertThatThrownBy(() -> controller.create(new CreateAccountRequest("Test", "USD", BigDecimal.ZERO), auth))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("User is not authenticated");
     }
