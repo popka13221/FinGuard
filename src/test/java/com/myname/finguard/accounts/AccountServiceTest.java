@@ -9,7 +9,9 @@ import com.myname.finguard.accounts.dto.UserBalanceResponse;
 import com.myname.finguard.accounts.model.Account;
 import com.myname.finguard.accounts.repository.AccountRepository;
 import com.myname.finguard.accounts.service.AccountService;
+import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.exception.ApiException;
+import com.myname.finguard.common.service.CurrencyService;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,13 +23,17 @@ class AccountServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private CurrencyService currencyService;
 
     private AccountService accountService;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        accountService = new AccountService(accountRepository);
+        accountService = new AccountService(accountRepository, userRepository, currencyService);
     }
 
     @Test

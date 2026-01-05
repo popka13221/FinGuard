@@ -107,6 +107,59 @@ class AccountBalanceIntegrationTest {
         assertThat(root.get("totalsByCurrency")).isEmpty();
     }
 
+    @Test
+    @Transactional
+    void createsAccountAndReflectsInBalance() throws Exception {
+        String email = "create-account@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!");
+
+        String createResponse = mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
+                        .content("""
+                                {"name":"Visa","currency":"USD","initialBalance":123.45}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode created = objectMapper.readTree(createResponse);
+        assertThat(created.get("id").asLong()).isPositive();
+        assertThat(created.get("name").asText()).isEqualTo("Visa");
+        assertThat(created.get("currency").asText()).isEqualTo("USD");
+        assertThat(created.get("balance").decimalValue()).isEqualByComparingTo("123.45");
+        assertThat(created.get("archived").asBoolean()).isFalse();
+
+        String balanceResponse = mockMvc.perform(get("/api/accounts/balance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode root = objectMapper.readTree(balanceResponse);
+        assertThat(root.get("accounts")).hasSize(1);
+        assertThat(root.get("accounts").get(0).get("name").asText()).isEqualTo("Visa");
+        assertThat(root.get("totalsByCurrency")).hasSize(1);
+        assertThat(root.get("totalsByCurrency").get(0).get("currency").asText()).isEqualTo("USD");
+        assertThat(root.get("totalsByCurrency").get(0).get("total").decimalValue()).isEqualByComparingTo("123.45");
+    }
+
+    @Test
+    @Transactional
+    void createAccountRejectsUnsupportedCurrency() throws Exception {
+        String token = registerVerifyAndLogin("bad-currency@example.com", "StrongPass1!");
+
+        mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
+                        .content("""
+                                {"name":"Test","currency":"ZZZ","initialBalance":0}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
     private Account account(User user, String name, String currency, BigDecimal balance, boolean archived) {
         Account a = new Account();
         a.setUser(user);

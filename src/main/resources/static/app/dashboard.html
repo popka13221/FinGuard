@@ -218,10 +218,34 @@
   </div>
   <div id="add-account-overlay" class="overlay" style="display:none;">
     <div class="dropdown-menu" id="add-account-menu" aria-label="Добавить счёт" data-i18n-aria="add_account_menu_aria">
-      <button type="button" class="dropdown-item">1</button>
-      <button type="button" class="dropdown-item">2</button>
-      <button type="button" class="dropdown-item">3</button>
-      <button type="button" class="dropdown-item">4</button>
+      <div class="card-row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin:0;" data-i18n="add_account_title">Добавить счёт</h3>
+          <div class="muted" data-i18n="add_account_subtitle">Создайте новый счёт для учёта баланса.</div>
+        </div>
+        <button type="button" class="ghost" id="btn-add-account-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
+      </div>
+
+      <div class="alert" id="addAccountError" style="display:none;"></div>
+
+      <div class="form" style="margin-top:6px;">
+        <div class="field">
+          <label for="newAccountName" data-i18n="account_name_label">Название</label>
+          <input id="newAccountName" type="text" maxlength="255" placeholder="Например: Visa" data-i18n-placeholder="account_name_placeholder">
+        </div>
+        <div class="field">
+          <label for="newAccountCurrency" data-i18n="currency_label">Валюта</label>
+          <select id="newAccountCurrency" aria-label="Валюта" data-i18n-aria="currency_aria"></select>
+        </div>
+        <div class="field">
+          <label for="newAccountBalance" data-i18n="initial_balance_label">Начальный баланс</label>
+          <input id="newAccountBalance" type="number" step="0.01" inputmode="decimal" placeholder="0.00" data-i18n-placeholder="initial_balance_placeholder">
+        </div>
+        <div class="buttons" style="justify-content:flex-end;">
+          <button type="button" class="ghost" id="btn-add-account-cancel" data-i18n="cancel">Отмена</button>
+          <button type="button" id="btn-add-account-create" data-i18n="create">Создать</button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1,5 +1,6 @@
 package com.myname.finguard.accounts.controller;
 
+import com.myname.finguard.accounts.dto.CreateAccountRequest;
 import com.myname.finguard.accounts.dto.UserBalanceResponse;
 import com.myname.finguard.accounts.service.AccountService;
 import com.myname.finguard.auth.model.User;
@@ -8,14 +9,18 @@ import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +46,24 @@ public class AccountController {
     public ResponseEntity<UserBalanceResponse> balance(Authentication authentication) {
         Long userId = resolveUserId(authentication);
         return ResponseEntity.ok(accountService.getUserBalance(userId));
+    }
+
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Create account", description = "Creates a new account for the current user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Account created"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<UserBalanceResponse.AccountBalance> create(
+            @Valid @RequestBody CreateAccountRequest request,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        UserBalanceResponse.AccountBalance created = accountService.createAccount(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     private Long resolveUserId(Authentication authentication) {

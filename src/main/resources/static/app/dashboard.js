@@ -32,7 +32,17 @@
     fxDetailChange: '#fxDetailChange',
     fxDetailChart: '#fxDetailChart',
     fxToggleList: '#fxToggleList',
-    fxSortButtons: '.fx-sort button'
+    fxSortButtons: '.fx-sort button',
+    addAccountBtn: '#btn-add-account',
+    addAccountOverlay: '#add-account-overlay',
+    addAccountMenu: '#add-account-menu',
+    addAccountName: '#newAccountName',
+    addAccountCurrency: '#newAccountCurrency',
+    addAccountBalance: '#newAccountBalance',
+    addAccountCancelBtn: '#btn-add-account-cancel',
+    addAccountCreateBtn: '#btn-add-account-create',
+    addAccountCloseBtn: '#btn-add-account-close',
+    addAccountError: '#addAccountError'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -82,6 +92,21 @@
       base_currency_aria: 'Базовая валюта',
       volatility: 'Волатильность',
       add_account_menu_aria: 'Добавить счёт',
+      add_account_title: 'Добавить счёт',
+      add_account_subtitle: 'Создайте новый счёт для учёта баланса.',
+      account_name_label: 'Название',
+      account_name_placeholder: 'Например: Visa',
+      currency_label: 'Валюта',
+      currency_aria: 'Валюта',
+      initial_balance_label: 'Начальный баланс',
+      initial_balance_placeholder: '0.00',
+      cancel: 'Отмена',
+      create: 'Создать',
+      close_dialog: 'Закрыть',
+      create_account_failed: 'Не удалось создать счёт.',
+      enter_account_name: 'Введите название счёта.',
+      select_currency: 'Выберите валюту.',
+      invalid_balance: 'Некорректный баланс.',
       total: 'Всего',
       balance_by_currency: 'Баланс по валютам',
       no_accounts: 'Счета пока не добавлены.',
@@ -149,6 +174,21 @@
       base_currency_aria: 'Base currency',
       volatility: 'Volatility',
       add_account_menu_aria: 'Add account',
+      add_account_title: 'Add account',
+      add_account_subtitle: 'Create a new account to track balances.',
+      account_name_label: 'Name',
+      account_name_placeholder: 'e.g. Visa',
+      currency_label: 'Currency',
+      currency_aria: 'Currency',
+      initial_balance_label: 'Initial balance',
+      initial_balance_placeholder: '0.00',
+      cancel: 'Cancel',
+      create: 'Create',
+      close_dialog: 'Close',
+      create_account_failed: 'Failed to create account.',
+      enter_account_name: 'Enter an account name.',
+      select_currency: 'Select a currency.',
+      invalid_balance: 'Invalid balance.',
       total: 'Total',
       balance_by_currency: 'Balance by currency',
       no_accounts: 'No accounts added yet.',
@@ -688,6 +728,7 @@
       const base = resolveFxBase();
       baseSelect.value = base;
     }
+    populateAccountCurrencySelect();
   }
 
   async function loadBalance() {
@@ -1027,34 +1068,152 @@
     });
   }
 
+  function showAddAccountError(message) {
+    const box = document.querySelector(selectors.addAccountError);
+    if (!box) return;
+    if (message) {
+      box.style.display = 'block';
+      box.textContent = message;
+    } else {
+      box.style.display = 'none';
+      box.textContent = '';
+    }
+  }
+
+  function populateAccountCurrencySelect(preferredCode) {
+    const select = document.querySelector(selectors.addAccountCurrency);
+    if (!select) return;
+    const existing = preferredCode || select.value;
+    select.innerHTML = '';
+    fxCurrencies.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.code;
+      option.textContent = `${item.code} — ${item.name}`;
+      select.appendChild(option);
+    });
+    const preferred = (existing || baseCurrency || fxFallbackBase || '').toUpperCase();
+    if (preferred && fxCurrencies.some((item) => item.code === preferred)) {
+      select.value = preferred;
+    } else if (fxCurrencies.length) {
+      select.value = fxCurrencies[0].code;
+    }
+  }
+
   function bindAddAccountMenu() {
-    const btn = document.querySelector('#btn-add-account');
-    const menu = document.querySelector('#add-account-menu');
-    const overlay = document.querySelector('#add-account-overlay');
-    if (!btn || !menu || !overlay) return;
+    const btn = document.querySelector(selectors.addAccountBtn);
+    const menu = document.querySelector(selectors.addAccountMenu);
+    const overlay = document.querySelector(selectors.addAccountOverlay);
+    const cancelBtn = document.querySelector(selectors.addAccountCancelBtn);
+    const closeBtn = document.querySelector(selectors.addAccountCloseBtn);
+    const createBtn = document.querySelector(selectors.addAccountCreateBtn);
+    if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn) return;
+
     let open = false;
-    const toggle = (state) => {
-      open = state ?? !open;
-      if (open) {
-        overlay.style.display = 'flex';
-        menu.style.display = 'grid';
-      } else {
-        overlay.style.display = 'none';
-        menu.style.display = 'none';
+    let submitting = false;
+
+    const close = () => {
+      open = false;
+      overlay.style.display = 'none';
+      menu.style.display = 'none';
+    };
+
+    const openDialog = () => {
+      open = true;
+      overlay.style.display = 'flex';
+      menu.style.display = 'grid';
+      showAddAccountError('');
+      populateAccountCurrencySelect();
+      const nameEl = document.querySelector(selectors.addAccountName);
+      const balanceEl = document.querySelector(selectors.addAccountBalance);
+      if (nameEl) nameEl.value = '';
+      if (balanceEl) balanceEl.value = '';
+      if (nameEl) nameEl.focus();
+      createBtn.disabled = false;
+    };
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    cancelBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (open && e.key === 'Escape') {
+        close();
+      }
+    });
+
+    const parseOptionalNumber = (raw) => {
+      const value = (raw || '').trim();
+      if (!value) return null;
+      const normalized = value.replace(',', '.');
+      const num = Number(normalized);
+      return Number.isFinite(num) ? num : NaN;
+    };
+
+    const submit = async () => {
+      if (!open || submitting) return;
+      showAddAccountError('');
+
+      const nameEl = document.querySelector(selectors.addAccountName);
+      const currencyEl = document.querySelector(selectors.addAccountCurrency);
+      const balanceEl = document.querySelector(selectors.addAccountBalance);
+      const name = (nameEl?.value || '').trim();
+      const currency = (currencyEl?.value || '').trim();
+      const initialBalance = parseOptionalNumber(balanceEl?.value || '');
+
+      if (nameEl) nameEl.classList.toggle('error', !name);
+      if (currencyEl) currencyEl.classList.toggle('error', !currency);
+      if (balanceEl) balanceEl.classList.toggle('error', Number.isNaN(initialBalance));
+
+      if (!name) {
+        showAddAccountError(t('enter_account_name'));
+        if (nameEl) nameEl.focus();
+        return;
+      }
+      if (!currency) {
+        showAddAccountError(t('select_currency'));
+        if (currencyEl) currencyEl.focus();
+        return;
+      }
+      if (Number.isNaN(initialBalance)) {
+        showAddAccountError(t('invalid_balance'));
+        if (balanceEl) balanceEl.focus();
+        return;
+      }
+
+      submitting = true;
+      createBtn.disabled = true;
+      try {
+        const res = await Api.call('/api/accounts', 'POST', {
+          name,
+          currency,
+          initialBalance
+        }, true);
+        if (!res.ok) {
+          const message = res.data && typeof res.data === 'object'
+            ? (res.data.message || '')
+            : '';
+          showAddAccountError(message || t('create_account_failed'));
+          return;
+        }
+        close();
+        await loadBalance();
+      } finally {
+        submitting = false;
+        createBtn.disabled = false;
       }
     };
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggle();
-    });
-    document.addEventListener('click', (e) => {
-      if (open && (!menu.contains(e.target) && !btn.contains(e.target) && !overlay.contains(e.target))) {
-        toggle(false);
+
+    createBtn.addEventListener('click', submit);
+    menu.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
       }
-    });
-    overlay.addEventListener('click', () => open && toggle(false));
-    menu.querySelectorAll('.dropdown-item').forEach((item) => {
-      item.addEventListener('click', () => toggle(false));
     });
   }
 
