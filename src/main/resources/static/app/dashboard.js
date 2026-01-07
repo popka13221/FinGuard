@@ -339,6 +339,93 @@
   let fxItems = [];
 
   let baseCurrency = 'USD';
+  let balanceRenderId = 0;
+
+  function normalizeCurrency(code) {
+    return (code || '').trim().toUpperCase();
+  }
+
+  function toNumber(value) {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return NaN;
+      return Number(trimmed);
+    }
+    return NaN;
+  }
+
+  function sumTotals(totals) {
+    return (Array.isArray(totals) ? totals : []).reduce((acc, item) => {
+      const value = toNumber(item?.total);
+      return Number.isFinite(value) ? acc + value : acc;
+    }, 0);
+  }
+
+  async function convertTotalsToBase(totals, base) {
+    const normalizedBase = normalizeCurrency(base) || 'USD';
+    const list = Array.isArray(totals) ? totals : [];
+    if (!list.length) {
+      return { ok: true, total: 0, base: normalizedBase };
+    }
+    const neededQuotes = Array.from(new Set(
+      list.map((item) => normalizeCurrency(item?.currency))
+        .filter((code) => code && code !== normalizedBase)
+    ));
+    if (neededQuotes.length === 0) {
+      return { ok: true, total: sumTotals(list), base: normalizedBase };
+    }
+
+    const params = new URLSearchParams();
+    params.set('base', normalizedBase);
+    neededQuotes.forEach((code) => params.append('quote', code));
+    const res = await Api.call(`/api/fx/rates?${params}`, 'GET', null, false);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      return { ok: false, base: normalizedBase };
+    }
+    const rates = res.data.rates && typeof res.data.rates === 'object' ? res.data.rates : {};
+
+    let totalInBase = 0;
+    for (const item of list) {
+      const currency = normalizeCurrency(item?.currency);
+      const amount = toNumber(item?.total);
+      if (!Number.isFinite(amount)) {
+        continue;
+      }
+      if (!currency || currency === normalizedBase) {
+        totalInBase += amount;
+        continue;
+      }
+      const rate = toNumber(rates[currency]);
+      if (!Number.isFinite(rate) || rate <= 0) {
+        return { ok: false, base: normalizedBase };
+      }
+      totalInBase += amount / rate;
+    }
+    return { ok: true, total: totalInBase, base: normalizedBase, asOf: res.data.asOf };
+  }
+
+  async function updateTotalBalanceInBase(totals, renderId) {
+    const totalBalanceEl = document.querySelector(selectors.totalBalance);
+    if (!totalBalanceEl) return;
+    const base = normalizeCurrency(baseCurrency) || 'USD';
+
+    const result = await convertTotalsToBase(totals, base);
+    if (renderId !== balanceRenderId) return;
+
+    if (result.ok) {
+      totalBalanceEl.textContent = formatMoney(result.total || 0, base);
+      return;
+    }
+
+    const list = Array.isArray(totals) ? totals : [];
+    const baseItem = list.find((item) => normalizeCurrency(item?.currency) === base);
+    const fallback = baseItem || list[0];
+    const fallbackCurrency = normalizeCurrency(fallback?.currency) || base;
+    const fallbackAmount = toNumber(fallback?.total);
+    totalBalanceEl.textContent = formatMoney(Number.isFinite(fallbackAmount) ? fallbackAmount : 0, fallbackCurrency);
+  }
+
   function updateCurrencyLabels() {
     const bal = document.querySelector('#balanceCurrency');
     const exp = document.querySelector('#expenseCurrency');
@@ -428,13 +515,20 @@
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
     const creditEl = document.querySelector(selectors.creditValue);
     const totalsLineEl = document.querySelector(selectors.totalsByCurrency);
-
-    const mainTotal = totals.length
-      ? totals[0]
-      : { currency: accounts[0]?.currency || baseCurrency, total: accounts.reduce((acc, a) => acc + (a.balance || 0), 0) };
+    const base = normalizeCurrency(baseCurrency) || 'USD';
+    const needsConversion = totals.some((item) => {
+      const currency = normalizeCurrency(item?.currency);
+      return currency && currency !== base;
+    });
 
     if (totalBalanceEl) {
-      totalBalanceEl.textContent = formatMoney(mainTotal.total || 0, mainTotal.currency);
+      if (!totals.length) {
+        totalBalanceEl.textContent = formatMoney(0, base);
+      } else if (!needsConversion) {
+        totalBalanceEl.textContent = formatMoney(sumTotals(totals), base);
+      } else {
+        totalBalanceEl.textContent = t('updating');
+      }
     }
 
     const creditByCurrency = accounts.reduce((acc, account) => {
@@ -453,6 +547,10 @@
     if (totalsLineEl) {
       totalsLineEl.textContent = totalsText ? `${t('balance_by_currency')}: ${totalsText}` : '';
       totalsLineEl.style.display = totalsText ? 'block' : 'none';
+    }
+
+    if (needsConversion) {
+      updateTotalBalanceInBase(totals, balanceRenderId);
     }
   }
 
@@ -747,8 +845,9 @@
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
-    renderBalance(payload);
     renderAccountsList(payload.accounts || []);
+    balanceRenderId += 1;
+    renderBalance(payload);
   }
 
   async function loadFxRates() {
