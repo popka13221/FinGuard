@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 
 import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
+import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.CryptoRatesService;
@@ -29,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 
 class CryptoWalletServiceTest {
 
@@ -112,6 +115,28 @@ class CryptoWalletServiceTest {
         assertThatThrownBy(() -> cryptoWalletService.createWallet(1L, new CreateCryptoWalletRequest("BTC", "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh", null)))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("Wallet already exists");
+    }
+
+    @Test
+    void createWalletMapsUniqueConstraintViolationToValidationError() {
+        User user = user(1L, "user@example.com", "USD");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(cryptoWalletRepository.existsByUserIdAndNetworkAndAddressNormalized(1L, CryptoNetwork.BTC, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"))
+                .thenReturn(false);
+        when(cryptoWalletRepository.save(any(CryptoWallet.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> cryptoWalletService.createWallet(1L, new CreateCryptoWalletRequest(
+                "BTC",
+                "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+                null
+        )))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException api = (ApiException) ex;
+                    assertThat(api.getCode()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+                    assertThat(api.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
     }
 
     @Test

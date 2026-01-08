@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -70,8 +71,12 @@ public class CryptoWalletService {
         wallet.setLabel(label);
         wallet.setArchived(false);
 
-        CryptoWallet saved = cryptoWalletRepository.save(wallet);
-        return new CryptoWalletDto(saved.getId(), saved.getNetwork().name(), saved.getLabel(), saved.getAddress(), null, null, user.getBaseCurrency(), null);
+        try {
+            CryptoWallet saved = cryptoWalletRepository.save(wallet);
+            return new CryptoWalletDto(saved.getId(), saved.getNetwork().name(), saved.getLabel(), saved.getAddress(), null, null, user.getBaseCurrency(), null);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet already exists", HttpStatus.BAD_REQUEST);
+        }
     }
 
     public List<CryptoWalletDto> listWallets(Long userId) {

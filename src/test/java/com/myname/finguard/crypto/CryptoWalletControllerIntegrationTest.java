@@ -1,6 +1,7 @@
 package com.myname.finguard.crypto;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -174,6 +175,45 @@ class CryptoWalletControllerIntegrationTest {
 
     @Test
     @Transactional
+    void rejectsInvalidBtcAddress() throws Exception {
+        String token = registerVerifyAndLogin("bad-btc-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"not-an-address","label":"Test"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+    }
+
+    @Test
+    @Transactional
+    void rejectsNetworkThatFailsBeanValidation() throws Exception {
+        String token = registerVerifyAndLogin("bad-network-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"B1","address":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh","label":"Test"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+        assertThat(error.get("message").asText()).contains("Network must be a 2-16 letter code");
+    }
+
+    @Test
+    @Transactional
     void rejectsDuplicateWalletDueToEthNormalization() throws Exception {
         String token = registerVerifyAndLogin("dup-eth-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
         String ethAddress = "0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd";
@@ -198,6 +238,52 @@ class CryptoWalletControllerIntegrationTest {
 
         JsonNode error = objectMapper.readTree(response);
         assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+    }
+
+    @Test
+    @Transactional
+    void listsWalletsInCryptoBaseCurrencyWith8DecimalsAndUsesNormalizedAddressForLookup() throws Exception {
+        String token = registerVerifyAndLogin("base-btc-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "BTC");
+        String original = "BC1QXY2KGDYGJRSQTZQ2N0YRF2493P83KKFJHX0WLH";
+        String normalized = original.toLowerCase();
+
+        when(cryptoRatesProvider.fetchLatest("BTC"))
+                .thenReturn(new CryptoRatesProvider.CryptoRates(
+                        "BTC",
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        List.of(new CryptoRatesProvider.CryptoRate("BTC", "Bitcoin", BigDecimal.ONE, BigDecimal.ZERO, List.of()))
+                ));
+        when(walletBalanceProvider.fetchLatest(CryptoNetwork.BTC, normalized))
+                .thenReturn(new CryptoWalletBalanceProvider.WalletBalance(
+                        CryptoNetwork.BTC,
+                        normalized,
+                        new BigDecimal("0.1"),
+                        Instant.parse("2024-01-01T00:00:00Z")
+                ));
+
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(original)))
+                .andExpect(status().isCreated());
+
+        String listResponse = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode list = objectMapper.readTree(listResponse);
+        assertThat(list.isArray()).isTrue();
+        assertThat(list.size()).isEqualTo(1);
+        JsonNode wallet = list.get(0);
+        assertThat(wallet.get("baseCurrency").asText()).isEqualTo("BTC");
+        assertThat(wallet.get("valueInBase").decimalValue()).isEqualByComparingTo("0.10000000");
+
+        verify(walletBalanceProvider).fetchLatest(CryptoNetwork.BTC, normalized);
     }
 
     @Test
