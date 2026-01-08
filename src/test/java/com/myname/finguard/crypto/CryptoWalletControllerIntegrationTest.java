@@ -9,18 +9,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.myname.finguard.auth.model.User;
-import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.service.CryptoRatesProvider;
+import com.myname.finguard.common.service.MailService;
 import com.myname.finguard.crypto.model.CryptoNetwork;
-import com.myname.finguard.crypto.model.CryptoWallet;
 import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.time.Instant;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +29,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "app.crypto.cache-ttl-seconds=0",
+        "app.crypto.wallet.cache-ttl-seconds=0"
+})
 class CryptoWalletControllerIntegrationTest {
 
     @Autowired
@@ -44,10 +50,10 @@ class CryptoWalletControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private UserRepository userRepository;
+    private CryptoWalletRepository cryptoWalletRepository;
 
     @Autowired
-    private CryptoWalletRepository cryptoWalletRepository;
+    private MailService mailService;
 
     @MockBean
     private CryptoWalletBalanceProvider walletBalanceProvider;
@@ -56,25 +62,15 @@ class CryptoWalletControllerIntegrationTest {
     private CryptoRatesProvider cryptoRatesProvider;
 
     @BeforeEach
-    void setupUser() {
-        cryptoWalletRepository.deleteAll();
-        userRepository.deleteAll();
-        User user = new User();
-        user.setEmail("user@example.com");
-        user.setPasswordHash("hash");
-        user.setBaseCurrency("USD");
-        userRepository.save(user);
-    }
-
-    @AfterEach
-    void cleanup() {
-        cryptoWalletRepository.deleteAll();
-        userRepository.deleteAll();
+    void setup() {
+        mailService.clearOutbox();
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
+    @Transactional
     void createListAndArchiveWallet() throws Exception {
+        String email = "wallet-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
         String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
         when(cryptoRatesProvider.fetchLatest("USD"))
                 .thenReturn(new CryptoRatesProvider.CryptoRates(
@@ -94,6 +90,7 @@ class CryptoWalletControllerIntegrationTest {
                 ));
 
         String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"network":"BTC","address":"%s","label":"Ledger"}
@@ -106,7 +103,8 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode created = objectMapper.readTree(createResponse);
         assertThat(created.get("id").asLong()).isPositive();
 
-        String listResponse = mockMvc.perform(get("/api/crypto/wallets"))
+        String listResponse = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -123,10 +121,15 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(wallet.get("baseCurrency").asText()).isEqualTo("USD");
 
         long id = wallet.get("id").asLong();
-        mockMvc.perform(delete("/api/crypto/wallets/{id}", id))
+        mockMvc.perform(delete("/api/crypto/wallets/{id}", id)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        String listAfterArchive = mockMvc.perform(get("/api/crypto/wallets"))
+        assertThat(cryptoWalletRepository.findById(id)).isPresent().get()
+                .satisfies(saved -> assertThat(saved.isArchived()).isTrue());
+
+        String listAfterArchive = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -151,9 +154,11 @@ class CryptoWalletControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
+    @Transactional
     void rejectsInvalidEthAddress() throws Exception {
+        String token = registerVerifyAndLogin("bad-eth-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
         String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"network":"ETH","address":"0x123","label":"Test"}
@@ -168,21 +173,24 @@ class CryptoWalletControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
-    void rejectsDuplicateWallet() throws Exception {
-        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+    @Transactional
+    void rejectsDuplicateWalletDueToEthNormalization() throws Exception {
+        String token = registerVerifyAndLogin("dup-eth-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String ethAddress = "0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd";
         mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"network":"BTC","address":"%s","label":"Ledger"}
-                                """.formatted(btcAddress)))
+                                {"network":"ETH","address":"%s","label":"Ledger"}
+                                """.formatted(ethAddress)))
                 .andExpect(status().isCreated());
 
         String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"network":"BTC","address":"%s","label":"Ledger"}
-                                """.formatted(btcAddress)))
+                                {"network":"ETH","address":"%s","label":"Ledger"}
+                                """.formatted(ethAddress.toLowerCase())))
                 .andExpect(status().isBadRequest())
                 .andReturn()
                 .getResponse()
@@ -193,25 +201,26 @@ class CryptoWalletControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "other@example.com")
+    @Transactional
     void cannotArchiveOtherUsersWallet() throws Exception {
-        User other = new User();
-        other.setEmail("other@example.com");
-        other.setPasswordHash("hash");
-        other.setBaseCurrency("USD");
-        userRepository.save(other);
+        String ownerToken = registerVerifyAndLogin("owner-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String otherToken = registerVerifyAndLogin("other-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
 
-        User owner = userRepository.findByEmail("user@example.com").orElseThrow();
-        CryptoWallet wallet = new CryptoWallet();
-        wallet.setUser(owner);
-        wallet.setNetwork(CryptoNetwork.BTC);
-        wallet.setAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
-        wallet.setAddressNormalized("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
-        wallet.setLabel("Owner");
-        wallet.setArchived(false);
-        cryptoWalletRepository.save(wallet);
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + ownerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh","label":"Owner"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        String response = mockMvc.perform(delete("/api/crypto/wallets/{id}", wallet.getId()))
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String response = mockMvc.perform(delete("/api/crypto/wallets/{id}", walletId)
+                        .header("Authorization", "Bearer " + otherToken))
                 .andExpect(status().isBadRequest())
                 .andReturn()
                 .getResponse()
@@ -219,5 +228,94 @@ class CryptoWalletControllerIntegrationTest {
 
         JsonNode error = objectMapper.readTree(response);
         assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.BAD_REQUEST);
+    }
+
+    @Test
+    @Transactional
+    void listWalletsIsScopedToUser() throws Exception {
+        String ownerToken = registerVerifyAndLogin("owner-list-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String otherToken = registerVerifyAndLogin("other-list-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + ownerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh","label":"Owner"}
+                                """))
+                .andExpect(status().isCreated());
+
+        String otherList = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode list = objectMapper.readTree(otherList);
+        assertThat(list.isArray()).isTrue();
+        assertThat(list).isEmpty();
+    }
+
+    private String registerVerifyAndLogin(String email, String password, String baseCurrency) throws Exception {
+        String registerPayload = """
+                {
+                  "email": "%s",
+                  "password": "%s",
+                  "fullName": "Test User",
+                  "baseCurrency": "%s"
+                }
+                """.formatted(email, password, baseCurrency);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerPayload))
+                .andExpect(status().isCreated());
+
+        MailService.MailMessage msg = mailService.getOutbox().get(mailService.getOutbox().size() - 1);
+        String verifyToken = extractCode(msg.body());
+        mockMvc.perform(post("/api/auth/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","token":"%s"}
+                                """.formatted(email, verifyToken)))
+                .andExpect(status().isOk());
+
+        String loginPayload = """
+                {
+                  "email": "%s",
+                  "password": "%s"
+                }
+                """.formatted(email, password);
+
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginPayload))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode loginNode = objectMapper.readTree(loginResponse);
+        return loginNode.get("token").asText();
+    }
+
+    private String extractCode(String body) {
+        if (body == null) {
+            return "";
+        }
+        Matcher tokenParam = Pattern.compile("token=([^&\\s]+)").matcher(body);
+        if (tokenParam.find()) {
+            return URLDecoder.decode(tokenParam.group(1), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        Matcher codeLine = Pattern.compile("(?i)code:\\s*([A-Za-z0-9-]{6,})").matcher(body);
+        if (codeLine.find()) {
+            return codeLine.group(1).trim();
+        }
+        Matcher digits = Pattern.compile("\\b\\d{6}\\b").matcher(body);
+        if (digits.find()) {
+            return digits.group().trim();
+        }
+        Matcher hex = Pattern.compile("\\b(?=[0-9a-fA-F-]*\\d)[0-9a-fA-F-]{6,}\\b").matcher(body);
+        return hex.find() ? hex.group().trim() : "";
     }
 }
