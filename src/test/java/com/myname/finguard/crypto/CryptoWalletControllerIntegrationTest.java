@@ -11,8 +11,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
+import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.crypto.model.CryptoNetwork;
+import com.myname.finguard.crypto.model.CryptoWallet;
 import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
 import java.math.BigDecimal;
@@ -133,5 +135,89 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode after = objectMapper.readTree(listAfterArchive);
         assertThat(after.isArray()).isTrue();
         assertThat(after.size()).isEqualTo(0);
+    }
+
+    @Test
+    void anonymousIsForbidden() throws Exception {
+        mockMvc.perform(get("/api/crypto/wallets"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh","label":"Ledger"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void rejectsInvalidEthAddress() throws Exception {
+        String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"ETH","address":"0x123","label":"Test"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void rejectsDuplicateWallet() throws Exception {
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated());
+
+        String response = mockMvc.perform(post("/api/crypto/wallets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.VALIDATION_GENERIC);
+    }
+
+    @Test
+    @WithMockUser(username = "other@example.com")
+    void cannotArchiveOtherUsersWallet() throws Exception {
+        User other = new User();
+        other.setEmail("other@example.com");
+        other.setPasswordHash("hash");
+        other.setBaseCurrency("USD");
+        userRepository.save(other);
+
+        User owner = userRepository.findByEmail("user@example.com").orElseThrow();
+        CryptoWallet wallet = new CryptoWallet();
+        wallet.setUser(owner);
+        wallet.setNetwork(CryptoNetwork.BTC);
+        wallet.setAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        wallet.setAddressNormalized("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        wallet.setLabel("Owner");
+        wallet.setArchived(false);
+        cryptoWalletRepository.save(wallet);
+
+        String response = mockMvc.perform(delete("/api/crypto/wallets/{id}", wallet.getId()))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.BAD_REQUEST);
     }
 }
