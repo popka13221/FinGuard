@@ -32,5 +32,15 @@ test('add and remove crypto wallet (watch-only)', async ({ page }) => {
   await wallet.locator('button.wallet-remove').click();
 
   await expect(page.locator('#walletsList')).toContainText('No wallets added yet.');
-});
 
+  await page.click('#btn-add-wallet');
+  await expect(page.locator('#add-wallet-overlay')).toBeVisible();
+  await page.fill('#newWalletLabel', 'Ledger');
+  await page.selectOption('#newWalletNetwork', 'BTC');
+  await page.fill('#newWalletAddress', 'BC1QXY2KGDYGJRSQTZQ2N0YRF2493P83KKFJHX0WLH');
+  await page.click('#btn-add-wallet-create');
+  await expect(page.locator('#add-wallet-overlay')).toBeHidden();
+
+  const walletAgain = page.locator('#walletsList .wallet-item', { hasText: 'Ledger' });
+  await expect(walletAgain).toBeVisible();
+});

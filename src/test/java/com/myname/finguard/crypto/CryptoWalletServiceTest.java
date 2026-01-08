@@ -109,8 +109,18 @@ class CryptoWalletServiceTest {
     void createWalletRejectsDuplicateAddress() {
         User user = user(1L, "user@example.com", "USD");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(cryptoWalletRepository.existsByUserIdAndNetworkAndAddressNormalized(1L, CryptoNetwork.BTC, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"))
-                .thenReturn(true);
+        CryptoWallet existing = new CryptoWallet();
+        existing.setId(10L);
+        existing.setUser(user);
+        existing.setNetwork(CryptoNetwork.BTC);
+        existing.setAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        existing.setAddressNormalized("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        existing.setArchived(false);
+        when(cryptoWalletRepository.findByUserIdAndNetworkAndAddressNormalized(
+                1L,
+                CryptoNetwork.BTC,
+                "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+        )).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> cryptoWalletService.createWallet(1L, new CreateCryptoWalletRequest("BTC", "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh", null)))
                 .isInstanceOf(ApiException.class)
@@ -121,8 +131,11 @@ class CryptoWalletServiceTest {
     void createWalletMapsUniqueConstraintViolationToValidationError() {
         User user = user(1L, "user@example.com", "USD");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(cryptoWalletRepository.existsByUserIdAndNetworkAndAddressNormalized(1L, CryptoNetwork.BTC, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"))
-                .thenReturn(false);
+        when(cryptoWalletRepository.findByUserIdAndNetworkAndAddressNormalized(
+                1L,
+                CryptoNetwork.BTC,
+                "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+        )).thenReturn(Optional.empty());
         when(cryptoWalletRepository.save(any(CryptoWallet.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
 
@@ -320,17 +333,15 @@ class CryptoWalletServiceTest {
     }
 
     @Test
-    void archiveWalletIsIdempotent() {
+    void deleteWalletRemovesRecord() {
         CryptoWallet wallet = new CryptoWallet();
         wallet.setId(10L);
-        wallet.setArchived(false);
 
         when(cryptoWalletRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(wallet));
 
-        cryptoWalletService.archiveWallet(1L, 10L);
-        cryptoWalletService.archiveWallet(1L, 10L);
+        cryptoWalletService.deleteWallet(1L, 10L);
 
-        verify(cryptoWalletRepository, times(1)).save(wallet);
+        verify(cryptoWalletRepository).delete(wallet);
     }
 
     private User user(Long id, String email, String baseCurrency) {

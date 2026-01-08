@@ -58,8 +58,14 @@ public class CryptoWalletService {
         String addressNormalized = normalizeAddress(network, address);
         String label = normalizeOptionalLabel(request.label());
 
-        if (cryptoWalletRepository.existsByUserIdAndNetworkAndAddressNormalized(userId, network, addressNormalized)) {
-            throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet already exists", HttpStatus.BAD_REQUEST);
+        CryptoWallet existing = cryptoWalletRepository.findByUserIdAndNetworkAndAddressNormalized(userId, network, addressNormalized)
+                .orElse(null);
+        if (existing != null) {
+            if (!existing.isArchived()) {
+                throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet already exists", HttpStatus.BAD_REQUEST);
+            }
+            // Clean up previously removed wallets to allow re-adding the same address.
+            cryptoWalletRepository.delete(existing);
         }
 
         User user = userRepository.findById(userId).orElseThrow(this::unauthorized);
@@ -97,7 +103,7 @@ public class CryptoWalletService {
                 .toList();
     }
 
-    public void archiveWallet(Long userId, Long walletId) {
+    public void deleteWallet(Long userId, Long walletId) {
         if (userId == null) {
             throw unauthorized();
         }
@@ -106,10 +112,7 @@ public class CryptoWalletService {
         }
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST));
-        if (!wallet.isArchived()) {
-            wallet.setArchived(true);
-            cryptoWalletRepository.save(wallet);
-        }
+        cryptoWalletRepository.delete(wallet);
     }
 
     private CryptoWalletDto toDto(CryptoWallet wallet, String baseCurrency, Map<String, BigDecimal> prices) {

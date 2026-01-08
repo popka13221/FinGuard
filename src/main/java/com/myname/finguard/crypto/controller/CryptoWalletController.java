@@ -70,16 +70,16 @@ public class CryptoWalletController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Archive wallet", description = "Archives a watch-only wallet for the current user.")
+    @Operation(summary = "Delete wallet", description = "Deletes a watch-only wallet for the current user.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Wallet archived"),
+            @ApiResponse(responseCode = "204", description = "Wallet deleted"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Void> archive(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         Long userId = resolveUserId(authentication);
-        cryptoWalletService.archiveWallet(userId, id);
+        cryptoWalletService.deleteWallet(userId, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -108,4 +108,3 @@ public class CryptoWalletController {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
     }
 }
-

@@ -69,7 +69,7 @@ class CryptoWalletControllerIntegrationTest {
 
     @Test
     @Transactional
-    void createListAndArchiveWallet() throws Exception {
+    void createListDeleteAndReAddWallet() throws Exception {
         String email = "wallet-" + UUID.randomUUID() + "@example.com";
         String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
         String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
@@ -126,19 +126,36 @@ class CryptoWalletControllerIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        assertThat(cryptoWalletRepository.findById(id)).isPresent().get()
-                .satisfies(saved -> assertThat(saved.isArchived()).isTrue());
+        assertThat(cryptoWalletRepository.findById(id)).isEmpty();
 
-        String listAfterArchive = mockMvc.perform(get("/api/crypto/wallets")
+        String listAfterDelete = mockMvc.perform(get("/api/crypto/wallets")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        JsonNode after = objectMapper.readTree(listAfterArchive);
+        JsonNode after = objectMapper.readTree(listAfterDelete);
         assertThat(after.isArray()).isTrue();
         assertThat(after.size()).isEqualTo(0);
+
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated());
+
+        String listAfterReAdd = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode afterReAdd = objectMapper.readTree(listAfterReAdd);
+        assertThat(afterReAdd.isArray()).isTrue();
+        assertThat(afterReAdd.size()).isEqualTo(1);
     }
 
     @Test

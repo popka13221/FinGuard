@@ -12,5 +12,6 @@ public interface CryptoWalletRepository extends JpaRepository<CryptoWallet, Long
     Optional<CryptoWallet> findByIdAndUserId(Long id, Long userId);
 
     boolean existsByUserIdAndNetworkAndAddressNormalized(Long userId, CryptoNetwork network, String addressNormalized);
-}
 
+    Optional<CryptoWallet> findByUserIdAndNetworkAndAddressNormalized(Long userId, CryptoNetwork network, String addressNormalized);
+}
