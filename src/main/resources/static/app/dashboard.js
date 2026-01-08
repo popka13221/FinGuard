@@ -42,7 +42,18 @@
     addAccountCancelBtn: '#btn-add-account-cancel',
     addAccountCreateBtn: '#btn-add-account-create',
     addAccountCloseBtn: '#btn-add-account-close',
-    addAccountError: '#addAccountError'
+    addAccountError: '#addAccountError',
+    walletsList: '#walletsList',
+    addWalletBtn: '#btn-add-wallet',
+    addWalletOverlay: '#add-wallet-overlay',
+    addWalletMenu: '#add-wallet-menu',
+    addWalletLabel: '#newWalletLabel',
+    addWalletNetwork: '#newWalletNetwork',
+    addWalletAddress: '#newWalletAddress',
+    addWalletCancelBtn: '#btn-add-wallet-cancel',
+    addWalletCreateBtn: '#btn-add-wallet-create',
+    addWalletCloseBtn: '#btn-add-wallet-close',
+    addWalletError: '#addWalletError'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -116,6 +127,22 @@
       balance_load_failed_short: 'Не удалось загрузить баланс',
       fx_no_data: 'Нет данных по валютам.',
       fx_no_currencies: 'Нет доступных валют.',
+      wallets_title: 'Крипто-кошельки',
+      wallets_empty: 'Кошельки не добавлены.',
+      wallets_loading_failed: 'Не удалось загрузить кошельки.',
+      add_wallet_menu_aria: 'Добавить кошелёк',
+      add_wallet_title: 'Добавить кошелёк',
+      add_wallet_subtitle: 'Только чтение: добавьте адрес, мы подтянем баланс.',
+      wallet_label: 'Название',
+      wallet_label_placeholder: 'Например: Ledger',
+      wallet_network: 'Сеть',
+      wallet_network_aria: 'Сеть',
+      wallet_address: 'Адрес',
+      wallet_address_placeholder: '0x… / bc1…',
+      wallet_remove: 'Удалить',
+      wallet_enter_address: 'Введите адрес.',
+      wallet_invalid_address: 'Некорректный адрес.',
+      wallet_create_failed: 'Не удалось добавить кошелёк.',
       period_7d: 'за 7д',
       period_24h: 'за 24ч',
       min: 'Мин',
@@ -198,6 +225,22 @@
       balance_load_failed_short: 'Failed to load balance',
       fx_no_data: 'No FX data.',
       fx_no_currencies: 'No currencies available.',
+      wallets_title: 'Crypto wallets',
+      wallets_empty: 'No wallets added yet.',
+      wallets_loading_failed: 'Failed to load wallets.',
+      add_wallet_menu_aria: 'Add wallet',
+      add_wallet_title: 'Add wallet',
+      add_wallet_subtitle: 'Watch-only: add an address and we will fetch its balance.',
+      wallet_label: 'Label',
+      wallet_label_placeholder: 'e.g. Ledger',
+      wallet_network: 'Network',
+      wallet_network_aria: 'Network',
+      wallet_address: 'Address',
+      wallet_address_placeholder: '0x… / bc1…',
+      wallet_remove: 'Remove',
+      wallet_enter_address: 'Enter an address.',
+      wallet_invalid_address: 'Invalid address.',
+      wallet_create_failed: 'Failed to add wallet.',
       period_7d: 'in 7d',
       period_24h: 'in 24h',
       min: 'Min',
@@ -1179,6 +1222,186 @@
     }
   }
 
+  function shortAddress(value) {
+    if (!value) return '';
+    const raw = String(value);
+    if (raw.length <= 16) return raw;
+    return `${raw.slice(0, 6)}…${raw.slice(-4)}`;
+  }
+
+  function formatAssetAmount(value, asset) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return '—';
+    const code = (asset || '').toUpperCase();
+    const digits = code === 'BTC' ? 8 : 6;
+    return `${amount.toLocaleString(getLocale(), { minimumFractionDigits: 0, maximumFractionDigits: digits })} ${code || ''}`.trim();
+  }
+
+  function renderWallets(wallets) {
+    const list = document.querySelector(selectors.walletsList);
+    if (!list) return;
+    if (!Array.isArray(wallets) || wallets.length === 0) {
+      list.innerHTML = `<div class="muted">${t('wallets_empty')}</div>`;
+      return;
+    }
+    list.innerHTML = wallets.map((wallet) => {
+      const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
+      const label = wallet && wallet.label ? String(wallet.label) : '';
+      const address = wallet && wallet.address ? String(wallet.address) : '';
+      const balance = wallet ? wallet.balance : null;
+      const valueInBase = wallet ? wallet.valueInBase : null;
+      const base = wallet && wallet.baseCurrency ? String(wallet.baseCurrency) : baseCurrency;
+      const valueText = Number.isFinite(Number(valueInBase)) ? formatMoney(Number(valueInBase), base) : '';
+      return `
+        <div class="list-item wallet-item">
+          <div class="wallet-left">
+            <div style="font-weight:800;">${label || network}</div>
+            <small>${network}${address ? ` · ${shortAddress(address)}` : ''}</small>
+          </div>
+          <div class="wallet-actions">
+            <div class="wallet-right">
+              <div class="amount-positive">${formatAssetAmount(balance, network)}</div>
+              ${valueText ? `<small class="muted">≈ ${valueText}</small>` : `<small class="muted">—</small>`}
+            </div>
+            <button type="button" class="ghost wallet-remove" data-wallet-id="${wallet.id || ''}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('[data-wallet-id]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.walletId;
+        if (!id) return;
+        await Api.call(`/api/crypto/wallets/${encodeURIComponent(id)}`, 'DELETE', null, true);
+        await loadWallets();
+      });
+    });
+  }
+
+  async function loadWallets() {
+    const list = document.querySelector(selectors.walletsList);
+    if (list) {
+      list.innerHTML = `<div class="muted">${t('loading')}</div>`;
+    }
+    const res = await Api.call('/api/crypto/wallets', 'GET', null, true);
+    if (!res.ok) {
+      if (list) list.innerHTML = `<div class="amount-negative">${t('wallets_loading_failed')}</div>`;
+      return;
+    }
+    renderWallets(res.data || []);
+  }
+
+  function showAddWalletError(message) {
+    const box = document.querySelector(selectors.addWalletError);
+    if (!box) return;
+    if (message) {
+      box.style.display = 'block';
+      box.textContent = message;
+    } else {
+      box.style.display = 'none';
+      box.textContent = '';
+    }
+  }
+
+  function bindAddWalletMenu() {
+    const btn = document.querySelector(selectors.addWalletBtn);
+    const menu = document.querySelector(selectors.addWalletMenu);
+    const overlay = document.querySelector(selectors.addWalletOverlay);
+    const cancelBtn = document.querySelector(selectors.addWalletCancelBtn);
+    const closeBtn = document.querySelector(selectors.addWalletCloseBtn);
+    const createBtn = document.querySelector(selectors.addWalletCreateBtn);
+    if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn) return;
+
+    let open = false;
+    let submitting = false;
+
+    const close = () => {
+      open = false;
+      overlay.style.display = 'none';
+      menu.style.display = 'none';
+    };
+
+    const openDialog = () => {
+      open = true;
+      overlay.style.display = 'flex';
+      menu.style.display = 'grid';
+      showAddWalletError('');
+      const labelEl = document.querySelector(selectors.addWalletLabel);
+      const networkEl = document.querySelector(selectors.addWalletNetwork);
+      const addressEl = document.querySelector(selectors.addWalletAddress);
+      if (labelEl) labelEl.value = '';
+      if (networkEl) networkEl.value = 'BTC';
+      if (addressEl) addressEl.value = '';
+      if (addressEl) addressEl.focus();
+      createBtn.disabled = false;
+    };
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    cancelBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (open && e.key === 'Escape') {
+        close();
+      }
+    });
+
+    const submit = async () => {
+      if (!open || submitting) return;
+      showAddWalletError('');
+
+      const labelEl = document.querySelector(selectors.addWalletLabel);
+      const networkEl = document.querySelector(selectors.addWalletNetwork);
+      const addressEl = document.querySelector(selectors.addWalletAddress);
+      const label = (labelEl?.value || '').trim();
+      const network = (networkEl?.value || '').trim();
+      const address = (addressEl?.value || '').trim();
+
+      if (addressEl) addressEl.classList.toggle('error', !address);
+      if (!address) {
+        showAddWalletError(t('wallet_enter_address'));
+        if (addressEl) addressEl.focus();
+        return;
+      }
+
+      submitting = true;
+      createBtn.disabled = true;
+      try {
+        const res = await Api.call('/api/crypto/wallets', 'POST', {
+          network,
+          address,
+          label: label || null
+        }, true);
+        if (!res.ok) {
+          const message = res.data && typeof res.data === 'object'
+            ? (res.data.message || '')
+            : '';
+          showAddWalletError(message || t('wallet_create_failed'));
+          return;
+        }
+        close();
+        await loadWallets();
+      } finally {
+        submitting = false;
+        createBtn.disabled = false;
+      }
+    };
+
+    createBtn.addEventListener('click', submit);
+    menu.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
+    });
+  }
+
   function populateAccountCurrencySelect(preferredCode) {
     const select = document.querySelector(selectors.addAccountCurrency);
     if (!select) return;
@@ -1371,6 +1594,7 @@
     bindFxControls();
     await loadFxRates();
     await loadCryptoRates();
+    await loadWallets();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(
       selectors.expenseChart,
@@ -1378,6 +1602,7 @@
       baseCurrency
     );
     bindAddAccountMenu();
+    bindAddWalletMenu();
     if (root) root.style.visibility = 'visible';
   });
 })();

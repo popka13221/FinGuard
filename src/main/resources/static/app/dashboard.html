@@ -49,6 +49,16 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <h3 style="margin:0;" data-i18n="wallets_title">Крипто-кошельки</h3>
+            <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
+          </div>
+          <div class="list" style="margin-top:10px;" id="walletsList">
+            <div class="muted" data-i18n="loading">Загрузка…</div>
+          </div>
+        </div>
+
       </div>
 
       <div class="stack">
@@ -244,6 +254,42 @@
         <div class="buttons" style="justify-content:flex-end;">
           <button type="button" class="ghost" id="btn-add-account-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-account-create" data-i18n="create">Создать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="add-wallet-overlay" class="overlay" style="display:none;">
+    <div class="dropdown-menu" id="add-wallet-menu" aria-label="Добавить кошелёк" data-i18n-aria="add_wallet_menu_aria">
+      <div class="card-row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin:0;" data-i18n="add_wallet_title">Добавить кошелёк</h3>
+          <div class="muted" data-i18n="add_wallet_subtitle">Только чтение: добавьте адрес, мы подтянем баланс.</div>
+        </div>
+        <button type="button" class="ghost" id="btn-add-wallet-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
+      </div>
+
+      <div class="alert" id="addWalletError" style="display:none;"></div>
+
+      <div class="form" style="margin-top:6px;">
+        <div class="field">
+          <label for="newWalletLabel" data-i18n="wallet_label">Название</label>
+          <input id="newWalletLabel" type="text" maxlength="255" placeholder="Например: Ledger" data-i18n-placeholder="wallet_label_placeholder">
+        </div>
+        <div class="field">
+          <label for="newWalletNetwork" data-i18n="wallet_network">Сеть</label>
+          <select id="newWalletNetwork" aria-label="Сеть" data-i18n-aria="wallet_network_aria">
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="newWalletAddress" data-i18n="wallet_address">Адрес</label>
+          <input id="newWalletAddress" type="text" maxlength="160" placeholder="0x… / bc1…" data-i18n-placeholder="wallet_address_placeholder">
+        </div>
+        <div class="buttons" style="justify-content:flex-end;">
+          <button type="button" class="ghost" id="btn-add-wallet-cancel" data-i18n="cancel">Отмена</button>
+          <button type="button" id="btn-add-wallet-create" data-i18n="create">Создать</button>
         </div>
       </div>
     </div>
