@@ -499,11 +499,18 @@
     });
   }
 
+  function moneyFractionDigits(currency) {
+    const cur = (currency || '').trim().toUpperCase();
+    if (cur === 'BTC' || cur === 'ETH') return 8;
+    return 2;
+  }
+
   function formatMoney(value, currency) {
     const cur = currency || baseCurrency || 'USD';
     const abs = Math.abs(value || 0);
     const sign = (value || 0) < 0 ? '-' : '';
-    return `${sign}${abs.toLocaleString(getLocale(), { minimumFractionDigits: 2 })} ${cur}`;
+    const digits = moneyFractionDigits(cur);
+    return `${sign}${abs.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
   }
 
   function formatCryptoPrice(value, currency) {
