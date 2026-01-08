@@ -2,6 +2,7 @@
   const selectors = {
     userEmail: '#userEmail',
     logoutBtn: '#btn-logout',
+    baseCurrencyBtn: '#btn-base-currency',
     langBtn: '#btn-lang',
     balanceChart: '#balanceChart',
     expenseChart: '#expenseChart',
@@ -53,7 +54,18 @@
     addWalletCancelBtn: '#btn-add-wallet-cancel',
     addWalletCreateBtn: '#btn-add-wallet-create',
     addWalletCloseBtn: '#btn-add-wallet-close',
-    addWalletError: '#addWalletError'
+    addWalletError: '#addWalletError',
+    baseCurrencyOverlay: '#base-currency-overlay',
+    baseCurrencyMenu: '#base-currency-menu',
+    baseCurrencySelect: '#baseCurrencySelect',
+    baseCurrencyCancelBtn: '#btn-base-currency-cancel',
+    baseCurrencySaveBtn: '#btn-base-currency-save',
+    baseCurrencyCloseBtn: '#btn-base-currency-close',
+    baseCurrencyError: '#baseCurrencyError',
+    incomeExpenseNet: '#incomeExpenseNet',
+    paymentRentAmount: '#paymentRentAmount',
+    paymentSpotifyAmount: '#paymentSpotifyAmount',
+    paymentMobileAmount: '#paymentMobileAmount'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -61,6 +73,7 @@
     ru: {
       dashboard_title: 'Личный кабинет',
       logout: 'Выйти',
+      base_currency_button: 'Валюта: {value}',
       balance: 'Баланс',
       credit: 'Кредит',
       credit_placeholder: 'Кредит: —',
@@ -113,6 +126,7 @@
       initial_balance_placeholder: '0.00',
       cancel: 'Отмена',
       create: 'Создать',
+      save: 'Сохранить',
       close_dialog: 'Закрыть',
       create_account_failed: 'Не удалось создать счёт.',
       enter_account_name: 'Введите название счёта.',
@@ -143,6 +157,11 @@
       wallet_enter_address: 'Введите адрес.',
       wallet_invalid_address: 'Некорректный адрес.',
       wallet_create_failed: 'Не удалось добавить кошелёк.',
+      base_currency_menu_aria: 'Изменить базовую валюту',
+      base_currency_title: 'Базовая валюта',
+      base_currency_subtitle: 'Все суммы будут отображаться в выбранной валюте.',
+      base_currency_update_failed: 'Не удалось обновить базовую валюту.',
+      base_currency_conversion_failed: 'Не удалось конвертировать суммы в базовую валюту.',
       period_7d: 'за 7д',
       period_24h: 'за 24ч',
       min: 'Мин',
@@ -159,6 +178,7 @@
     en: {
       dashboard_title: 'Dashboard',
       logout: 'Log out',
+      base_currency_button: 'Currency: {value}',
       balance: 'Balance',
       credit: 'Credit',
       credit_placeholder: 'Credit: —',
@@ -211,6 +231,7 @@
       initial_balance_placeholder: '0.00',
       cancel: 'Cancel',
       create: 'Create',
+      save: 'Save',
       close_dialog: 'Close',
       create_account_failed: 'Failed to create account.',
       enter_account_name: 'Enter an account name.',
@@ -241,6 +262,11 @@
       wallet_enter_address: 'Enter an address.',
       wallet_invalid_address: 'Invalid address.',
       wallet_create_failed: 'Failed to add wallet.',
+      base_currency_menu_aria: 'Change base currency',
+      base_currency_title: 'Base currency',
+      base_currency_subtitle: 'All amounts are shown in the selected currency.',
+      base_currency_update_failed: 'Failed to update base currency.',
+      base_currency_conversion_failed: 'Failed to convert amounts to base currency.',
       period_7d: 'in 7d',
       period_24h: 'in 24h',
       min: 'Min',
@@ -374,6 +400,10 @@
   const fxFallbackBase = 'USD';
   const fxExcluded = new Set(['BTC', 'ETH']);
   const fxSortModes = { volatility: 'volatility', alpha: 'alpha' };
+  let supportedCurrencies = fxFallbackCurrencies.concat([
+    { code: 'BTC', name: 'Bitcoin' },
+    { code: 'ETH', name: 'Ethereum' }
+  ]);
   let fxCurrencies = fxFallbackCurrencies.slice();
   let fxBase = '';
   let fxSortMode = fxSortModes.volatility;
@@ -405,68 +435,146 @@
     }, 0);
   }
 
-  async function convertTotalsToBase(totals, base) {
+  function isCryptoCurrency(code) {
+    const normalized = normalizeCurrency(code);
+    return normalized === 'BTC' || normalized === 'ETH';
+  }
+
+  function uniqueCurrencies(values) {
+    return Array.from(new Set((Array.isArray(values) ? values : [])
+      .map((v) => normalizeCurrency(v))
+      .filter(Boolean)));
+  }
+
+  async function fetchFxRates(base, quotes) {
     const normalizedBase = normalizeCurrency(base) || 'USD';
-    const list = Array.isArray(totals) ? totals : [];
-    if (!list.length) {
-      return { ok: true, total: 0, base: normalizedBase };
-    }
-    const neededQuotes = Array.from(new Set(
-      list.map((item) => normalizeCurrency(item?.currency))
-        .filter((code) => code && code !== normalizedBase)
-    ));
-    if (neededQuotes.length === 0) {
-      return { ok: true, total: sumTotals(list), base: normalizedBase };
+    const uniqueQuotes = uniqueCurrencies(quotes)
+      .filter((code) => code && code !== normalizedBase)
+      .filter((code) => !isCryptoCurrency(code));
+    if (uniqueQuotes.length === 0) {
+      return { ok: true, base: normalizedBase, rates: {}, asOf: null };
     }
 
     const params = new URLSearchParams();
     params.set('base', normalizedBase);
-    neededQuotes.forEach((code) => params.append('quote', code));
+    uniqueQuotes.forEach((code) => params.append('quote', code));
     const res = await Api.call(`/api/fx/rates?${params}`, 'GET', null, false);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      return { ok: false, base: normalizedBase };
+      return { ok: false, base: normalizedBase, rates: {}, asOf: null };
     }
     const rates = res.data.rates && typeof res.data.rates === 'object' ? res.data.rates : {};
-
-    let totalInBase = 0;
-    for (const item of list) {
-      const currency = normalizeCurrency(item?.currency);
-      const amount = toNumber(item?.total);
-      if (!Number.isFinite(amount)) {
-        continue;
-      }
-      if (!currency || currency === normalizedBase) {
-        totalInBase += amount;
-        continue;
-      }
-      const rate = toNumber(rates[currency]);
-      if (!Number.isFinite(rate) || rate <= 0) {
-        return { ok: false, base: normalizedBase };
-      }
-      totalInBase += amount / rate;
-    }
-    return { ok: true, total: totalInBase, base: normalizedBase, asOf: res.data.asOf };
+    return { ok: true, base: normalizedBase, rates, asOf: res.data.asOf };
   }
 
-  async function updateTotalBalanceInBase(totals, renderId) {
-    const totalBalanceEl = document.querySelector(selectors.totalBalance);
-    if (!totalBalanceEl) return;
-    const base = normalizeCurrency(baseCurrency) || 'USD';
+  async function fetchCryptoUsdPrices() {
+    const res = await Api.call('/api/crypto/rates?base=USD', 'GET', null, false);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      return { ok: false, prices: {}, asOf: null };
+    }
+    const payload = res.data;
+    const list = Array.isArray(payload.rates) ? payload.rates : [];
+    const prices = {};
+    list.forEach((item) => {
+      const code = item && item.code ? String(item.code).toUpperCase() : '';
+      const price = toNumber(item && item.price);
+      if (code && Number.isFinite(price) && price > 0) {
+        prices[code] = price;
+      }
+    });
+    return { ok: Object.keys(prices).length > 0, prices, asOf: payload.asOf };
+  }
 
-    const result = await convertTotalsToBase(totals, base);
-    if (renderId !== balanceRenderId) return;
+  async function buildConversionContext(base, currencies) {
+    const normalizedBase = normalizeCurrency(base) || 'USD';
+    const currencyList = uniqueCurrencies(currencies);
+    const hasCrypto = currencyList.some((code) => isCryptoCurrency(code)) || isCryptoCurrency(normalizedBase);
+    const baseIsCrypto = isCryptoCurrency(normalizedBase);
 
-    if (result.ok) {
-      totalBalanceEl.textContent = formatMoney(result.total || 0, base);
-      return;
+    let fx = { ok: true, base: normalizedBase, rates: {}, asOf: null };
+    let cryptoUsd = { ok: true, prices: {}, asOf: null };
+
+    if (baseIsCrypto) {
+      const fiat = currencyList.filter((code) => !isCryptoCurrency(code) && code !== 'USD');
+      fx = await fetchFxRates('USD', fiat);
+      cryptoUsd = await fetchCryptoUsdPrices();
+    } else {
+      const fiat = currencyList.filter((code) => !isCryptoCurrency(code) && code !== normalizedBase);
+      if (hasCrypto && normalizedBase !== 'USD' && !fiat.includes('USD')) {
+        fiat.push('USD');
+      }
+      fx = await fetchFxRates(normalizedBase, fiat);
+      if (hasCrypto) {
+        cryptoUsd = await fetchCryptoUsdPrices();
+      }
     }
 
-    const list = Array.isArray(totals) ? totals : [];
-    const baseItem = list.find((item) => normalizeCurrency(item?.currency) === base);
-    const fallback = baseItem || list[0];
-    const fallbackCurrency = normalizeCurrency(fallback?.currency) || base;
-    const fallbackAmount = toNumber(fallback?.total);
-    totalBalanceEl.textContent = formatMoney(Number.isFinite(fallbackAmount) ? fallbackAmount : 0, fallbackCurrency);
+    return {
+      base: normalizedBase,
+      baseIsCrypto,
+      fx,
+      cryptoUsd,
+      ok: fx.ok && (!hasCrypto || cryptoUsd.ok)
+    };
+  }
+
+  function convertToBaseAmount(amount, currency, ctx) {
+    const base = normalizeCurrency(ctx && ctx.base ? ctx.base : baseCurrency) || 'USD';
+    const from = normalizeCurrency(currency);
+    const value = toNumber(amount);
+    if (!Number.isFinite(value)) {
+      return NaN;
+    }
+    if (!from || from === base) {
+      return value;
+    }
+    if (!ctx || !ctx.ok) {
+      return NaN;
+    }
+
+    if (ctx.baseIsCrypto) {
+      const baseUsd = toNumber(ctx.cryptoUsd && ctx.cryptoUsd.prices ? ctx.cryptoUsd.prices[base] : NaN);
+      if (!Number.isFinite(baseUsd) || baseUsd <= 0) {
+        return NaN;
+      }
+      if (isCryptoCurrency(from)) {
+        const fromUsd = toNumber(ctx.cryptoUsd && ctx.cryptoUsd.prices ? ctx.cryptoUsd.prices[from] : NaN);
+        if (!Number.isFinite(fromUsd) || fromUsd <= 0) {
+          return NaN;
+        }
+        return (value * fromUsd) / baseUsd;
+      }
+      if (from === 'USD') {
+        return value / baseUsd;
+      }
+      const quotePerUsd = toNumber(ctx.fx && ctx.fx.rates ? ctx.fx.rates[from] : NaN);
+      if (!Number.isFinite(quotePerUsd) || quotePerUsd <= 0) {
+        return NaN;
+      }
+      const usdAmount = value / quotePerUsd;
+      return usdAmount / baseUsd;
+    }
+
+    if (!isCryptoCurrency(from)) {
+      const quotePerBase = toNumber(ctx.fx && ctx.fx.rates ? ctx.fx.rates[from] : NaN);
+      if (!Number.isFinite(quotePerBase) || quotePerBase <= 0) {
+        return NaN;
+      }
+      return value / quotePerBase;
+    }
+
+    const fromUsd = toNumber(ctx.cryptoUsd && ctx.cryptoUsd.prices ? ctx.cryptoUsd.prices[from] : NaN);
+    if (!Number.isFinite(fromUsd) || fromUsd <= 0) {
+      return NaN;
+    }
+    const usdValue = value * fromUsd;
+    if (base === 'USD') {
+      return usdValue;
+    }
+    const usdPerBase = toNumber(ctx.fx && ctx.fx.rates ? ctx.fx.rates.USD : NaN);
+    if (!Number.isFinite(usdPerBase) || usdPerBase <= 0) {
+      return NaN;
+    }
+    return usdValue / usdPerBase;
   }
 
   function updateCurrencyLabels() {
@@ -474,6 +582,8 @@
     const exp = document.querySelector('#expenseCurrency');
     if (bal) bal.textContent = baseCurrency;
     if (exp) exp.textContent = baseCurrency;
+    const baseBtn = document.querySelector(selectors.baseCurrencyBtn);
+    if (baseBtn) baseBtn.textContent = t('base_currency_button', { value: baseCurrency });
     const totalExpense = document.querySelector('#expenseTotal');
     if (totalExpense) totalExpense.textContent = `${t('total')}: ${formatMoney(2350, baseCurrency)}`;
   }
@@ -559,67 +669,98 @@
     }
   }
 
-  function renderBalance(summary) {
+  function renderBalance(summary, conversion) {
     const totals = Array.isArray(summary.totalsByCurrency) ? summary.totalsByCurrency : [];
     const accounts = Array.isArray(summary.accounts) ? summary.accounts : [];
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
     const creditEl = document.querySelector(selectors.creditValue);
     const totalsLineEl = document.querySelector(selectors.totalsByCurrency);
     const base = normalizeCurrency(baseCurrency) || 'USD';
-    const needsConversion = totals.some((item) => {
-      const currency = normalizeCurrency(item?.currency);
-      return currency && currency !== base;
-    });
+
+    let totalOk = true;
+    const totalInBase = totals.reduce((acc, item) => {
+      const value = convertToBaseAmount(item?.total, item?.currency, conversion);
+      if (!Number.isFinite(value)) {
+        totalOk = false;
+        return acc;
+      }
+      return acc + value;
+    }, 0);
 
     if (totalBalanceEl) {
       if (!totals.length) {
         totalBalanceEl.textContent = formatMoney(0, base);
-      } else if (!needsConversion) {
-        totalBalanceEl.textContent = formatMoney(sumTotals(totals), base);
+      } else if (totalOk) {
+        totalBalanceEl.textContent = formatMoney(totalInBase, base);
       } else {
-        totalBalanceEl.textContent = t('updating');
+        const baseItem = totals.find((item) => normalizeCurrency(item?.currency) === base);
+        const fallback = baseItem || totals[0];
+        const fallbackCurrency = normalizeCurrency(fallback?.currency) || base;
+        const fallbackAmount = toNumber(fallback?.total);
+        totalBalanceEl.textContent = formatMoney(Number.isFinite(fallbackAmount) ? fallbackAmount : 0, fallbackCurrency);
       }
     }
 
-    const creditByCurrency = accounts.reduce((acc, account) => {
-      if ((account.balance || 0) < 0) {
-        const cur = account.currency || baseCurrency;
-        acc[cur] = (acc[cur] || 0) + Math.abs(account.balance || 0);
+    let creditOk = true;
+    const creditInBase = accounts.reduce((acc, account) => {
+      const balance = toNumber(account?.balance);
+      if (!Number.isFinite(balance) || balance >= 0) {
+        return acc;
       }
-      return acc;
-    }, {});
-    const creditParts = Object.entries(creditByCurrency).map(([cur, sum]) => formatMoney(sum, cur));
+      const value = convertToBaseAmount(Math.abs(balance), account?.currency, conversion);
+      if (!Number.isFinite(value)) {
+        creditOk = false;
+        return acc;
+      }
+      return acc + value;
+    }, 0);
     if (creditEl) {
-      creditEl.textContent = `${t('credit')}: ${creditParts.length ? creditParts.join(' · ') : formatMoney(0)}`;
+      creditEl.textContent = creditOk
+        ? `${t('credit')}: ${formatMoney(creditInBase || 0, base)}`
+        : `${t('credit')}: —`;
     }
 
-    const totalsText = totals.length ? totals.map((t) => formatMoney(t.total || 0, t.currency)).join(' · ') : '';
+    const totalsText = totals.length
+      ? totals.map((item) => {
+        const cur = normalizeCurrency(item?.currency);
+        const value = convertToBaseAmount(item?.total, cur, conversion);
+        if (Number.isFinite(value)) {
+          return `${cur}: ${formatMoney(value, base)}`;
+        }
+        return formatMoney(item?.total || 0, cur || base);
+      }).join(' · ')
+      : '';
     if (totalsLineEl) {
       totalsLineEl.textContent = totalsText ? `${t('balance_by_currency')}: ${totalsText}` : '';
       totalsLineEl.style.display = totalsText ? 'block' : 'none';
     }
 
-    if (needsConversion) {
-      updateTotalBalanceInBase(totals, balanceRenderId);
-    }
+    showBalanceError(totalOk && creditOk && conversion && conversion.ok ? '' : t('base_currency_conversion_failed'));
   }
 
-  function renderAccountsList(accounts) {
+  function renderAccountsList(accounts, conversion) {
     const list = document.querySelector(selectors.accountsList);
     if (!list) return;
     if (!accounts || accounts.length === 0) {
       list.innerHTML = `<div class="muted">${t('no_accounts')}</div>`;
       return;
     }
-    list.innerHTML = accounts.map((acc) => `
-      <div class="list-item">
-        <div>
-          <div style="font-weight:800;">${acc.name || t('account')}</div>
-          <small>${acc.currency || baseCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
+    const base = normalizeCurrency(baseCurrency) || 'USD';
+    list.innerHTML = accounts.map((acc) => {
+      const value = convertToBaseAmount(acc.balance || 0, acc.currency, conversion);
+      const amountText = Number.isFinite(value) ? formatMoney(value, base) : formatMoney(acc.balance || 0, acc.currency);
+      const balanceValue = toNumber(acc.balance);
+      const signClass = Number.isFinite(balanceValue) && balanceValue < 0 ? 'amount-negative' : 'amount-positive';
+      return `
+        <div class="list-item">
+          <div>
+            <div style="font-weight:800;">${acc.name || t('account')}</div>
+            <small>${acc.currency || baseCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
+          </div>
+          <div class="${signClass}">${amountText}</div>
         </div>
-        <div class="${(acc.balance || 0) >= 0 ? 'amount-positive' : 'amount-negative'}">${formatMoney(acc.balance || 0, acc.currency)}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   function hashString(value) {
@@ -853,16 +994,24 @@
       const resp = await fetch('/api/currencies');
       const data = await resp.json();
       if (Array.isArray(data) && data.length) {
-        const filtered = data
+        const all = data
           .filter((item) => item && item.code && item.name)
           .map((item) => ({ code: item.code.toUpperCase(), name: item.name }))
-          .filter((item) => item.code.length === 3 && !fxExcluded.has(item.code));
-        if (filtered.length) {
-          fxCurrencies = filtered;
+          .filter((item) => item.code.length === 3);
+        if (all.length) {
+          supportedCurrencies = all;
+          const filtered = all.filter((item) => !fxExcluded.has(item.code));
+          if (filtered.length) {
+            fxCurrencies = filtered;
+          }
         }
       }
     } catch (_) {
       fxCurrencies = fxFallbackCurrencies.slice();
+      supportedCurrencies = fxFallbackCurrencies.concat([
+        { code: 'BTC', name: 'Bitcoin' },
+        { code: 'ETH', name: 'Ethereum' }
+      ]);
     }
     const baseSelect = document.querySelector(selectors.fxBaseSelect);
     if (baseSelect) {
@@ -877,6 +1026,7 @@
       baseSelect.value = base;
     }
     populateAccountCurrencySelect();
+    populateBaseCurrencySelect();
   }
 
   async function loadBalance() {
@@ -895,9 +1045,17 @@
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
-    renderAccountsList(payload.accounts || []);
-    balanceRenderId += 1;
-    renderBalance(payload);
+    const accounts = Array.isArray(payload.accounts) ? payload.accounts : [];
+    const totalsByCurrency = Array.isArray(payload.totalsByCurrency) ? payload.totalsByCurrency : [];
+    const renderId = (balanceRenderId += 1);
+    const currencyList = [
+      ...accounts.map((item) => item && item.currency),
+      ...totalsByCurrency.map((item) => item && item.currency)
+    ];
+    const conversion = await buildConversionContext(baseCurrency, currencyList);
+    if (renderId !== balanceRenderId) return;
+    renderAccountsList(accounts, conversion);
+    renderBalance({ accounts, totalsByCurrency }, conversion);
   }
 
   async function loadFxRates() {
@@ -1428,6 +1586,153 @@
     }
   }
 
+  function showBaseCurrencyError(message) {
+    const box = document.querySelector(selectors.baseCurrencyError);
+    if (!box) return;
+    if (message) {
+      box.style.display = 'block';
+      box.textContent = message;
+    } else {
+      box.style.display = 'none';
+      box.textContent = '';
+    }
+  }
+
+  function populateBaseCurrencySelect(preferredCode) {
+    const select = document.querySelector(selectors.baseCurrencySelect);
+    if (!select) return;
+    const existing = preferredCode || select.value;
+    select.innerHTML = '';
+    supportedCurrencies.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.code;
+      option.textContent = `${item.code} — ${item.name}`;
+      select.appendChild(option);
+    });
+    const preferred = (existing || baseCurrency || fxFallbackBase || '').toUpperCase();
+    if (preferred && supportedCurrencies.some((item) => item.code === preferred)) {
+      select.value = preferred;
+    } else if (supportedCurrencies.length) {
+      select.value = supportedCurrencies[0].code;
+    }
+  }
+
+  async function updateDemoAmounts() {
+    const base = normalizeCurrency(baseCurrency) || 'USD';
+    const entries = [
+      { selector: selectors.incomeExpenseNet, amount: 1850, currency: 'USD' },
+      { selector: selectors.paymentRentAmount, amount: -700, currency: 'USD' },
+      { selector: selectors.paymentSpotifyAmount, amount: -4.99, currency: 'USD' },
+      { selector: selectors.paymentMobileAmount, amount: -15, currency: 'USD' }
+    ];
+
+    const conversion = await buildConversionContext(base, entries.map((item) => item.currency));
+    entries.forEach((item) => {
+      const el = document.querySelector(item.selector);
+      if (!el) return;
+      const value = convertToBaseAmount(item.amount, item.currency, conversion);
+      el.textContent = Number.isFinite(value) ? formatMoney(value, base) : formatMoney(item.amount, item.currency);
+    });
+  }
+
+  function bindBaseCurrencyMenu() {
+    const btn = document.querySelector(selectors.baseCurrencyBtn);
+    const menu = document.querySelector(selectors.baseCurrencyMenu);
+    const overlay = document.querySelector(selectors.baseCurrencyOverlay);
+    const cancelBtn = document.querySelector(selectors.baseCurrencyCancelBtn);
+    const closeBtn = document.querySelector(selectors.baseCurrencyCloseBtn);
+    const saveBtn = document.querySelector(selectors.baseCurrencySaveBtn);
+    if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !saveBtn) return;
+
+    let open = false;
+    let submitting = false;
+
+    const close = () => {
+      open = false;
+      overlay.style.display = 'none';
+      menu.style.display = 'none';
+    };
+
+    const openDialog = () => {
+      open = true;
+      overlay.style.display = 'flex';
+      menu.style.display = 'grid';
+      showBaseCurrencyError('');
+      populateBaseCurrencySelect(baseCurrency);
+      const select = document.querySelector(selectors.baseCurrencySelect);
+      if (select) select.focus();
+      saveBtn.disabled = false;
+    };
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    cancelBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (open && e.key === 'Escape') close();
+    });
+
+    const submit = async () => {
+      if (!open || submitting) return;
+      showBaseCurrencyError('');
+
+      const select = document.querySelector(selectors.baseCurrencySelect);
+      const selected = normalizeCurrency(select?.value);
+      if (select) select.classList.toggle('error', !selected);
+      if (!selected) {
+        showBaseCurrencyError(t('select_currency'));
+        if (select) select.focus();
+        return;
+      }
+
+      submitting = true;
+      saveBtn.disabled = true;
+      try {
+        const res = await Api.call('/api/auth/me/base-currency', 'PATCH', { baseCurrency: selected }, true);
+        if (!res.ok || !res.data || typeof res.data !== 'object') {
+          const message = res.data && typeof res.data === 'object'
+            ? (res.data.message || '')
+            : '';
+          showBaseCurrencyError(message || t('base_currency_update_failed'));
+          return;
+        }
+        baseCurrency = res.data.baseCurrency || selected;
+        fxBase = '';
+        updateCurrencyLabels();
+        close();
+        await Promise.all([
+          loadBalance(),
+          loadFxRates(),
+          loadCryptoRates(),
+          loadWallets(),
+          updateDemoAmounts()
+        ]);
+        renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
+        renderBarChart(
+          selectors.expenseChart,
+          demoData.expenses.map((item) => ({ ...item, label: t(item.labelKey) })),
+          baseCurrency
+        );
+      } finally {
+        submitting = false;
+        saveBtn.disabled = false;
+      }
+    };
+
+    saveBtn.addEventListener('click', submit);
+    menu.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
+    });
+  }
+
   function bindAddAccountMenu() {
     const btn = document.querySelector(selectors.addAccountBtn);
     const menu = document.querySelector(selectors.addAccountMenu);
@@ -1596,12 +1901,14 @@
     }
     renderProfile(res.data || {});
     bindLogout();
+    bindBaseCurrencyMenu();
     await loadBalance();
     await loadFxCurrencies();
     bindFxControls();
     await loadFxRates();
     await loadCryptoRates();
     await loadWallets();
+    await updateDemoAmounts();
     renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
     renderBarChart(
       selectors.expenseChart,

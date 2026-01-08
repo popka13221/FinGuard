@@ -6,6 +6,7 @@ import com.myname.finguard.auth.dto.LoginRequest;
 import com.myname.finguard.auth.dto.RegisterRequest;
 import com.myname.finguard.auth.dto.ResetPasswordRequest;
 import com.myname.finguard.auth.dto.ResetSessionResponse;
+import com.myname.finguard.auth.dto.UpdateBaseCurrencyRequest;
 import com.myname.finguard.auth.dto.ValidateResetTokenRequest;
 import com.myname.finguard.auth.dto.UserProfileResponse;
 import com.myname.finguard.auth.dto.ForgotPasswordRequest;
@@ -31,9 +32,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -146,6 +149,23 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<UserProfileResponse> me(Authentication authentication) {
         UserProfileResponse profile = authService.profile(authentication.getName());
+        return ResponseEntity.ok(profile);
+    }
+
+    @PatchMapping("/me/base-currency")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update base currency", description = "Updates the current user's base currency preference.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Base currency updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<UserProfileResponse> updateBaseCurrency(
+            @Valid @RequestBody UpdateBaseCurrencyRequest request,
+            Authentication authentication
+    ) {
+        UserProfileResponse profile = authService.updateBaseCurrency(authentication.getName(), request.baseCurrency());
         return ResponseEntity.ok(profile);
     }
 

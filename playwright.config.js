@@ -1,7 +1,9 @@
 // @ts-check
 const { defineConfig, devices } = require('@playwright/test');
 
-const baseURL = process.env.E2E_BASE_URL || 'http://localhost:8080';
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:8085';
+const parsedBaseUrl = new URL(baseURL);
+const serverPort = parsedBaseUrl.port || '8085';
 const serverUrl = `${baseURL.replace(/\/+$/, '')}/actuator/health`;
 
 module.exports = defineConfig({
@@ -30,9 +32,9 @@ module.exports = defineConfig({
   webServer: process.env.E2E_NO_SERVER
     ? undefined
     : {
-      command: 'mvn -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=e2e -Dspring-boot.run.arguments=--server.port=8080',
+      command: `mvn -q -DskipTests spring-boot:run -Dspring-boot.run.profiles=e2e -Dspring-boot.run.arguments=--server.port=${serverPort}`,
       url: serverUrl,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: process.env.E2E_REUSE_SERVER === '1' && !process.env.CI,
       timeout: 120_000
     }
 });

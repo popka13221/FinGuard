@@ -260,6 +260,31 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public UserProfileResponse updateBaseCurrency(String email, String baseCurrency) {
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        if (normalizedEmail.isBlank()) {
+            throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED);
+        }
+
+        String normalizedCurrency = currencyService.normalize(baseCurrency);
+        if (!currencyService.isSupported(normalizedCurrency)) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "Unsupported base currency", HttpStatus.BAD_REQUEST);
+        }
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED));
+        user.setBaseCurrency(normalizedCurrency);
+        User saved = userRepository.save(user);
+        return new UserProfileResponse(
+                saved.getId(),
+                saved.getEmail(),
+                saved.getFullName(),
+                saved.getBaseCurrency(),
+                saved.getRole().name()
+        );
+    }
+
     public long tokenTtlSeconds() {
         return jwtTokenProvider.getValiditySeconds();
     }

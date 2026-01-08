@@ -17,6 +17,7 @@
       </div>
       <div class="actions">
         <div class="chip" id="userEmail">—</div>
+        <button type="button" class="ghost" id="btn-base-currency" data-i18n-title="base_currency_title" data-i18n-aria="base_currency_aria">USD</button>
         <button type="button" class="ghost" id="btn-lang">EN</button>
         <button type="button" class="ghost" id="btn-logout" data-i18n="logout">Выйти</button>
       </div>
@@ -32,7 +33,7 @@
       </div>
       <div class="card stat-card">
         <div class="muted" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
-        <div class="stat-value">1 850.00 USD</div>
+        <div class="stat-value" id="incomeExpenseNet">—</div>
         <div class="muted" data-i18n="income_expense_details">Доход: 4 200 · Расход: 2 350</div>
       </div>
     </div>
@@ -70,21 +71,21 @@
                 <div style="font-weight:700;" data-i18n="payment_rent">Аренда</div>
                 <small data-i18n="payment_due_jan15">Срок: 15 янв</small>
               </div>
-              <div class="amount-negative">-700 USD</div>
+              <div class="amount-negative" id="paymentRentAmount">—</div>
             </div>
             <div class="list-item">
               <div>
                 <div style="font-weight:700;">Spotify</div>
                 <small data-i18n="payment_due_jan19">Срок: 19 янв</small>
               </div>
-              <div class="amount-negative">-4.99 USD</div>
+              <div class="amount-negative" id="paymentSpotifyAmount">—</div>
             </div>
             <div class="list-item">
               <div>
                 <div style="font-weight:700;" data-i18n="payment_mobile">Мобильная связь</div>
                 <small data-i18n="payment_due_jan22">Срок: 22 янв</small>
               </div>
-              <div class="amount-negative">-15 USD</div>
+              <div class="amount-negative" id="paymentMobileAmount">—</div>
             </div>
           </div>
         </div>
@@ -290,6 +291,31 @@
         <div class="buttons" style="justify-content:flex-end;">
           <button type="button" class="ghost" id="btn-add-wallet-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-wallet-create" data-i18n="create">Создать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="base-currency-overlay" class="overlay" style="display:none;">
+    <div class="dropdown-menu" id="base-currency-menu" aria-label="Базовая валюта" data-i18n-aria="base_currency_menu_aria">
+      <div class="card-row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin:0;" data-i18n="base_currency_title">Базовая валюта</h3>
+          <div class="muted" data-i18n="base_currency_subtitle">Все суммы будут отображаться в выбранной валюте.</div>
+        </div>
+        <button type="button" class="ghost" id="btn-base-currency-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
+      </div>
+
+      <div class="alert" id="baseCurrencyError" style="display:none;"></div>
+
+      <div class="form" style="margin-top:6px;">
+        <div class="field">
+          <label for="baseCurrencySelect" data-i18n="currency_label">Валюта</label>
+          <select id="baseCurrencySelect" aria-label="Валюта" data-i18n-aria="currency_aria"></select>
+        </div>
+        <div class="buttons" style="justify-content:flex-end;">
+          <button type="button" class="ghost" id="btn-base-currency-cancel" data-i18n="cancel">Отмена</button>
+          <button type="button" id="btn-base-currency-save" data-i18n="save">Сохранить</button>
         </div>
       </div>
     </div>
