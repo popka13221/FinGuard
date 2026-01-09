@@ -22,6 +22,7 @@ import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceService;
 import com.myname.finguard.crypto.service.CryptoWalletService;
+import com.myname.finguard.crypto.service.ArbitrumWalletPortfolioService;
 import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
 import com.myname.finguard.crypto.service.EthWalletPortfolioService;
 import java.math.BigDecimal;
@@ -56,6 +57,9 @@ class CryptoWalletServiceTest {
     @Mock
     private EthWalletPortfolioService ethWalletPortfolioService;
 
+    @Mock
+    private ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
+
     private CryptoWalletService cryptoWalletService;
 
     @BeforeEach
@@ -67,7 +71,8 @@ class CryptoWalletServiceTest {
                 walletBalanceService,
                 cryptoRatesService,
                 currencyService,
-                ethWalletPortfolioService
+                ethWalletPortfolioService,
+                arbitrumWalletPortfolioService
         );
     }
 
@@ -251,6 +256,51 @@ class CryptoWalletServiceTest {
         assertThat(dto.network()).isEqualTo("ETH");
         assertThat(dto.balance()).isEqualByComparingTo("0.00029");
         assertThat(dto.valueInBase()).isEqualByComparingTo("1000.87");
+    }
+
+    @Test
+    void listWalletsIncludesArbitrumTokensAndUsesEthPrice() {
+        User user = user(1L, "user@example.com", "USD");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        CryptoWallet wallet = new CryptoWallet();
+        wallet.setId(12L);
+        wallet.setUser(user);
+        wallet.setNetwork(CryptoNetwork.ARBITRUM);
+        wallet.setAddress("0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd");
+        wallet.setAddressNormalized("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd");
+        wallet.setLabel("Arbitrum");
+        wallet.setArchived(false);
+
+        when(cryptoWalletRepository.findByUserIdAndArchivedFalseOrderByCreatedAtDesc(1L)).thenReturn(List.of(wallet));
+        when(walletBalanceService.latestBalance(CryptoNetwork.ARBITRUM, wallet.getAddressNormalized()))
+                .thenReturn(new CryptoWalletBalanceProvider.WalletBalance(
+                        CryptoNetwork.ARBITRUM,
+                        wallet.getAddressNormalized(),
+                        new BigDecimal("1.5"),
+                        Instant.parse("2024-01-01T00:00:00Z")
+                ));
+        when(cryptoRatesService.latestRates("USD"))
+                .thenReturn(new CryptoRatesProvider.CryptoRates(
+                        "USD",
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        List.of(new CryptoRatesProvider.CryptoRate("ETH", "Ethereum", new BigDecimal("3000"), BigDecimal.ZERO, List.of()))
+                ));
+        when(arbitrumWalletPortfolioService.latestPortfolio(wallet.getAddressNormalized()))
+                .thenReturn(new com.myname.finguard.crypto.service.ArbitrumWalletPortfolioProvider.ArbitrumWalletPortfolio(
+                        wallet.getAddressNormalized(),
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        new BigDecimal("1000.00"),
+                        List.of()
+                ));
+
+        List<CryptoWalletDto> result = cryptoWalletService.listWallets(1L);
+
+        assertThat(result).hasSize(1);
+        CryptoWalletDto dto = result.get(0);
+        assertThat(dto.network()).isEqualTo("ARBITRUM");
+        assertThat(dto.balance()).isEqualByComparingTo("1.5");
+        assertThat(dto.valueInBase()).isEqualByComparingTo("5500.00");
     }
 
     @Test

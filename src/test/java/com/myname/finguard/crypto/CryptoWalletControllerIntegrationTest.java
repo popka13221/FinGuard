@@ -16,6 +16,7 @@ import com.myname.finguard.common.service.MailService;
 import com.myname.finguard.crypto.model.CryptoNetwork;
 import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
+import com.myname.finguard.crypto.service.ArbitrumWalletPortfolioProvider;
 import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
@@ -42,7 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
 @TestPropertySource(properties = {
         "app.crypto.cache-ttl-seconds=0",
         "app.crypto.wallet.cache-ttl-seconds=0",
-        "app.crypto.wallet.eth.portfolio.cache-ttl-seconds=0"
+        "app.crypto.wallet.eth.portfolio.cache-ttl-seconds=0",
+        "app.crypto.wallet.arbitrum.portfolio.cache-ttl-seconds=0"
 })
 class CryptoWalletControllerIntegrationTest {
 
@@ -66,6 +68,9 @@ class CryptoWalletControllerIntegrationTest {
 
     @MockBean
     private EthWalletPortfolioProvider ethWalletPortfolioProvider;
+
+    @MockBean
+    private ArbitrumWalletPortfolioProvider arbitrumWalletPortfolioProvider;
 
     @BeforeEach
     void setup() {
@@ -311,6 +316,57 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode wallet = list.get(0);
         assertThat(wallet.get("network").asText()).isEqualTo("ETH");
         assertThat(wallet.get("valueInBase").decimalValue()).isEqualByComparingTo("1000.87");
+    }
+
+    @Test
+    @Transactional
+    void includesArbitrumTokenValueInValueInBase() throws Exception {
+        String email = "wallet-arb-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+
+        when(cryptoRatesProvider.fetchLatest("USD"))
+                .thenReturn(new CryptoRatesProvider.CryptoRates(
+                        "USD",
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        List.of(new CryptoRatesProvider.CryptoRate("ETH", "Ethereum", new BigDecimal("3000"), BigDecimal.ZERO, List.of()))
+                ));
+        when(walletBalanceProvider.fetchLatest(CryptoNetwork.ARBITRUM, address))
+                .thenReturn(new CryptoWalletBalanceProvider.WalletBalance(
+                        CryptoNetwork.ARBITRUM,
+                        address,
+                        new BigDecimal("1.5"),
+                        Instant.parse("2024-01-01T00:00:00Z")
+                ));
+        when(arbitrumWalletPortfolioProvider.fetchLatest(address))
+                .thenReturn(new ArbitrumWalletPortfolioProvider.ArbitrumWalletPortfolio(
+                        address,
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        new BigDecimal("500.00"),
+                        List.of()
+                ));
+
+        mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"ARBITRUM","address":"%s","label":"Arbitrum"}
+                                """.formatted(address)))
+                .andExpect(status().isCreated());
+
+        String listResponse = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode list = objectMapper.readTree(listResponse);
+        assertThat(list.isArray()).isTrue();
+        assertThat(list.size()).isEqualTo(1);
+        JsonNode wallet = list.get(0);
+        assertThat(wallet.get("network").asText()).isEqualTo("ARBITRUM");
+        assertThat(wallet.get("valueInBase").decimalValue()).isEqualByComparingTo("5000.00");
     }
 
     @Test

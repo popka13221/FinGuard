@@ -37,6 +37,7 @@ public class CryptoWalletService {
     private final CryptoRatesService cryptoRatesService;
     private final CurrencyService currencyService;
     private final EthWalletPortfolioService ethWalletPortfolioService;
+    private final ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
 
     public CryptoWalletService(
             CryptoWalletRepository cryptoWalletRepository,
@@ -44,7 +45,8 @@ public class CryptoWalletService {
             CryptoWalletBalanceService walletBalanceService,
             CryptoRatesService cryptoRatesService,
             CurrencyService currencyService,
-            EthWalletPortfolioService ethWalletPortfolioService
+            EthWalletPortfolioService ethWalletPortfolioService,
+            ArbitrumWalletPortfolioService arbitrumWalletPortfolioService
     ) {
         this.cryptoWalletRepository = cryptoWalletRepository;
         this.userRepository = userRepository;
@@ -52,6 +54,7 @@ public class CryptoWalletService {
         this.cryptoRatesService = cryptoRatesService;
         this.currencyService = currencyService;
         this.ethWalletPortfolioService = ethWalletPortfolioService;
+        this.arbitrumWalletPortfolioService = arbitrumWalletPortfolioService;
     }
 
     public CryptoWalletDto createWallet(Long userId, CreateCryptoWalletRequest request) {
@@ -137,6 +140,10 @@ public class CryptoWalletService {
             BigDecimal tokenValueInBase = computeEthTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
             valueInBase = mergeValues(valueInBase, tokenValueInBase, baseCurrency);
         }
+        if (wallet.getNetwork() == CryptoNetwork.ARBITRUM) {
+            BigDecimal tokenValueInBase = computeArbitrumTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
+            valueInBase = mergeValues(valueInBase, tokenValueInBase, baseCurrency);
+        }
         return new CryptoWalletDto(
                 wallet.getId(),
                 wallet.getNetwork().name(),
@@ -155,6 +162,19 @@ public class CryptoWalletService {
         }
         try {
             EthWalletPortfolioProvider.EthWalletPortfolio portfolio = ethWalletPortfolioService.latestPortfolio(addressNormalized);
+            BigDecimal tokenValueUsd = portfolio == null ? null : portfolio.tokenValueUsd();
+            return convertUsdToBase(tokenValueUsd, baseCurrency);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private BigDecimal computeArbitrumTokenValueInBase(String addressNormalized, String baseCurrency) {
+        if (arbitrumWalletPortfolioService == null || addressNormalized == null || addressNormalized.isBlank()) {
+            return null;
+        }
+        try {
+            ArbitrumWalletPortfolioProvider.ArbitrumWalletPortfolio portfolio = arbitrumWalletPortfolioService.latestPortfolio(addressNormalized);
             BigDecimal tokenValueUsd = portfolio == null ? null : portfolio.tokenValueUsd();
             return convertUsdToBase(tokenValueUsd, baseCurrency);
         } catch (Exception ignored) {
@@ -230,12 +250,23 @@ public class CryptoWalletService {
         if (network == null || balance == null || baseCurrency == null || baseCurrency.isBlank() || prices.isEmpty()) {
             return null;
         }
-        BigDecimal price = prices.get(network.name());
+        BigDecimal price = prices.get(priceCode(network));
         if (price == null) {
             return null;
         }
         int scale = isCrypto(baseCurrency) ? 8 : 2;
         return balance.multiply(price).setScale(scale, RoundingMode.HALF_UP);
+    }
+
+    private String priceCode(CryptoNetwork network) {
+        if (network == null) {
+            return null;
+        }
+        return switch (network) {
+            case BTC -> "BTC";
+            case ETH -> "ETH";
+            case ARBITRUM -> "ETH";
+        };
     }
 
     private boolean isCrypto(String currency) {
@@ -282,6 +313,7 @@ public class CryptoWalletService {
         return switch (network) {
             case ETH -> normalizeEthAddress(trimmed);
             case BTC -> normalizeBtcAddress(trimmed);
+            case ARBITRUM -> normalizeEthAddress(trimmed);
         };
     }
 

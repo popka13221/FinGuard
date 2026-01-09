@@ -2,8 +2,11 @@ package com.myname.finguard.crypto.service;
 
 import com.myname.finguard.crypto.model.CryptoNetwork;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,14 +20,17 @@ public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvi
 
     private final RestClient btcClient;
     private final RestClient ethClient;
+    private final RestClient arbitrumClient;
 
     public HttpCryptoWalletBalanceProvider(
             RestClient.Builder builder,
             @Value("${app.crypto.wallet.btc.provider-base-url:https://blockstream.info/api}") String btcBaseUrl,
-            @Value("${app.crypto.wallet.eth.provider-base-url:https://api.blockcypher.com/v1/eth/main}") String ethBaseUrl
+            @Value("${app.crypto.wallet.eth.provider-base-url:https://api.blockcypher.com/v1/eth/main}") String ethBaseUrl,
+            @Value("${app.crypto.wallet.arbitrum.provider-base-url:https://arb1.arbitrum.io/rpc}") String arbitrumBaseUrl
     ) {
         this.btcClient = builder.baseUrl(trimTrailingSlash(btcBaseUrl)).build();
         this.ethClient = builder.baseUrl(trimTrailingSlash(ethBaseUrl)).build();
+        this.arbitrumClient = builder.baseUrl(trimTrailingSlash(arbitrumBaseUrl)).build();
     }
 
     @Override
@@ -39,6 +45,7 @@ public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvi
         return switch (network) {
             case BTC -> fetchBtc(addressNormalized, asOf);
             case ETH -> fetchEth(addressNormalized, asOf);
+            case ARBITRUM -> fetchArbitrum(addressNormalized, asOf);
         };
     }
 
@@ -72,6 +79,40 @@ public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvi
         return new WalletBalance(CryptoNetwork.ETH, address, eth, asOf);
     }
 
+    private WalletBalance fetchArbitrum(String address, Instant asOf) {
+        JsonRpcResponse response = arbitrumClient.post()
+                .body(new JsonRpcRequest("2.0", 1L, "eth_getBalance", List.of(address, "latest")))
+                .retrieve()
+                .body(JsonRpcResponse.class);
+        if (response == null) {
+            throw new IllegalStateException("Empty Arbitrum balance response");
+        }
+        if (response.error() != null && response.error().message() != null && !response.error().message().isBlank()) {
+            throw new IllegalStateException("Arbitrum provider error: " + response.error().message());
+        }
+        if (response.result() == null || response.result().isBlank()) {
+            throw new IllegalStateException("Empty Arbitrum balance result");
+        }
+
+        BigDecimal wei = new BigDecimal(parseHexWei(response.result()));
+        BigDecimal eth = wei.divide(WEI_PER_ETH, DISPLAY_SCALE, RoundingMode.DOWN);
+        return new WalletBalance(CryptoNetwork.ARBITRUM, address, eth, asOf);
+    }
+
+    private BigInteger parseHexWei(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return BigInteger.ZERO;
+        }
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        if (value.startsWith("0x")) {
+            value = value.substring(2);
+        }
+        if (value.isEmpty()) {
+            return BigInteger.ZERO;
+        }
+        return new BigInteger(value, 16);
+    }
+
     private long safeLong(Long value) {
         return value == null ? 0L : value;
     }
@@ -91,5 +132,13 @@ public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvi
 
     private record BlockcypherBalance(BigDecimal final_balance) {
     }
-}
 
+    private record JsonRpcRequest(String jsonrpc, long id, String method, List<Object> params) {
+    }
+
+    private record JsonRpcResponse(String jsonrpc, Long id, String result, JsonRpcError error) {
+    }
+
+    private record JsonRpcError(Integer code, String message) {
+    }
+}

@@ -23,7 +23,8 @@ class HttpCryptoWalletBalanceProviderTest {
         HttpCryptoWalletBalanceProvider provider = new HttpCryptoWalletBalanceProvider(
                 builder,
                 "https://btc.example/api/",
-                "https://eth.example/v1/eth/main/"
+                "https://eth.example/v1/eth/main/",
+                "https://arb.example/rpc/"
         );
 
         String address = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
@@ -53,7 +54,8 @@ class HttpCryptoWalletBalanceProviderTest {
         HttpCryptoWalletBalanceProvider provider = new HttpCryptoWalletBalanceProvider(
                 builder,
                 "https://btc.example/api/",
-                "https://eth.example/v1/eth/main/"
+                "https://eth.example/v1/eth/main/",
+                "https://arb.example/rpc/"
         );
 
         String address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
@@ -71,5 +73,32 @@ class HttpCryptoWalletBalanceProviderTest {
         assertThat(balance.asOf()).isNotNull();
         server.verify();
     }
-}
 
+    @Test
+    void arbitrumConvertsWeiToEthUsingJsonRpc() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        HttpCryptoWalletBalanceProvider provider = new HttpCryptoWalletBalanceProvider(
+                builder,
+                "https://btc.example/api/",
+                "https://eth.example/v1/eth/main/",
+                "https://arb.example/rpc/"
+        );
+
+        String address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+        server.expect(requestTo("https://arb.example/rpc"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("""
+                        { "jsonrpc":"2.0", "id":1, "result":"0x14d1120d7b160000" }
+                        """, MediaType.APPLICATION_JSON));
+
+        CryptoWalletBalanceProvider.WalletBalance balance = provider.fetchLatest(CryptoNetwork.ARBITRUM, address);
+
+        assertThat(balance.network()).isEqualTo(CryptoNetwork.ARBITRUM);
+        assertThat(balance.address()).isEqualTo(address);
+        assertThat(balance.balance()).isEqualByComparingTo(new BigDecimal("1.50000000"));
+        assertThat(balance.asOf()).isNotNull();
+        server.verify();
+    }
+}

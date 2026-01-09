@@ -1402,6 +1402,18 @@
     return `${amount.toLocaleString(getLocale(), { minimumFractionDigits: 0, maximumFractionDigits: digits })} ${code || ''}`.trim();
   }
 
+  function walletNetworkLabel(network) {
+    const code = (network || '').toUpperCase();
+    if (code === 'ARBITRUM') return 'Arbitrum';
+    return code;
+  }
+
+  function walletNativeAsset(network) {
+    const code = (network || '').toUpperCase();
+    if (code === 'ARBITRUM') return 'ETH';
+    return code;
+  }
+
   function renderWallets(wallets) {
     const list = document.querySelector(selectors.walletsList);
     if (!list) return;
@@ -1411,6 +1423,7 @@
     }
     list.innerHTML = wallets.map((wallet) => {
       const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
+      const networkLabel = walletNetworkLabel(network);
       const label = wallet && wallet.label ? String(wallet.label) : '';
       const address = wallet && wallet.address ? String(wallet.address) : '';
       const balance = wallet ? wallet.balance : null;
@@ -1421,13 +1434,13 @@
       return `
         <div class="list-item wallet-item">
           <div class="wallet-left">
-            <div style="font-weight:800;">${label || network}</div>
-            <small>${network}${address ? ` · ${shortAddress(address)}` : ''}</small>
+            <div style="font-weight:800;">${label || networkLabel}</div>
+            <small>${networkLabel}${address ? ` · ${shortAddress(address)}` : ''}</small>
           </div>
           <div class="wallet-actions">
             <div class="wallet-right">
               <div class="amount-positive">${mainValueText}</div>
-              <small class="muted">${formatAssetAmount(balance, network)}</small>
+              <small class="muted">${formatAssetAmount(balance, walletNativeAsset(network))}</small>
             </div>
             <button type="button" class="ghost wallet-remove" data-wallet-id="${wallet.id || ''}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">✕</button>
           </div>

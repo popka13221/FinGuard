@@ -4,6 +4,7 @@ import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.FxRatesProvider;
 import com.myname.finguard.crypto.model.CryptoNetwork;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
+import com.myname.finguard.crypto.service.ArbitrumWalletPortfolioProvider;
 import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -86,6 +87,7 @@ public class E2eStubProvidersConfig {
             BigDecimal balance = switch (network) {
                 case BTC -> new BigDecimal("0.12345678");
                 case ETH -> new BigDecimal("1.50000000");
+                case ARBITRUM -> new BigDecimal("1.50000000");
             };
             return new CryptoWalletBalanceProvider.WalletBalance(network, addressNormalized, balance, FIXED_AS_OF);
         };
@@ -101,6 +103,20 @@ public class E2eStubProvidersConfig {
                 List.of(
                         new EthWalletPortfolioProvider.TokenHolding("0x1", "USDC", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00")),
                         new EthWalletPortfolioProvider.TokenHolding("0x2", "USDT", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00"))
+                )
+        );
+    }
+
+    @Bean
+    @Primary
+    public ArbitrumWalletPortfolioProvider arbitrumWalletPortfolioProvider() {
+        return addressNormalized -> new ArbitrumWalletPortfolioProvider.ArbitrumWalletPortfolio(
+                addressNormalized,
+                FIXED_AS_OF,
+                new BigDecimal("500.00"),
+                List.of(
+                        new ArbitrumWalletPortfolioProvider.TokenHolding("0x1", "USDC", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00")),
+                        new ArbitrumWalletPortfolioProvider.TokenHolding("0x2", "USDT", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00"))
                 )
         );
     }
