@@ -11,6 +11,7 @@ import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
+import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.CryptoRatesService;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
@@ -21,6 +22,8 @@ import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceService;
 import com.myname.finguard.crypto.service.CryptoWalletService;
+import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
+import com.myname.finguard.crypto.service.EthWalletPortfolioService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -47,12 +50,25 @@ class CryptoWalletServiceTest {
     @Mock
     private CryptoRatesService cryptoRatesService;
 
+    @Mock
+    private CurrencyService currencyService;
+
+    @Mock
+    private EthWalletPortfolioService ethWalletPortfolioService;
+
     private CryptoWalletService cryptoWalletService;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        cryptoWalletService = new CryptoWalletService(cryptoWalletRepository, userRepository, walletBalanceService, cryptoRatesService);
+        cryptoWalletService = new CryptoWalletService(
+                cryptoWalletRepository,
+                userRepository,
+                walletBalanceService,
+                cryptoRatesService,
+                currencyService,
+                ethWalletPortfolioService
+        );
     }
 
     @Test
@@ -190,6 +206,51 @@ class CryptoWalletServiceTest {
         assertThat(dto.balance()).isEqualByComparingTo("0.50");
         assertThat(dto.valueInBase()).isEqualByComparingTo("32500.00");
         assertThat(dto.baseCurrency()).isEqualTo("USD");
+    }
+
+    @Test
+    void listWalletsIncludesEthTokenValueInBaseWhenAvailable() {
+        User user = user(1L, "user@example.com", "USD");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        CryptoWallet wallet = new CryptoWallet();
+        wallet.setId(11L);
+        wallet.setUser(user);
+        wallet.setNetwork(CryptoNetwork.ETH);
+        wallet.setAddress("0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd");
+        wallet.setAddressNormalized("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd");
+        wallet.setLabel("MetaMask");
+        wallet.setArchived(false);
+
+        when(cryptoWalletRepository.findByUserIdAndArchivedFalseOrderByCreatedAtDesc(1L)).thenReturn(List.of(wallet));
+        when(walletBalanceService.latestBalance(CryptoNetwork.ETH, wallet.getAddressNormalized()))
+                .thenReturn(new CryptoWalletBalanceProvider.WalletBalance(
+                        CryptoNetwork.ETH,
+                        wallet.getAddressNormalized(),
+                        new BigDecimal("0.00029"),
+                        Instant.parse("2024-01-01T00:00:00Z")
+                ));
+        when(cryptoRatesService.latestRates("USD"))
+                .thenReturn(new CryptoRatesProvider.CryptoRates(
+                        "USD",
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        List.of(new CryptoRatesProvider.CryptoRate("ETH", "Ethereum", new BigDecimal("3000"), BigDecimal.ZERO, List.of()))
+                ));
+        when(ethWalletPortfolioService.latestPortfolio(wallet.getAddressNormalized()))
+                .thenReturn(new EthWalletPortfolioProvider.EthWalletPortfolio(
+                        wallet.getAddressNormalized(),
+                        Instant.parse("2024-01-01T00:00:00Z"),
+                        new BigDecimal("1000.00"),
+                        List.of()
+                ));
+
+        List<CryptoWalletDto> result = cryptoWalletService.listWallets(1L);
+
+        assertThat(result).hasSize(1);
+        CryptoWalletDto dto = result.get(0);
+        assertThat(dto.network()).isEqualTo("ETH");
+        assertThat(dto.balance()).isEqualByComparingTo("0.00029");
+        assertThat(dto.valueInBase()).isEqualByComparingTo("1000.87");
     }
 
     @Test

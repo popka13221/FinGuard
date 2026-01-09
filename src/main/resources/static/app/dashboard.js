@@ -1417,6 +1417,7 @@
       const valueInBase = wallet ? wallet.valueInBase : null;
       const base = wallet && wallet.baseCurrency ? String(wallet.baseCurrency) : baseCurrency;
       const valueText = Number.isFinite(Number(valueInBase)) ? formatMoney(Number(valueInBase), base) : '';
+      const mainValueText = valueText ? `≈ ${valueText}` : '—';
       return `
         <div class="list-item wallet-item">
           <div class="wallet-left">
@@ -1425,8 +1426,8 @@
           </div>
           <div class="wallet-actions">
             <div class="wallet-right">
-              <div class="amount-positive">${formatAssetAmount(balance, network)}</div>
-              ${valueText ? `<small class="muted">≈ ${valueText}</small>` : `<small class="muted">—</small>`}
+              <div class="amount-positive">${mainValueText}</div>
+              <small class="muted">${formatAssetAmount(balance, network)}</small>
             </div>
             <button type="button" class="ghost wallet-remove" data-wallet-id="${wallet.id || ''}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">✕</button>
           </div>

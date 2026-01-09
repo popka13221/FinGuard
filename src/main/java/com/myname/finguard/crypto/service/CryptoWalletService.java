@@ -4,6 +4,7 @@ import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
+import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.CryptoRatesService;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
@@ -16,6 +17,7 @@ import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,17 +35,23 @@ public class CryptoWalletService {
     private final UserRepository userRepository;
     private final CryptoWalletBalanceService walletBalanceService;
     private final CryptoRatesService cryptoRatesService;
+    private final CurrencyService currencyService;
+    private final EthWalletPortfolioService ethWalletPortfolioService;
 
     public CryptoWalletService(
             CryptoWalletRepository cryptoWalletRepository,
             UserRepository userRepository,
             CryptoWalletBalanceService walletBalanceService,
-            CryptoRatesService cryptoRatesService
+            CryptoRatesService cryptoRatesService,
+            CurrencyService currencyService,
+            EthWalletPortfolioService ethWalletPortfolioService
     ) {
         this.cryptoWalletRepository = cryptoWalletRepository;
         this.userRepository = userRepository;
         this.walletBalanceService = walletBalanceService;
         this.cryptoRatesService = cryptoRatesService;
+        this.currencyService = currencyService;
+        this.ethWalletPortfolioService = ethWalletPortfolioService;
     }
 
     public CryptoWalletDto createWallet(Long userId, CreateCryptoWalletRequest request) {
@@ -125,6 +133,10 @@ public class CryptoWalletService {
 
         BigDecimal balanceValue = balance == null ? null : balance.balance();
         BigDecimal valueInBase = computeValueInBase(wallet.getNetwork(), balanceValue, baseCurrency, prices);
+        if (wallet.getNetwork() == CryptoNetwork.ETH) {
+            BigDecimal tokenValueInBase = computeEthTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
+            valueInBase = mergeValues(valueInBase, tokenValueInBase, baseCurrency);
+        }
         return new CryptoWalletDto(
                 wallet.getId(),
                 wallet.getNetwork().name(),
@@ -135,6 +147,33 @@ public class CryptoWalletService {
                 baseCurrency,
                 balance == null ? null : balance.asOf()
         );
+    }
+
+    private BigDecimal computeEthTokenValueInBase(String addressNormalized, String baseCurrency) {
+        if (ethWalletPortfolioService == null || addressNormalized == null || addressNormalized.isBlank()) {
+            return null;
+        }
+        try {
+            EthWalletPortfolioProvider.EthWalletPortfolio portfolio = ethWalletPortfolioService.latestPortfolio(addressNormalized);
+            BigDecimal tokenValueUsd = portfolio == null ? null : portfolio.tokenValueUsd();
+            return convertUsdToBase(tokenValueUsd, baseCurrency);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private BigDecimal mergeValues(BigDecimal nativeValue, BigDecimal tokenValue, String baseCurrency) {
+        if (nativeValue == null && tokenValue == null) {
+            return null;
+        }
+        if (nativeValue == null) {
+            return tokenValue;
+        }
+        if (tokenValue == null) {
+            return nativeValue;
+        }
+        int scale = isCrypto(baseCurrency) ? 8 : 2;
+        return nativeValue.add(tokenValue).setScale(scale, RoundingMode.HALF_UP);
     }
 
     private Map<String, BigDecimal> fetchPrices(String baseCurrency) {
@@ -148,6 +187,37 @@ public class CryptoWalletService {
                     .collect(Collectors.toMap(rate -> rate.code().toUpperCase(), CryptoRatesProvider.CryptoRate::price, (a, b) -> a));
         } catch (Exception ignored) {
             return Collections.emptyMap();
+        }
+    }
+
+    private BigDecimal convertUsdToBase(BigDecimal usdAmount, String baseCurrency) {
+        if (usdAmount == null || baseCurrency == null || baseCurrency.isBlank()) {
+            return null;
+        }
+        String base = normalizeCurrency(baseCurrency);
+        int scale = isCrypto(base) ? 8 : 2;
+        if ("USD".equalsIgnoreCase(base)) {
+            return usdAmount.setScale(scale, RoundingMode.HALF_UP);
+        }
+        if (isCrypto(base)) {
+            Map<String, BigDecimal> usdPrices = fetchPrices("USD");
+            BigDecimal baseUsdPrice = usdPrices.get(base);
+            if (baseUsdPrice == null || baseUsdPrice.signum() == 0) {
+                return null;
+            }
+            return usdAmount.divide(baseUsdPrice, scale, RoundingMode.HALF_UP);
+        }
+        if (currencyService == null) {
+            return null;
+        }
+        try {
+            BigDecimal rate = Objects.requireNonNull(currencyService.latestRates("USD")).rates().get(base);
+            if (rate == null) {
+                return null;
+            }
+            return usdAmount.multiply(rate).setScale(scale, RoundingMode.HALF_UP);
+        } catch (Exception ignored) {
+            return null;
         }
     }
 

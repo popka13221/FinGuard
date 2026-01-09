@@ -4,6 +4,7 @@ import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.FxRatesProvider;
 import com.myname.finguard.crypto.model.CryptoNetwork;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
+import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -88,6 +89,20 @@ public class E2eStubProvidersConfig {
             };
             return new CryptoWalletBalanceProvider.WalletBalance(network, addressNormalized, balance, FIXED_AS_OF);
         };
+    }
+
+    @Bean
+    @Primary
+    public EthWalletPortfolioProvider ethWalletPortfolioProvider() {
+        return addressNormalized -> new EthWalletPortfolioProvider.EthWalletPortfolio(
+                addressNormalized,
+                FIXED_AS_OF,
+                new BigDecimal("500.00"),
+                List.of(
+                        new EthWalletPortfolioProvider.TokenHolding("0x1", "USDC", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00")),
+                        new EthWalletPortfolioProvider.TokenHolding("0x2", "USDT", new BigDecimal("250"), BigDecimal.ONE, new BigDecimal("250.00"))
+                )
+        );
     }
 
     private static BigDecimal toBase(BigDecimal usdPrice, String baseCurrency) {
