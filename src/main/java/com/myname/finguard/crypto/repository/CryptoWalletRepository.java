@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CryptoWalletRepository extends JpaRepository<CryptoWallet, Long> {
     List<CryptoWallet> findByUserIdAndArchivedFalseOrderByCreatedAtDesc(Long userId);
 
+    long countByUserIdAndArchivedFalse(Long userId);
+
     Optional<CryptoWallet> findByIdAndUserId(Long id, Long userId);
 
     boolean existsByUserIdAndNetworkAndAddressNormalized(Long userId, CryptoNetwork network, String addressNormalized);

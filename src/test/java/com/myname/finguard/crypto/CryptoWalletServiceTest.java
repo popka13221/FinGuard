@@ -72,7 +72,8 @@ class CryptoWalletServiceTest {
                 cryptoRatesService,
                 currencyService,
                 ethWalletPortfolioService,
-                arbitrumWalletPortfolioService
+                arbitrumWalletPortfolioService,
+                25
         );
     }
 

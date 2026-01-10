@@ -147,6 +147,7 @@
       add_wallet_menu_aria: 'Добавить кошелёк',
       add_wallet_title: 'Добавить кошелёк',
       add_wallet_subtitle: 'Только чтение: добавьте адрес, мы подтянем баланс.',
+      wallet_privacy_notice: 'Адрес будет отправлен внешним провайдерам для получения баланса и цен.',
       wallet_label: 'Название',
       wallet_label_placeholder: 'Например: Ledger',
       wallet_network: 'Сеть',
@@ -252,6 +253,7 @@
       add_wallet_menu_aria: 'Add wallet',
       add_wallet_title: 'Add wallet',
       add_wallet_subtitle: 'Watch-only: add an address and we will fetch its balance.',
+      wallet_privacy_notice: 'Your wallet address will be sent to third-party providers to fetch balances and prices.',
       wallet_label: 'Label',
       wallet_label_placeholder: 'e.g. Ledger',
       wallet_network: 'Network',
@@ -623,6 +625,15 @@
     return `${sign}${abs.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   function formatCryptoPrice(value, currency) {
     if (typeof value !== 'number' || Number.isNaN(value)) return '—';
     const cur = (currency || 'USD').toUpperCase();
@@ -751,11 +762,13 @@
       const amountText = Number.isFinite(value) ? formatMoney(value, base) : formatMoney(acc.balance || 0, acc.currency);
       const balanceValue = toNumber(acc.balance);
       const signClass = Number.isFinite(balanceValue) && balanceValue < 0 ? 'amount-negative' : 'amount-positive';
+      const safeName = escapeHtml(acc.name || t('account'));
+      const safeCurrency = escapeHtml(acc.currency || baseCurrency);
       return `
         <div class="list-item">
           <div>
-            <div style="font-weight:800;">${acc.name || t('account')}</div>
-            <small>${acc.currency || baseCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
+            <div style="font-weight:800;">${safeName}</div>
+            <small>${safeCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
           </div>
           <div class="${signClass}">${amountText}</div>
         </div>
@@ -1304,9 +1317,10 @@
     const legend = items.map((item, idx) => {
       const color = item.color || ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa'][idx % 5];
       const pct = Math.round(((item.value || 0) / total) * 100);
-      return `<button class="legend-item" data-slice="${idx}" aria-label="${item.label}">
+      const safeLabel = escapeHtml(item.label || '');
+      return `<button class="legend-item" data-slice="${idx}" aria-label="${safeLabel}">
                 <span class="legend-dot" style="background:${color};"></span>
-                <span>${item.label}</span>
+                <span>${safeLabel}</span>
                 <span class="legend-pct">${pct}%</span>
               </button>`;
     }).join('');
@@ -1404,7 +1418,7 @@
 
   function walletNetworkLabel(network) {
     const code = (network || '').toUpperCase();
-    if (code === 'ARBITRUM') return 'Arbitrum';
+    if (code === 'ARBITRUM') return 'Arbitrum (ETH)';
     return code;
   }
 
@@ -1424,8 +1438,8 @@
     list.innerHTML = wallets.map((wallet) => {
       const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
       const networkLabel = walletNetworkLabel(network);
-      const label = wallet && wallet.label ? String(wallet.label) : '';
-      const address = wallet && wallet.address ? String(wallet.address) : '';
+      const label = wallet && wallet.label ? escapeHtml(String(wallet.label)) : '';
+      const addressShort = wallet && wallet.address ? escapeHtml(shortAddress(String(wallet.address))) : '';
       const balance = wallet ? wallet.balance : null;
       const valueInBase = wallet ? wallet.valueInBase : null;
       const base = wallet && wallet.baseCurrency ? String(wallet.baseCurrency) : baseCurrency;
@@ -1434,8 +1448,8 @@
       return `
         <div class="list-item wallet-item">
           <div class="wallet-left">
-            <div style="font-weight:800;">${label || networkLabel}</div>
-            <small>${networkLabel}${address ? ` · ${shortAddress(address)}` : ''}</small>
+            <div style="font-weight:800;">${label || escapeHtml(networkLabel)}</div>
+            <small>${escapeHtml(networkLabel)}${addressShort ? ` · ${addressShort}` : ''}</small>
           </div>
           <div class="wallet-actions">
             <div class="wallet-right">

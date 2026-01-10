@@ -63,3 +63,23 @@ test('changing base currency converts all amounts', async ({ page }) => {
   await expect(page.locator('#btn-base-currency')).toHaveText('Currency: EUR');
   await expect(page.locator('#totalBalance')).toHaveText('145.00 EUR');
 });
+
+test('account name is escaped (no html injection)', async ({ page }) => {
+  const email = uniqueEmail('e2e-account-xss');
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+
+  await page.click('#btn-add-account');
+  await expect(page.locator('#add-account-overlay')).toBeVisible();
+
+  const payload = '<img src=x onerror=alert(1)>';
+  await page.fill('#newAccountName', payload);
+  await page.selectOption('#newAccountCurrency', 'USD');
+  await page.fill('#newAccountBalance', '10');
+  await page.click('#btn-add-account-create');
+
+  await expect(page.locator('#add-account-overlay')).toBeHidden();
+
+  const account = page.locator('#accountsList .list-item', { hasText: payload });
+  await expect(account).toBeVisible();
+  await expect(account.locator('img')).toHaveCount(0);
+});

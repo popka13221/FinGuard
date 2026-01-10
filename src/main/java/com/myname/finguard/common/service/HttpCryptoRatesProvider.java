@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpCryptoRatesProvider implements CryptoRatesProvider {
 
     private static final List<CryptoAsset> ASSETS = List.of(

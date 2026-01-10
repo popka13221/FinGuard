@@ -3,11 +3,13 @@ package com.myname.finguard.common.service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpFxRatesProvider implements FxRatesProvider {
 
     private final RestClient restClient;
@@ -52,4 +54,3 @@ public class HttpFxRatesProvider implements FxRatesProvider {
     ) {
     }
 }
-

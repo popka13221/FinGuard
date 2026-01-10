@@ -35,14 +35,14 @@ class HttpArbitrumWalletPortfolioProviderTest {
                           "result": [
                             {
                               "balance": "2000000",
-                              "contractAddress": "0x1",
+                              "contractAddress": "0x0000000000000000000000000000000000000001",
                               "decimals": "6",
                               "symbol": "USDC",
                               "type": "ERC-20"
                             },
                             {
                               "balance": "1000000000000000000",
-                              "contractAddress": "0x2",
+                              "contractAddress": "0x0000000000000000000000000000000000000002",
                               "decimals": "18",
                               "symbol": "ABC",
                               "type": "ERC-20"
@@ -56,8 +56,8 @@ class HttpArbitrumWalletPortfolioProviderTest {
                 .andRespond(withSuccess("""
                         {
                           "coins": {
-                            "arbitrum:0x1": { "price": 1 },
-                            "arbitrum:0x2": { "price": 2 }
+                            "arbitrum:0x0000000000000000000000000000000000000001": { "price": 1 },
+                            "arbitrum:0x0000000000000000000000000000000000000002": { "price": 2 }
                           }
                         }
                         """, MediaType.APPLICATION_JSON));
@@ -74,4 +74,3 @@ class HttpArbitrumWalletPortfolioProviderTest {
         server.verify();
     }
 }
-

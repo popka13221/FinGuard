@@ -18,7 +18,7 @@ class HttpEthplorerWalletPortfolioProviderTest {
                   "tokens": [
                     {
                       "tokenInfo": {
-                        "address": "0x1",
+                        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
                         "symbol": "USDT",
                         "decimals": "6",
                         "price": false
@@ -27,7 +27,7 @@ class HttpEthplorerWalletPortfolioProviderTest {
                     },
                     {
                       "tokenInfo": {
-                        "address": "0x2",
+                        "address": "0x0000000000000000000000000000000000000002",
                         "symbol": "ABC",
                         "decimals": "18",
                         "price": { "rate": 2, "currency": "USD" }
@@ -36,7 +36,7 @@ class HttpEthplorerWalletPortfolioProviderTest {
                     },
                     {
                       "tokenInfo": {
-                        "address": "0x3",
+                        "address": "0x0000000000000000000000000000000000000003",
                         "symbol": "NOPRICE",
                         "decimals": "18",
                         "price": false
@@ -61,4 +61,3 @@ class HttpEthplorerWalletPortfolioProviderTest {
         assertThat(usdtValue).isEqualByComparingTo(new BigDecimal("1.000000000000"));
     }
 }
-

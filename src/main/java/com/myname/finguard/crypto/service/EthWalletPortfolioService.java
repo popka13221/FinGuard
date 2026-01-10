@@ -5,6 +5,7 @@ import com.myname.finguard.common.exception.ApiException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,29 +18,34 @@ import org.springframework.stereotype.Service;
 public class EthWalletPortfolioService {
 
     private static final long DEFAULT_CACHE_TTL_SECONDS = 300;
+    private static final int DEFAULT_CACHE_MAX_ENTRIES = 5000;
 
     private final EthWalletPortfolioProvider provider;
     private final Duration cacheTtl;
+    private final int maxEntries;
     private final Clock clock;
     private final Map<String, CachedPortfolio> cache = new ConcurrentHashMap<>();
 
     public EthWalletPortfolioService() {
-        this(null, Duration.ofSeconds(DEFAULT_CACHE_TTL_SECONDS), Clock.systemUTC());
+        this(null, Duration.ofSeconds(DEFAULT_CACHE_TTL_SECONDS), DEFAULT_CACHE_MAX_ENTRIES, Clock.systemUTC());
     }
 
     @Autowired
     public EthWalletPortfolioService(
             ObjectProvider<EthWalletPortfolioProvider> provider,
-            @Value("${app.crypto.wallet.eth.portfolio.cache-ttl-seconds:" + DEFAULT_CACHE_TTL_SECONDS + "}") long cacheTtlSeconds
+            @Value("${app.crypto.wallet.eth.portfolio.cache-ttl-seconds:" + DEFAULT_CACHE_TTL_SECONDS + "}") long cacheTtlSeconds,
+            @Value("${app.crypto.wallet.eth.portfolio.cache-max-entries:" + DEFAULT_CACHE_MAX_ENTRIES + "}") int maxEntries
     ) {
         this(provider.getIfAvailable(),
                 Duration.ofSeconds(Math.max(0, cacheTtlSeconds)),
+                Math.max(0, maxEntries),
                 Clock.systemUTC());
     }
 
-    EthWalletPortfolioService(EthWalletPortfolioProvider provider, Duration cacheTtl, Clock clock) {
+    EthWalletPortfolioService(EthWalletPortfolioProvider provider, Duration cacheTtl, int maxEntries, Clock clock) {
         this.provider = provider;
         this.cacheTtl = cacheTtl == null ? Duration.ofSeconds(DEFAULT_CACHE_TTL_SECONDS) : cacheTtl;
+        this.maxEntries = Math.max(0, maxEntries);
         this.clock = clock == null ? Clock.systemUTC() : clock;
     }
 
@@ -70,6 +76,7 @@ public class EthWalletPortfolioService {
                 throw new IllegalStateException("Empty ETH wallet portfolio response");
             }
             cache.put(key, new CachedPortfolio(fetched, now));
+            evictIfNeeded();
             return fetched;
         } catch (Exception e) {
             if (cached != null) {
@@ -79,7 +86,22 @@ public class EthWalletPortfolioService {
         }
     }
 
+    private void evictIfNeeded() {
+        if (maxEntries <= 0) {
+            return;
+        }
+        int size = cache.size();
+        if (size <= maxEntries) {
+            return;
+        }
+        int toRemove = size - maxEntries;
+        cache.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> entry.getValue().fetchedAt()))
+                .limit(toRemove)
+                .map(Map.Entry::getKey)
+                .forEach(cache::remove);
+    }
+
     private record CachedPortfolio(EthWalletPortfolioProvider.EthWalletPortfolio portfolio, Instant fetchedAt) {
     }
 }
-

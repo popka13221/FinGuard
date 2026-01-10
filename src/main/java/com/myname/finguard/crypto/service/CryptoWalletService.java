@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class CryptoWalletService {
     private final CurrencyService currencyService;
     private final EthWalletPortfolioService ethWalletPortfolioService;
     private final ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
+    private final int maxWalletsPerUser;
 
     public CryptoWalletService(
             CryptoWalletRepository cryptoWalletRepository,
@@ -46,7 +48,8 @@ public class CryptoWalletService {
             CryptoRatesService cryptoRatesService,
             CurrencyService currencyService,
             EthWalletPortfolioService ethWalletPortfolioService,
-            ArbitrumWalletPortfolioService arbitrumWalletPortfolioService
+            ArbitrumWalletPortfolioService arbitrumWalletPortfolioService,
+            @Value("${app.crypto.wallet.max-per-user:25}") int maxWalletsPerUser
     ) {
         this.cryptoWalletRepository = cryptoWalletRepository;
         this.userRepository = userRepository;
@@ -55,6 +58,7 @@ public class CryptoWalletService {
         this.currencyService = currencyService;
         this.ethWalletPortfolioService = ethWalletPortfolioService;
         this.arbitrumWalletPortfolioService = arbitrumWalletPortfolioService;
+        this.maxWalletsPerUser = Math.max(0, maxWalletsPerUser);
     }
 
     public CryptoWalletDto createWallet(Long userId, CreateCryptoWalletRequest request) {
@@ -77,6 +81,10 @@ public class CryptoWalletService {
             }
             // Clean up previously removed wallets to allow re-adding the same address.
             cryptoWalletRepository.delete(existing);
+        }
+
+        if (maxWalletsPerUser > 0 && cryptoWalletRepository.countByUserIdAndArchivedFalse(userId) >= maxWalletsPerUser) {
+            throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet limit reached", HttpStatus.BAD_REQUEST);
         }
 
         User user = userRepository.findById(userId).orElseThrow(this::unauthorized);

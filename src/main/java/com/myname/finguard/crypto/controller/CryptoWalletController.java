@@ -7,6 +7,7 @@ import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
 import com.myname.finguard.crypto.service.CryptoWalletService;
+import com.myname.finguard.security.RateLimiterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,10 +36,34 @@ public class CryptoWalletController {
 
     private final CryptoWalletService cryptoWalletService;
     private final UserRepository userRepository;
+    private final RateLimiterService rateLimiterService;
+    private final int walletsListLimit;
+    private final long walletsListWindowMs;
+    private final int walletsCreateLimit;
+    private final long walletsCreateWindowMs;
+    private final int walletsDeleteLimit;
+    private final long walletsDeleteWindowMs;
 
-    public CryptoWalletController(CryptoWalletService cryptoWalletService, UserRepository userRepository) {
+    public CryptoWalletController(
+            CryptoWalletService cryptoWalletService,
+            UserRepository userRepository,
+            RateLimiterService rateLimiterService,
+            @Value("${app.security.rate-limit.wallets.list.limit:120}") int walletsListLimit,
+            @Value("${app.security.rate-limit.wallets.list.window-ms:60000}") long walletsListWindowMs,
+            @Value("${app.security.rate-limit.wallets.create.limit:30}") int walletsCreateLimit,
+            @Value("${app.security.rate-limit.wallets.create.window-ms:60000}") long walletsCreateWindowMs,
+            @Value("${app.security.rate-limit.wallets.delete.limit:60}") int walletsDeleteLimit,
+            @Value("${app.security.rate-limit.wallets.delete.window-ms:60000}") long walletsDeleteWindowMs
+    ) {
         this.cryptoWalletService = cryptoWalletService;
         this.userRepository = userRepository;
+        this.rateLimiterService = rateLimiterService;
+        this.walletsListLimit = walletsListLimit;
+        this.walletsListWindowMs = walletsListWindowMs;
+        this.walletsCreateLimit = walletsCreateLimit;
+        this.walletsCreateWindowMs = walletsCreateWindowMs;
+        this.walletsDeleteLimit = walletsDeleteLimit;
+        this.walletsDeleteWindowMs = walletsDeleteWindowMs;
     }
 
     @GetMapping
@@ -47,6 +73,7 @@ public class CryptoWalletController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<List<CryptoWalletDto>> list(Authentication authentication) {
         Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
         return ResponseEntity.ok(cryptoWalletService.listWallets(userId));
     }
 
@@ -64,6 +91,7 @@ public class CryptoWalletController {
             Authentication authentication
     ) {
         Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:create:user:" + userId, walletsCreateLimit, walletsCreateWindowMs);
         CryptoWalletDto created = cryptoWalletService.createWallet(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -79,8 +107,21 @@ public class CryptoWalletController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:delete:user:" + userId, walletsDeleteLimit, walletsDeleteWindowMs);
         cryptoWalletService.deleteWallet(userId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    private void enforceRateLimit(String key, int limit, long windowMs) {
+        if (rateLimiterService == null || key == null || key.isBlank()) {
+            return;
+        }
+        RateLimiterService.Result res = rateLimiterService.check(key, limit, windowMs);
+        if (res.allowed()) {
+            return;
+        }
+        long retryAfter = Math.max(1, (long) Math.ceil(res.retryAfterMs() / 1000.0));
+        throw new ApiException(ErrorCodes.RATE_LIMIT, "Too many requests. Please try again later.", HttpStatus.TOO_MANY_REQUESTS, retryAfter);
     }
 
     private Long resolveUserId(Authentication authentication) {

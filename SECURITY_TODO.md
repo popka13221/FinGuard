@@ -6,23 +6,28 @@
 - оценка портфеля через внешние провайдеры (Ethplorer/Blockscout/DefiLlama, JSON-RPC).
 
 ## P0 (критично перед продом)
-- [ ] Закрыть XSS именно в экранах “баланс/кошельки”: `innerHTML = \`...\`` с user-input (название аккаунта, label кошелька) → рендерить через DOM API (`textContent`) или централизованный `escapeHtml()` и применять в `dashboard.js` (и любых страницах, где выводятся эти поля).
-- [ ] Убрать “стейблкоин = 1 USD по символу”: сейчас для ETH токенов есть fallback `USDT/USDC/... => 1 USD` даже без цены → можно накрутить value фейковым токеном с символом “USDT”. Решение: whitelist по **адресам контрактов** (и по сети) или убрать fallback полностью (`src/main/java/com/myname/finguard/crypto/service/HttpEthplorerWalletPortfolioProvider.java`).
-- [ ] Добавить таймауты/лимиты на внешние HTTP вызовы (`RestClient`): BTC/ETH balance, Arbitrum JSON-RPC, Ethplorer, Blockscout, coins.llama.fi, FX (`HttpFxRatesProvider`). Сейчас без явных connect/read timeouts это легко превращается в подвес потоков/DoS.
-- [ ] Abuse protection для `/api/crypto/wallets`: лимит количества кошельков на пользователя, rate-limit create/delete, и отдельный лимит на “обновления” (list → внешние провайдеры). Иначе можно выжечь квоты провайдеров и/или уронить сервер.
-- [ ] Ограничить/валидировать данные от провайдеров перед использованием:
+- [x] Закрыть XSS именно в экранах “баланс/кошельки”: `innerHTML = \`...\`` с user-input (название аккаунта, label кошелька) → рендерить через DOM API (`textContent`) или централизованный `escapeHtml()` и применять в `dashboard.js` (и любых страницах, где выводятся эти поля).
+- [x] Убрать “стейблкоин = 1 USD по символу”: сейчас для ETH токенов есть fallback `USDT/USDC/... => 1 USD` даже без цены → можно накрутить value фейковым токеном с символом “USDT”. Решение: whitelist по **адресам контрактов** (и по сети) или убрать fallback полностью (`src/main/java/com/myname/finguard/crypto/service/HttpEthplorerWalletPortfolioProvider.java`).
+- [x] Добавить таймауты/лимиты на внешние HTTP вызовы (`RestClient`): BTC/ETH balance, Arbitrum JSON-RPC, Ethplorer, Blockscout, coins.llama.fi, FX (`HttpFxRatesProvider`). Сейчас без явных connect/read timeouts это легко превращается в подвес потоков/DoS.
+  - Конфиг: `app.http.connect-timeout-ms`, `app.http.read-timeout-ms`.
+- [x] Abuse protection для `/api/crypto/wallets`: лимит количества кошельков на пользователя, rate-limit create/delete, и отдельный лимит на “обновления” (list → внешние провайдеры). Иначе можно выжечь квоты провайдеров и/или уронить сервер.
+  - Конфиг: `app.crypto.wallet.max-per-user`, `app.security.rate-limit.wallets.*`, `app.security.rate-limit.public-rates.*`.
+- [x] Ограничить/валидировать данные от провайдеров перед использованием:
   - проверять, что token contract address выглядит как `0x[0-9a-fA-F]{40}` (иначе игнор);
   - капнуть `decimals` (например, 0..30) и длину `rawBalance` (иначе игнор), чтобы не ловить BigDecimal/scale DoS;
   - капнуть число токенов, по которым вообще считаем стоимость (до запроса цен), чтобы не собирать URL на тысячи контрактов.
-- [ ] Ограничить размер in-memory cache’ей (сейчас `ConcurrentHashMap` без max-size): `CryptoWalletBalanceService`, `EthWalletPortfolioService`, `ArbitrumWalletPortfolioService` могут разрастаться на уникальных адресах → добавить `maximumSize`/eviction (например Caffeine) и/или лимит кошельков на пользователя.
+- [x] Ограничить размер in-memory cache’ей (сейчас `ConcurrentHashMap` без max-size): `CryptoWalletBalanceService`, `EthWalletPortfolioService`, `ArbitrumWalletPortfolioService` могут разрастаться на уникальных адресах → добавить `maximumSize`/eviction (например Caffeine) и/или лимит кошельков на пользователя.
+  - Конфиг: `app.crypto.wallet.cache-max-entries`, `app.crypto.wallet.eth.portfolio.cache-max-entries`, `app.crypto.wallet.arbitrum.portfolio.cache-max-entries`.
 
 ## P1 (важно)
-- [ ] Ограничить объём работы на “тяжёлых” адресах: Ethplorer может вернуть сотни/тысячи токенов → поставить лимит токенов на обработку/время, и/или кешировать результаты дольше, и/или делать деградацию (“показываем только top-N, остальное — не считаем без premium провайдера”).
-- [ ] Privacy/consent: явно показать в UI, что адрес кошелька отправляется внешним провайдерам для получения баланса/цен; добавить флаг(и) конфигурации, чтобы выключать внешние вызовы или подставлять свой провайдер.
+- [x] Ограничить объём работы на “тяжёлых” адресах: Ethplorer может вернуть сотни/тысячи токенов → поставить лимит токенов на обработку/время, и/или кешировать результаты дольше, и/или делать деградацию (“показываем только top-N, остальное — не считаем без premium провайдера”).
+  - Конфиг: `app.crypto.wallet.eth.portfolio.max-tokens-scanned`.
+- [x] Privacy/consent: явно показать в UI, что адрес кошелька отправляется внешним провайдерам для получения баланса/цен; добавить флаг(и) конфигурации, чтобы выключать внешние вызовы или подставлять свой провайдер.
+  - Конфиг: `app.external.providers.enabled=false` отключает HTTP провайдеры (UI остаётся, но данные будут `null`/503 в зависимости от эндпойнта).
 - [ ] Не логировать адреса целиком на WARN/ERROR (и вообще не логировать ответы провайдеров) — маскировать `0x12…ABCD`/`bc1q…` при необходимости.
-- [ ] Добавить негативные тесты на XSS именно через `label` кошелька / `account.name` (минимум unit для `escapeHtml`, максимум e2e “вставили <img onerror> и не исполнилось”).
-- [ ] Rate-limit для публичных конвертеров: `GET /api/fx/rates` и `GET /api/crypto/rates` (сейчас публичные) — чтобы не было дешёвого способа дергать внешние FX/CoinGecko и грузить сервер.
-- [ ] Явно документировать, что “ARBITRUM = ETH как native asset”: в UI и/или в API поле (сейчас можно спутать сеть и монету); добавить тест на отображение/формат.
+- [x] Добавить негативные тесты на XSS именно через `label` кошелька / `account.name` (минимум unit для `escapeHtml`, максимум e2e “вставили <img onerror> и не исполнилось”).
+- [x] Rate-limit для публичных конвертеров: `GET /api/fx/rates` и `GET /api/crypto/rates` (сейчас публичные) — чтобы не было дешёвого способа дергать внешние FX/CoinGecko и грузить сервер.
+- [x] Явно документировать, что “ARBITRUM = ETH как native asset”: в UI и/или в API поле (сейчас можно спутать сеть и монету); добавить тест на отображение/формат.
 
 ## P2 (хорошо бы)
 - [ ] Ввести “provider hardening” слой: retries с backoff + circuit-breaker + отдельные бюджеты по провайдерам (Ethplorer/Blockscout/Llama/FX), чтобы сбой одного API не деградировал весь дашборд.

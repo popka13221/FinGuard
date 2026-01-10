@@ -7,11 +7,13 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvider {
 
     private static final BigDecimal SATOSHIS_PER_BTC = new BigDecimal("100000000");

@@ -10,16 +10,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfolioProvider {
 
     private static final int TOP_TOKENS_LIMIT = 5;
     private static final int INTERNAL_USD_SCALE = 12;
     private static final int PRICE_BATCH_SIZE = 50;
+    private static final int MAX_TOKENS_SCANNED = 200;
+    private static final int MAX_TOKEN_DECIMALS = 30;
+    private static final int MAX_RAW_BALANCE_LENGTH = 120;
+
+    private static final Pattern CONTRACT_ADDRESS = Pattern.compile("^0x[0-9a-f]{40}$");
 
     private final RestClient blockscoutClient;
     private final RestClient pricesClient;
@@ -58,7 +66,9 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
                 .filter(entry -> entry.balance() != null && !entry.balance().isBlank())
                 .filter(entry -> entry.type() == null || "ERC-20".equalsIgnoreCase(entry.type()))
                 .map(TokenBalance::fromBlockscout)
+                .filter(t -> t.contractAddress() != null && !t.contractAddress().isBlank())
                 .filter(t -> t.amount() != null && t.amount().signum() > 0)
+                .limit(MAX_TOKENS_SCANNED)
                 .toList();
 
         if (tokens.isEmpty()) {
@@ -115,6 +125,7 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
                     return;
                 }
                 String contract = extractContract(key);
+                contract = normalizeContract(contract);
                 if (contract.isBlank()) {
                     return;
                 }
@@ -134,6 +145,17 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
             return "";
         }
         return raw.substring(colon + 1).trim();
+    }
+
+    private static String normalizeContract(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        if (!value.startsWith("0x")) {
+            value = "0x" + value;
+        }
+        return CONTRACT_ADDRESS.matcher(value).matches() ? value : "";
     }
 
     private String trimTrailingSlash(String value) {
@@ -164,11 +186,17 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
     private record TokenBalance(String contractAddress, String symbol, BigDecimal amount) {
 
         static TokenBalance fromBlockscout(BlockscoutTokenEntry entry) {
-            String contract = entry.contractAddress() == null ? "" : entry.contractAddress().trim();
+            String contract = normalizeContract(entry.contractAddress());
             String symbol = entry.symbol() == null ? "" : entry.symbol().trim().toUpperCase(Locale.ROOT);
             int decimals = parseInt(entry.decimals(), 0);
+            if (decimals < 0 || decimals > MAX_TOKEN_DECIMALS) {
+                return new TokenBalance(contract, symbol, null);
+            }
             BigDecimal raw = parseBigDecimal(entry.balance());
-            BigDecimal amount = raw == null ? null : (decimals <= 0 ? raw : raw.movePointLeft(decimals));
+            if (raw == null || raw.signum() <= 0) {
+                return new TokenBalance(contract, symbol, null);
+            }
+            BigDecimal amount = decimals <= 0 ? raw : raw.movePointLeft(decimals);
             return new TokenBalance(contract, symbol, amount);
         }
     }
@@ -188,6 +216,9 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
         if (raw == null || raw.isBlank()) {
             return null;
         }
+        if (raw.length() > MAX_RAW_BALANCE_LENGTH) {
+            return null;
+        }
         try {
             return new BigDecimal(raw.trim());
         } catch (Exception ignored) {
@@ -195,4 +226,3 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
         }
     }
 }
-

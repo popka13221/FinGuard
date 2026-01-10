@@ -24,7 +24,7 @@ class CryptoWalletBalanceServiceTest {
             calls.incrementAndGet();
             return new CryptoWalletBalanceProvider.WalletBalance(network, address, new BigDecimal("0.5"), Instant.EPOCH);
         };
-        CryptoWalletBalanceService service = new CryptoWalletBalanceService(provider, Duration.ofMinutes(10), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        CryptoWalletBalanceService service = new CryptoWalletBalanceService(provider, Duration.ofMinutes(10), 1000, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
 
         CryptoWalletBalanceProvider.WalletBalance first = service.latestBalance(CryptoNetwork.BTC, "addr");
         CryptoWalletBalanceProvider.WalletBalance second = service.latestBalance(CryptoNetwork.BTC, "addr");
@@ -45,7 +45,7 @@ class CryptoWalletBalanceServiceTest {
             throw new RuntimeException("boom");
         };
         Instant now = Instant.parse("2025-01-01T00:00:00Z");
-        CryptoWalletBalanceService service = new CryptoWalletBalanceService(provider, Duration.ZERO, Clock.fixed(now, ZoneOffset.UTC));
+        CryptoWalletBalanceService service = new CryptoWalletBalanceService(provider, Duration.ZERO, 1000, Clock.fixed(now, ZoneOffset.UTC));
 
         CryptoWalletBalanceProvider.WalletBalance first = service.latestBalance(CryptoNetwork.ETH, "addr");
         CryptoWalletBalanceProvider.WalletBalance second = service.latestBalance(CryptoNetwork.ETH, "addr");
@@ -57,7 +57,7 @@ class CryptoWalletBalanceServiceTest {
 
     @Test
     void failsWhenProviderMissingAndNoCache() {
-        CryptoWalletBalanceService service = new CryptoWalletBalanceService(null, Duration.ofMinutes(10), Clock.systemUTC());
+        CryptoWalletBalanceService service = new CryptoWalletBalanceService(null, Duration.ofMinutes(10), 1000, Clock.systemUTC());
 
         assertThatThrownBy(() -> service.latestBalance(CryptoNetwork.BTC, "addr"))
                 .isInstanceOf(ApiException.class)
@@ -70,7 +70,7 @@ class CryptoWalletBalanceServiceTest {
 
     @Test
     void rejectsMissingNetworkOrAddress() {
-        CryptoWalletBalanceService service = new CryptoWalletBalanceService((n, a) -> null, Duration.ofSeconds(10), Clock.systemUTC());
+        CryptoWalletBalanceService service = new CryptoWalletBalanceService((n, a) -> null, Duration.ofSeconds(10), 1000, Clock.systemUTC());
 
         assertThatThrownBy(() -> service.latestBalance(null, "addr"))
                 .isInstanceOf(ApiException.class)
@@ -89,4 +89,3 @@ class CryptoWalletBalanceServiceTest {
                 });
     }
 }
-

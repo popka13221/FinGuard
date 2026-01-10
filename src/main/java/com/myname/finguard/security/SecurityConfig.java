@@ -24,16 +24,19 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
+    private final PublicRatesRateLimitFilter publicRatesRateLimitFilter;
     private final AccessDeniedHandler accessDeniedHandler;
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final boolean csrfEnabled;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
+                          PublicRatesRateLimitFilter publicRatesRateLimitFilter,
                           AppAccessDeniedHandler appAccessDeniedHandler,
                           @Value("${app.security.csrf.enabled:true}") boolean csrfEnabled) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
+        this.publicRatesRateLimitFilter = publicRatesRateLimitFilter;
         this.accessDeniedHandler = appAccessDeniedHandler;
         this.authenticationEntryPoint = appAccessDeniedHandler;
         this.csrfEnabled = csrfEnabled;
@@ -118,6 +121,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
+                .addFilterBefore(publicRatesRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
