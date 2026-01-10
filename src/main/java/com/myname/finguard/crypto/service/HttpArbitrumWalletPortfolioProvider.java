@@ -11,14 +11,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfolioProvider {
+
+    private static final String PROVIDER_BLOCKSCOUT = "blockscout";
+    private static final String PROVIDER_LLAMA = "llama";
 
     private static final int TOP_TOKENS_LIMIT = 5;
     private static final int INTERNAL_USD_SCALE = 12;
@@ -31,14 +34,38 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
 
     private final RestClient blockscoutClient;
     private final RestClient pricesClient;
+    private final com.myname.finguard.common.service.ExternalProviderGuard guard;
+    private final int blockscoutLimit;
+    private final long blockscoutWindowMs;
+    private final int llamaLimit;
+    private final long llamaWindowMs;
 
     public HttpArbitrumWalletPortfolioProvider(
             RestClient.Builder builder,
             @Value("${app.crypto.wallet.arbitrum.portfolio.blockscout-base-url:https://arbitrum.blockscout.com}") String blockscoutBaseUrl,
             @Value("${app.crypto.wallet.arbitrum.portfolio.prices-base-url:https://coins.llama.fi}") String pricesBaseUrl
     ) {
+        this(builder, blockscoutBaseUrl, pricesBaseUrl, null, 0, 0, 0, 0);
+    }
+
+    @Autowired
+    public HttpArbitrumWalletPortfolioProvider(
+            RestClient.Builder builder,
+            @Value("${app.crypto.wallet.arbitrum.portfolio.blockscout-base-url:https://arbitrum.blockscout.com}") String blockscoutBaseUrl,
+            @Value("${app.crypto.wallet.arbitrum.portfolio.prices-base-url:https://coins.llama.fi}") String pricesBaseUrl,
+            com.myname.finguard.common.service.ExternalProviderGuard guard,
+            @Value("${app.external.providers.budget.blockscout.limit:120}") int blockscoutLimit,
+            @Value("${app.external.providers.budget.blockscout.window-ms:60000}") long blockscoutWindowMs,
+            @Value("${app.external.providers.budget.llama.limit:240}") int llamaLimit,
+            @Value("${app.external.providers.budget.llama.window-ms:60000}") long llamaWindowMs
+    ) {
         this.blockscoutClient = builder.baseUrl(trimTrailingSlash(blockscoutBaseUrl)).build();
         this.pricesClient = builder.baseUrl(trimTrailingSlash(pricesBaseUrl)).build();
+        this.guard = guard;
+        this.blockscoutLimit = Math.max(0, blockscoutLimit);
+        this.blockscoutWindowMs = Math.max(0, blockscoutWindowMs);
+        this.llamaLimit = Math.max(0, llamaLimit);
+        this.llamaWindowMs = Math.max(0, llamaWindowMs);
     }
 
     @Override
@@ -46,7 +73,7 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
         if (addressNormalized == null || addressNormalized.isBlank()) {
             throw new IllegalArgumentException("Address is required");
         }
-        BlockscoutTokenListResponse response = blockscoutClient.get()
+        BlockscoutTokenListResponse response = guardedBlockscout(() -> blockscoutClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api")
                         .queryParam("module", "account")
@@ -54,7 +81,7 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
                         .queryParam("address", addressNormalized)
                         .build())
                 .retrieve()
-                .body(BlockscoutTokenListResponse.class);
+                .body(BlockscoutTokenListResponse.class));
 
         if (response == null || response.result() == null) {
             throw new IllegalStateException("Empty Arbitrum token list response");
@@ -113,10 +140,10 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
                     .map(contract -> "arbitrum:" + contract.toLowerCase(Locale.ROOT))
                     .collect(Collectors.joining(","));
 
-            LlamaPricesResponse response = pricesClient.get()
+            LlamaPricesResponse response = guardedLlama(() -> pricesClient.get()
                     .uri("/prices/current/{coins}", coins)
                     .retrieve()
-                    .body(LlamaPricesResponse.class);
+                    .body(LlamaPricesResponse.class));
             if (response == null || response.coins() == null || response.coins().isEmpty()) {
                 continue;
             }
@@ -133,6 +160,20 @@ public class HttpArbitrumWalletPortfolioProvider implements ArbitrumWalletPortfo
             });
         }
         return prices;
+    }
+
+    private <T> T guardedBlockscout(Supplier<T> call) {
+        if (guard == null) {
+            return call.get();
+        }
+        return guard.execute(PROVIDER_BLOCKSCOUT, blockscoutLimit, blockscoutWindowMs, call);
+    }
+
+    private <T> T guardedLlama(Supplier<T> call) {
+        if (guard == null) {
+            return call.get();
+        }
+        return guard.execute(PROVIDER_LLAMA, llamaLimit, llamaWindowMs, call);
     }
 
     private String extractContract(String key) {

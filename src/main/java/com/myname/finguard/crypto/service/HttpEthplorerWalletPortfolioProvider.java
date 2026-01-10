@@ -10,15 +10,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-@ConditionalOnProperty(name = "app.external.providers.enabled", havingValue = "true", matchIfMissing = true)
 public class HttpEthplorerWalletPortfolioProvider implements EthWalletPortfolioProvider {
+
+    private static final String PROVIDER_KEY = "ethplorer";
 
     private static final int TOP_TOKENS_LIMIT = 5;
     private static final int INTERNAL_USD_SCALE = 12;
@@ -42,16 +45,32 @@ public class HttpEthplorerWalletPortfolioProvider implements EthWalletPortfolioP
     private final RestClient restClient;
     private final String apiKey;
     private final int maxTokensScanned;
+    private final com.myname.finguard.common.service.ExternalProviderGuard guard;
+    private final int budgetLimit;
+    private final long budgetWindowMs;
 
+    @Autowired
     public HttpEthplorerWalletPortfolioProvider(
             RestClient.Builder builder,
             @Value("${app.crypto.wallet.eth.portfolio.provider-base-url:https://api.ethplorer.io}") String baseUrl,
             @Value("${app.crypto.wallet.eth.portfolio.api-key:freekey}") String apiKey,
-            @Value("${app.crypto.wallet.eth.portfolio.max-tokens-scanned:" + DEFAULT_MAX_TOKENS_SCANNED + "}") int maxTokensScanned
+            @Value("${app.crypto.wallet.eth.portfolio.max-tokens-scanned:" + DEFAULT_MAX_TOKENS_SCANNED + "}") int maxTokensScanned,
+            Environment environment,
+            com.myname.finguard.common.service.ExternalProviderGuard guard,
+            @Value("${app.external.providers.budget.ethplorer.limit:60}") int budgetLimit,
+            @Value("${app.external.providers.budget.ethplorer.window-ms:60000}") long budgetWindowMs
     ) {
         this.restClient = builder.baseUrl(trimTrailingSlash(baseUrl)).build();
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.maxTokensScanned = Math.max(0, maxTokensScanned);
+        this.guard = guard;
+        this.budgetLimit = Math.max(0, budgetLimit);
+        this.budgetWindowMs = Math.max(0, budgetWindowMs);
+
+        boolean prod = environment != null && environment.matchesProfiles("prod");
+        if (prod && (this.apiKey.isBlank() || "freekey".equalsIgnoreCase(this.apiKey))) {
+            throw new IllegalStateException("Ethplorer apiKey must be configured for prod profile");
+        }
     }
 
     @Override
@@ -63,13 +82,13 @@ public class HttpEthplorerWalletPortfolioProvider implements EthWalletPortfolioP
             throw new IllegalStateException("Ethplorer apiKey is not configured");
         }
 
-        JsonNode response = restClient.get()
+        JsonNode response = guarded(() -> restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/getAddressInfo/{address}")
                         .queryParam("apiKey", apiKey)
                         .build(addressNormalized))
                 .retrieve()
-                .body(JsonNode.class);
+                .body(JsonNode.class));
         if (response == null || response.isNull()) {
             throw new IllegalStateException("Empty ETH portfolio response");
         }
@@ -77,6 +96,13 @@ public class HttpEthplorerWalletPortfolioProvider implements EthWalletPortfolioP
         Instant asOf = Instant.now();
         ParsedTokens parsed = parseTokens(response, maxTokensScanned);
         return new EthWalletPortfolio(addressNormalized, asOf, parsed.totalUsd(), parsed.topTokens());
+    }
+
+    private <T> T guarded(Supplier<T> call) {
+        if (guard == null) {
+            return call.get();
+        }
+        return guard.execute(PROVIDER_KEY, budgetLimit, budgetWindowMs, call);
     }
 
     static ParsedTokens parseTokens(JsonNode response) {
