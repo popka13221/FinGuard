@@ -2,7 +2,7 @@
   "name": "finguard",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "1.50.1"
+    "@playwright/test": "1.57.0"
   },
   "scripts": {
     "e2e": "playwright test",
