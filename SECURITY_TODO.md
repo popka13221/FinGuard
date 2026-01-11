@@ -39,4 +39,4 @@
   - Док: `docs/EXTERNAL_PROVIDERS.md` (и проверка `freekey` для `prod` профиля).
 - [x] Для точности/целостности данных (anti-tamper): опционально сверять native ETH balance через 2 источника (например, JSON-RPC и BlockCypher) и логировать расхождение (без падения), чтобы ловить баги/провайдера.
   - Конфиг: `app.crypto.wallet.eth.cross-check.*` (см. `docs/EXTERNAL_PROVIDERS.md`).
-- [ ] Автоматизировать security checks в CI: dependency scan (OWASP/Dependabot), SAST (semgrep), базовый DAST (ZAP) на e2e окружении.
+- [x] Автоматизировать security checks в CI: dependency scan (OWASP/Dependabot), SAST (semgrep), базовый DAST (ZAP) на e2e окружении.
