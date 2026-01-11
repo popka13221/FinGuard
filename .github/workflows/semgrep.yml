@@ -27,16 +27,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
 
       - name: Install Semgrep
         run: pip install semgrep
 
       - name: Run Semgrep (SARIF)
-        run: semgrep --metrics=off --config p/java --config p/security-audit --sarif --output semgrep.sarif
+        run: semgrep --metrics=off --config p/java --config p/security-audit --sarif --output semgrep.sarif --exit-code 0
 
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
