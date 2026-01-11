@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Iterator;
 import java.util.HexFormat;
+import java.util.function.LongSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class RateLimiterService {
     private final int limit;
     private final long windowMs;
     private final int maxEntries;
+    private final LongSupplier nowMs;
 
     @Autowired
     public RateLimiterService(
@@ -33,17 +35,28 @@ public class RateLimiterService {
             @Value("${app.security.rate-limit.auth.window-ms:60000}") long windowMs,
             @Value("${app.security.rate-limit.max-entries:10000}") int maxEntries
     ) {
+        this(rateLimitBucketRepository, limit, windowMs, maxEntries, System::currentTimeMillis);
+    }
+
+    // For unit tests without Spring context
+    RateLimiterService(int limit, long windowMs, int maxEntries) {
+        this(null, limit, windowMs, maxEntries, System::currentTimeMillis);
+    }
+
+    // For unit tests/diagnostics with controlled clock
+    RateLimiterService(int limit, long windowMs, int maxEntries, LongSupplier nowMs) {
+        this(null, limit, windowMs, maxEntries, nowMs);
+    }
+
+    // For unit tests verifying repository-backed behavior
+    RateLimiterService(RateLimitBucketRepository rateLimitBucketRepository, int limit, long windowMs, int maxEntries, LongSupplier nowMs) {
         this.rateLimitBucketRepository = rateLimitBucketRepository;
         this.inMemoryBuckets = rateLimitBucketRepository == null ? new ConcurrentHashMap<>() : null;
         this.keyLocks = rateLimitBucketRepository == null ? null : new ConcurrentHashMap<>();
         this.limit = limit;
         this.windowMs = windowMs;
         this.maxEntries = maxEntries <= 0 ? 1000 : maxEntries;
-    }
-
-    // For unit tests without Spring context
-    RateLimiterService(int limit, long windowMs, int maxEntries) {
-        this(null, limit, windowMs, maxEntries);
+        this.nowMs = nowMs == null ? System::currentTimeMillis : nowMs;
     }
 
     public boolean allow(String key) {
@@ -70,7 +83,7 @@ public class RateLimiterService {
         }
         Object lock = keyLocks.computeIfAbsent(bucketKey, k -> new Object());
         synchronized (lock) {
-            long now = System.currentTimeMillis();
+            long now = nowMs.getAsLong();
             AtomicBoolean allowed = new AtomicBoolean(true);
             RateLimitBucket bucket = rateLimitBucketRepository.findByBucketKey(bucketKey).orElse(null);
             long effectiveWindow = bucket == null || bucket.getWindowMs() <= 0 ? customWindowMs : bucket.getWindowMs();
@@ -186,7 +199,7 @@ public class RateLimiterService {
         if (customLimit <= 0 || customWindowMs <= 0) {
             return new Result(true, 0);
         }
-        long now = System.currentTimeMillis();
+        long now = nowMs.getAsLong();
         AtomicBoolean allowed = new AtomicBoolean(true);
         inMemoryBuckets.compute(key, (k, bucket) -> {
             long effectiveWindow = bucket == null || bucket.windowMs <= 0 ? customWindowMs : bucket.windowMs;

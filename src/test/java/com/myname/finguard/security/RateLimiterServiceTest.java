@@ -1,16 +1,25 @@
 package com.myname.finguard.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.myname.finguard.security.model.RateLimitBucket;
+import com.myname.finguard.security.repository.RateLimitBucketRepository;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
-
-import com.myname.finguard.security.RateLimiterService;
+import org.mockito.ArgumentCaptor;
 
 class RateLimiterServiceTest {
 
     @Test
     void evictsOldBucketsWhenOverCapacity() {
-        RateLimiterService limiter = new RateLimiterService(5, 60000, 3);
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(5, 60000, 3, now::get);
 
         limiter.allow("k1");
         limiter.allow("k2");
@@ -21,24 +30,48 @@ class RateLimiterServiceTest {
     }
 
     @Test
-    void blocksWhenLimitExceededAndAllowsAfterWindowReset() throws InterruptedException {
-        RateLimiterService limiter = new RateLimiterService(2, 20, 100);
+    void blocksWhenLimitExceededAndAllowsAfterWindowReset() {
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(2, 20, 100, now::get);
 
         assertThat(limiter.allow("key")).isTrue();
         assertThat(limiter.allow("key")).isTrue();
         assertThat(limiter.allow("key")).isFalse();
 
-        Thread.sleep(25);
+        now.addAndGet(25);
 
         assertThat(limiter.allow("key")).isTrue();
     }
 
     @Test
-    void removesExpiredBuckets() throws InterruptedException {
-        RateLimiterService limiter = new RateLimiterService(1, 10, 100);
+    void removesExpiredBuckets() {
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(1, 10, 100, now::get);
         limiter.allow("short");
-        Thread.sleep(15);
+        now.addAndGet(15);
         limiter.allow("other");
         assertThat(limiter.getApproximateBucketCount()).isEqualTo(1);
+    }
+
+    @Test
+    void hashesBucketKeyBeforePersistingToRepository() {
+        RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
+        when(repo.findByBucketKey(anyString())).thenReturn(Optional.empty());
+        when(repo.save(any(RateLimitBucket.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repo.count()).thenReturn(0L);
+
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
+        limiter.check("login:email:user@example.com", 5, 60_000);
+
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(repo).findByBucketKey(keyCaptor.capture());
+        assertThat(keyCaptor.getValue()).startsWith("rl:");
+        assertThat(keyCaptor.getValue()).doesNotContain("user@example.com");
+
+        ArgumentCaptor<RateLimitBucket> bucketCaptor = ArgumentCaptor.forClass(RateLimitBucket.class);
+        verify(repo).save(bucketCaptor.capture());
+        assertThat(bucketCaptor.getValue().getBucketKey()).startsWith("rl:");
+        assertThat(bucketCaptor.getValue().getBucketKey()).doesNotContain("user@example.com");
     }
 }
