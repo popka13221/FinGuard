@@ -25,7 +25,7 @@
   - Конфиг: `app.crypto.wallet.eth.portfolio.max-tokens-scanned`.
 - [x] Не логировать адреса целиком на WARN/ERROR (и вообще не логировать ответы провайдеров) — маскировать `0x12…ABCD`/`bc1q…` при необходимости.
   - Утилита: `src/main/java/com/myname/finguard/common/util/Redaction.java`.
-- [ ] Убрать/замаскировать PII в логах и в ключах rate-limit: email/ip сейчас могут попадать в WARN и в `RateLimitBucket.bucketKey` → логировать `maskEmail`/maskIp и хранить hash ключей.
+- [x] Убрать/замаскировать PII в логах и в ключах rate-limit: email/ip сейчас могут попадать в WARN и в `RateLimitBucket.bucketKey` → логировать `maskEmail`/maskIp и хранить hash ключей.
 - [x] Добавить негативные тесты на XSS именно через `label` кошелька / `account.name` (минимум unit для `escapeHtml`, максимум e2e “вставили <img onerror> и не исполнилось”).
 - [x] Rate-limit для публичных конвертеров: `GET /api/fx/rates` и `GET /api/crypto/rates` (сейчас публичные) — чтобы не было дешёвого способа дергать внешние FX/CoinGecko и грузить сервер.
 - [x] Явно документировать, что “ARBITRUM = ETH как native asset”: в UI и/или в API поле (сейчас можно спутать сеть и монету); добавить тест на отображение/формат.

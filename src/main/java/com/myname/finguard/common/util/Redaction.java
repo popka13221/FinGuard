@@ -8,6 +8,40 @@ public final class Redaction {
     private Redaction() {
     }
 
+    public static String maskEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return "";
+        }
+        String raw = email.trim();
+        int at = raw.indexOf('@');
+        if (at <= 1) {
+            return "***";
+        }
+        return raw.charAt(0) + "***" + raw.substring(at);
+    }
+
+    public static String maskIp(String ip) {
+        if (!StringUtils.hasText(ip)) {
+            return "";
+        }
+        String raw = ip.trim();
+        if (raw.contains(".")) {
+            String[] parts = raw.split("\\.");
+            if (parts.length >= 2) {
+                return parts[0] + "." + parts[1] + ".***.***";
+            }
+            return "***.***.***.***";
+        }
+        if (raw.contains(":")) {
+            String[] parts = raw.split(":");
+            if (parts.length >= 2) {
+                return parts[0] + ":" + parts[1] + ":…";
+            }
+            return "***:…";
+        }
+        return "***";
+    }
+
     public static String maskWalletAddress(String address) {
         if (!StringUtils.hasText(address)) {
             return "";
@@ -23,4 +57,3 @@ public final class Redaction {
         return raw.substring(0, prefix) + "…" + raw.substring(raw.length() - 4);
     }
 }
-

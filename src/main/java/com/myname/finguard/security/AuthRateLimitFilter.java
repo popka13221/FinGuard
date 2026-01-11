@@ -3,6 +3,7 @@ package com.myname.finguard.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.dto.ApiError;
+import com.myname.finguard.common.util.Redaction;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +51,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             String key = ip + ":" + path;
             RateLimiterService.Result res = rateLimiterService.check(key);
             if (!res.allowed()) {
-                log.warn("Rate limit exceeded for ip={}, path={}", ip, path);
+                log.warn("Rate limit exceeded for ip={}, path={}", Redaction.maskIp(ip), path);
                 long retryAfter = Math.max(1, Math.round(Math.ceil(res.retryAfterMs() / 1000.0)));
                 ApiError error = new ApiError(ErrorCodes.RATE_LIMIT, "Too many requests. Please try again later.", retryAfter);
                 response.setStatus(429);

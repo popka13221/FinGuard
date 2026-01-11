@@ -18,6 +18,7 @@ import com.myname.finguard.auth.model.UserTokenType;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.model.Role;
+import com.myname.finguard.common.util.Redaction;
 import com.myname.finguard.common.util.PasswordValidator;
 import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.MailService;
@@ -185,7 +186,7 @@ public class AuthService {
         String email = request.email().trim().toLowerCase();
         enforceRateLimit("login:email:" + email, loginEmailLimit, loginEmailWindowMs);
         if (loginAttemptService.isLocked(email)) {
-            log.warn("Login blocked due to lockout for email={}", email);
+            log.warn("Login blocked due to lockout for email={}", Redaction.maskEmail(email));
             throw new ApiException(ErrorCodes.AUTH_LOCKED, "Too many attempts. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
         }
         try {
@@ -220,7 +221,7 @@ public class AuthService {
             if (!issueEmailLimit.allowed() || !issueIpLimit.allowed()) {
                 long retryMs = Math.max(issueEmailLimit.retryAfterMs(), issueIpLimit.retryAfterMs());
                 long retry = Math.max(1, Math.round(Math.ceil(retryMs / 1000.0)));
-                log.warn("OTP issuance limited email={}, ip={}, retryAfterSec={}", email, safe(ip), retry);
+                log.warn("OTP issuance limited email={}, ip={}, retryAfterSec={}", Redaction.maskEmail(email), Redaction.maskIp(ip), retry);
                 throw new ApiException(
                         ErrorCodes.OTP_ALREADY_SENT,
                         "OTP code already sent. Please check your email and try again later.",
@@ -243,7 +244,7 @@ public class AuthService {
                 );
             }
             loginAttemptService.recordFailure(email);
-            log.warn("Login failed for email={}", email);
+            log.warn("Login failed for email={}", Redaction.maskEmail(email));
             throw new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -414,7 +415,7 @@ public class AuthService {
             userTokenService.invalidateActive(user, UserTokenType.RESET);
             String tokenValue = userTokenService.issue(user, UserTokenType.RESET);
             mailService.sendResetEmail(user.getEmail(), tokenValue, userTokenService.getResetTtl());
-            log.info("Reset requested for email={}", maskEmail(user.getEmail()));
+            log.info("Reset requested for email={}", Redaction.maskEmail(user.getEmail()));
         });
     }
 
@@ -477,7 +478,7 @@ public class AuthService {
         );
         if (context.shouldReject()) {
             log.warn("Reset session context rejected for user={}, tampered={}, ipMatch={}, uaMatch={}, ipHash={}, uaHash={}",
-                    maskEmail(session.getUser().getEmail()),
+                    Redaction.maskEmail(session.getUser().getEmail()),
                     context.tampered(),
                     context.ipMatches(),
                     context.userAgentMatches(),
@@ -487,7 +488,7 @@ public class AuthService {
         }
         if (context.isSoftMismatch()) {
             log.warn("Reset session context mismatch for user={}, ipMatch={}, uaMatch={}, ipHash={}, uaHash={}",
-                    maskEmail(session.getUser().getEmail()),
+                    Redaction.maskEmail(session.getUser().getEmail()),
                     context.ipMatches(),
                     context.userAgentMatches(),
                     context.requestIpHash(),
@@ -561,13 +562,6 @@ public class AuthService {
     private void revokeUserSessions(User user) {
         List<com.myname.finguard.auth.model.UserSession> sessions = userSessionService.revokeAll(user);
         sessions.forEach(session -> tokenBlacklistService.revoke(session.getJti(), session.getExpiresAt()));
-    }
-
-    private String maskEmail(String email) {
-        if (email == null) return "";
-        int at = email.indexOf('@');
-        if (at <= 1) return "***";
-        return email.charAt(0) + "***" + email.substring(at);
     }
 
     public record LoginOutcome(AuthTokens tokens, boolean otpRequired, long otpExpiresInSeconds) {

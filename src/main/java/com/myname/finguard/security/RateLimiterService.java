@@ -2,12 +2,15 @@ package com.myname.finguard.security;
 
 import com.myname.finguard.security.model.RateLimitBucket;
 import com.myname.finguard.security.repository.RateLimitBucketRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Iterator;
+import java.util.HexFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -57,21 +60,23 @@ public class RateLimiterService {
 
     @Transactional
     public Result check(String key, int customLimit, long customWindowMs) {
+        String normalizedKey = (key == null || key.isBlank()) ? "unknown" : key;
+        String bucketKey = hashKey(normalizedKey);
         if (inMemoryBuckets != null) {
-            return checkInMemory(key, customLimit, customWindowMs);
+            return checkInMemory(bucketKey, customLimit, customWindowMs);
         }
         if (customLimit <= 0 || customWindowMs <= 0) {
             return new Result(true, 0);
         }
-        Object lock = keyLocks.computeIfAbsent(key, k -> new Object());
+        Object lock = keyLocks.computeIfAbsent(bucketKey, k -> new Object());
         synchronized (lock) {
             long now = System.currentTimeMillis();
             AtomicBoolean allowed = new AtomicBoolean(true);
-            RateLimitBucket bucket = rateLimitBucketRepository.findByBucketKey(key).orElse(null);
+            RateLimitBucket bucket = rateLimitBucketRepository.findByBucketKey(bucketKey).orElse(null);
             long effectiveWindow = bucket == null || bucket.getWindowMs() <= 0 ? customWindowMs : bucket.getWindowMs();
             if (bucket == null || now - bucket.getWindowStartMs() >= effectiveWindow) {
                 RateLimitBucket fresh = bucket == null ? new RateLimitBucket() : bucket;
-                fresh.setBucketKey(key);
+                fresh.setBucketKey(bucketKey);
                 fresh.setWindowStartMs(now);
                 fresh.setWindowMs(customWindowMs);
                 fresh.setCount(1);
@@ -210,6 +215,15 @@ public class RateLimiterService {
         long until = (bucket == null ? now : bucket.windowStartMs) + effectiveWindow;
         long retryAfter = Math.max(0, until - now);
         return new Result(false, retryAfter);
+    }
+
+    private String hashKey(String key) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8));
+            return "rl:" + HexFormat.of().formatHex(digest);
+        } catch (Exception ignored) {
+            return "rl:" + Integer.toHexString(key.hashCode());
+        }
     }
 
     private static final class InMemoryBucket {
