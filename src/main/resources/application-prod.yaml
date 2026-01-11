@@ -8,3 +8,9 @@ app:
       require-env-secret: true
       cookie-secure: true
       cookie-samesite: Strict
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
