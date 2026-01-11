@@ -44,7 +44,7 @@ class SecurityHeadersIntegrationTest {
 
     private void assertSecurityHeaders(MvcResult res, boolean expectHsts) {
         assertThat(res.getResponse().getHeader("Content-Security-Policy"))
-                .isEqualTo("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self'");
+                .isEqualTo("default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self'");
         assertThat(res.getResponse().getHeader("Referrer-Policy")).isEqualTo("same-origin");
         assertThat(res.getResponse().getHeader("Permissions-Policy"))
                 .isEqualTo("geolocation=(), microphone=(), camera=()");

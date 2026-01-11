@@ -29,7 +29,7 @@
 - [x] Добавить негативные тесты на XSS именно через `label` кошелька / `account.name` (минимум unit для `escapeHtml`, максимум e2e “вставили <img onerror> и не исполнилось”).
 - [x] Rate-limit для публичных конвертеров: `GET /api/fx/rates` и `GET /api/crypto/rates` (сейчас публичные) — чтобы не было дешёвого способа дергать внешние FX/CoinGecko и грузить сервер.
 - [x] Явно документировать, что “ARBITRUM = ETH как native asset”: в UI и/или в API поле (сейчас можно спутать сеть и монету); добавить тест на отображение/формат.
-- [ ] Ужесточить CSP/security headers: добавить `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`; по возможности убрать `style-src 'unsafe-inline'`.
+- [x] Ужесточить CSP/security headers: добавить `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`; по возможности убрать `style-src 'unsafe-inline'`.
 - [ ] Прод-режим: закрыть/отключить `/swagger-ui/**`, `/v3/api-docs/**`, `/playground/**` (только dev или только ADMIN).
 
 ## P2 (хорошо бы)
