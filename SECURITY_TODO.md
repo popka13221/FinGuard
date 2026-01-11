@@ -7,6 +7,7 @@
 
 ## P0 (критично перед продом)
 - [x] Закрыть XSS именно в экранах “баланс/кошельки”: `innerHTML = \`...\`` с user-input (название аккаунта, label кошелька) → рендерить через DOM API (`textContent`) или централизованный `escapeHtml()` и применять в `dashboard.js` (и любых страницах, где выводятся эти поля).
+- [x] Закрыть XSS в FX блоке дашборда: `renderFxTop/renderFxList/renderFxDetail` используют `innerHTML` и вставляют `item.code/item.name` → экранировать или рендерить через DOM API.
 - [x] Убрать “стейблкоин = 1 USD по символу”: сейчас для ETH токенов есть fallback `USDT/USDC/... => 1 USD` даже без цены → можно накрутить value фейковым токеном с символом “USDT”. Решение: whitelist по **адресам контрактов** (и по сети) или убрать fallback полностью (`src/main/java/com/myname/finguard/crypto/service/HttpEthplorerWalletPortfolioProvider.java`).
 - [x] Добавить таймауты/лимиты на внешние HTTP вызовы (`RestClient`): BTC/ETH balance, Arbitrum JSON-RPC, Ethplorer, Blockscout, coins.llama.fi, FX (`HttpFxRatesProvider`). Сейчас без явных connect/read timeouts это легко превращается в подвес потоков/DoS.
   - Конфиг: `app.http.connect-timeout-ms`, `app.http.read-timeout-ms`.
@@ -24,9 +25,12 @@
   - Конфиг: `app.crypto.wallet.eth.portfolio.max-tokens-scanned`.
 - [x] Не логировать адреса целиком на WARN/ERROR (и вообще не логировать ответы провайдеров) — маскировать `0x12…ABCD`/`bc1q…` при необходимости.
   - Утилита: `src/main/java/com/myname/finguard/common/util/Redaction.java`.
+- [ ] Убрать/замаскировать PII в логах и в ключах rate-limit: email/ip сейчас могут попадать в WARN и в `RateLimitBucket.bucketKey` → логировать `maskEmail`/maskIp и хранить hash ключей.
 - [x] Добавить негативные тесты на XSS именно через `label` кошелька / `account.name` (минимум unit для `escapeHtml`, максимум e2e “вставили <img onerror> и не исполнилось”).
 - [x] Rate-limit для публичных конвертеров: `GET /api/fx/rates` и `GET /api/crypto/rates` (сейчас публичные) — чтобы не было дешёвого способа дергать внешние FX/CoinGecko и грузить сервер.
 - [x] Явно документировать, что “ARBITRUM = ETH как native asset”: в UI и/или в API поле (сейчас можно спутать сеть и монету); добавить тест на отображение/формат.
+- [ ] Ужесточить CSP/security headers: добавить `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`; по возможности убрать `style-src 'unsafe-inline'`.
+- [ ] Прод-режим: закрыть/отключить `/swagger-ui/**`, `/v3/api-docs/**`, `/playground/**` (только dev или только ADMIN).
 
 ## P2 (хорошо бы)
 - [x] Ввести “provider hardening” слой: retries с backoff + circuit-breaker + отдельные бюджеты по провайдерам (Ethplorer/Blockscout/Llama/FX), чтобы сбой одного API не деградировал весь дашборд.
@@ -35,3 +39,4 @@
   - Док: `docs/EXTERNAL_PROVIDERS.md` (и проверка `freekey` для `prod` профиля).
 - [x] Для точности/целостности данных (anti-tamper): опционально сверять native ETH balance через 2 источника (например, JSON-RPC и BlockCypher) и логировать расхождение (без падения), чтобы ловить баги/провайдера.
   - Конфиг: `app.crypto.wallet.eth.cross-check.*` (см. `docs/EXTERNAL_PROVIDERS.md`).
+- [ ] Автоматизировать security checks в CI: dependency scan (OWASP/Dependabot), SAST (semgrep), базовый DAST (ZAP) на e2e окружении.

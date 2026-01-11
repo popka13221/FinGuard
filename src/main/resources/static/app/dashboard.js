@@ -872,11 +872,12 @@
     container.innerHTML = items.map((item, idx) => {
       const changeClass = pickChangeClass(item.metrics.change);
       const stroke = item.metrics.change >= 0 ? '#10b981' : '#f97316';
+      const safeName = escapeHtml(item.name || '');
       return `
         <button type="button" class="fx-card" data-code="${item.code}" style="--delay:${idx * 70}ms;">
           <div class="fx-card-main">
             <div class="fx-card-code">${item.code}</div>
-            <div class="fx-card-name">${item.name}</div>
+            <div class="fx-card-name">${safeName}</div>
           </div>
           <div class="fx-card-side">
             <div class="fx-card-rate">${formatFxRate(item.rate)}</div>
@@ -900,11 +901,12 @@
     }
     list.innerHTML = items.map((item) => {
       const active = item.code === fxSelectedCode ? 'is-active' : '';
+      const safeName = escapeHtml(item.name || '');
       return `
         <button type="button" class="fx-list-item ${active}" data-code="${item.code}">
           <div class="fx-list-left">
             <div class="fx-list-code">${item.code}</div>
-            <div class="fx-list-name">${item.name}</div>
+            <div class="fx-list-name">${safeName}</div>
           </div>
           <div class="fx-list-right">
             <div class="fx-list-rate">${formatFxRate(item.rate)}</div>
