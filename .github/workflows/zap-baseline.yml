@@ -41,12 +41,19 @@ jobs:
           done
           curl -fsS http://localhost:8085/actuator/health > /dev/null
 
+      - name: Prepare ZAP workspace
+        run: |
+          # ZAP docker runs as a non-owner user; pre-create the file so it can overwrite it.
+          touch zap.yaml
+          chmod a+w zap.yaml
+
       - name: ZAP baseline scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: "http://localhost:8085"
           fail_action: false
           cmd_options: "-a"
+          allow_issue_writing: false
 
       - name: Stop app
         if: always()
