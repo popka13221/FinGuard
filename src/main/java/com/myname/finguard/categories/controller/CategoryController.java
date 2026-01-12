@@ -1,12 +1,11 @@
-package com.myname.finguard.accounts.controller;
+package com.myname.finguard.categories.controller;
 
-import com.myname.finguard.accounts.dto.AccountDto;
-import com.myname.finguard.accounts.dto.CreateAccountRequest;
-import com.myname.finguard.accounts.dto.UpdateAccountRequest;
-import com.myname.finguard.accounts.dto.UserBalanceResponse;
-import com.myname.finguard.accounts.service.AccountService;
 import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
+import com.myname.finguard.categories.dto.CategoryDto;
+import com.myname.finguard.categories.dto.CreateCategoryRequest;
+import com.myname.finguard.categories.dto.UpdateCategoryRequest;
+import com.myname.finguard.categories.service.CategoryService;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,87 +30,73 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/accounts")
-@Tag(name = "Accounts", description = "Accounts and balances")
-public class AccountController {
+@RequestMapping("/api/categories")
+@Tag(name = "Categories", description = "Transaction categories")
+public class CategoryController {
 
-    private final AccountService accountService;
+    private final CategoryService categoryService;
     private final UserRepository userRepository;
 
-    public AccountController(AccountService accountService, UserRepository userRepository) {
-        this.accountService = accountService;
+    public CategoryController(CategoryService categoryService, UserRepository userRepository) {
+        this.categoryService = categoryService;
         this.userRepository = userRepository;
-    }
-
-    @GetMapping("/balance")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "User balance", description = "Returns the current user's account balances. "
-            + "Archived accounts are excluded from the aggregate.")
-    @ApiResponse(responseCode = "200", description = "Balance returned")
-    @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<UserBalanceResponse> balance(Authentication authentication) {
-        Long userId = resolveUserId(authentication);
-        return ResponseEntity.ok(accountService.getUserBalance(userId));
     }
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "List accounts", description = "Returns the current user's accounts.")
-    @ApiResponse(responseCode = "200", description = "Accounts returned")
+    @Operation(summary = "List categories", description = "Returns global and user-defined categories.")
+    @ApiResponse(responseCode = "200", description = "Categories returned")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<List<AccountDto>> list(Authentication authentication) {
+    public ResponseEntity<List<CategoryDto>> list(Authentication authentication) {
         Long userId = resolveUserId(authentication);
-        return ResponseEntity.ok(accountService.listAccounts(userId));
+        return ResponseEntity.ok(categoryService.listCategories(userId));
     }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Create account", description = "Creates a new account for the current user.")
+    @Operation(summary = "Create category", description = "Creates a user-defined category.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Account created"),
+            @ApiResponse(responseCode = "201", description = "Category created"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<UserBalanceResponse.AccountBalance> create(
-            @Valid @RequestBody CreateAccountRequest request,
-            Authentication authentication
-    ) {
+    public ResponseEntity<CategoryDto> create(@Valid @RequestBody CreateCategoryRequest request, Authentication authentication) {
         Long userId = resolveUserId(authentication);
-        UserBalanceResponse.AccountBalance created = accountService.createAccount(userId, request);
+        CategoryDto created = categoryService.createCategory(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Update account", description = "Updates an account for the current user.")
+    @Operation(summary = "Update category", description = "Updates a user-defined category.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Account updated"),
+            @ApiResponse(responseCode = "200", description = "Category updated"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<AccountDto> update(
+    public ResponseEntity<CategoryDto> update(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateAccountRequest request,
+            @Valid @RequestBody UpdateCategoryRequest request,
             Authentication authentication
     ) {
         Long userId = resolveUserId(authentication);
-        return ResponseEntity.ok(accountService.updateAccount(userId, id, request));
+        return ResponseEntity.ok(categoryService.updateCategory(userId, id, request));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Delete account", description = "Deletes an account for the current user.")
+    @Operation(summary = "Delete category", description = "Deletes a user-defined category.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Account deleted"),
+            @ApiResponse(responseCode = "204", description = "Category deleted"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         Long userId = resolveUserId(authentication);
-        accountService.deleteAccount(userId, id);
+        categoryService.deleteCategory(userId, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -140,3 +125,4 @@ public class AccountController {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
     }
 }
+

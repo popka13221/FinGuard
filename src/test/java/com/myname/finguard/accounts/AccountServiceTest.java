@@ -10,6 +10,7 @@ import com.myname.finguard.accounts.dto.CreateAccountRequest;
 import com.myname.finguard.accounts.dto.UserBalanceResponse;
 import com.myname.finguard.accounts.model.Account;
 import com.myname.finguard.accounts.repository.AccountRepository;
+import com.myname.finguard.accounts.service.AccountBalanceService;
 import com.myname.finguard.accounts.service.AccountService;
 import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
@@ -33,13 +34,15 @@ class AccountServiceTest {
     private UserRepository userRepository;
     @Mock
     private CurrencyService currencyService;
+    @Mock
+    private AccountBalanceService accountBalanceService;
 
     private AccountService accountService;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        accountService = new AccountService(accountRepository, userRepository, currencyService);
+        accountService = new AccountService(accountRepository, userRepository, currencyService, accountBalanceService);
     }
 
     @Test

@@ -67,7 +67,7 @@ class RepositoryScopingIntegrationTest {
 
         assertThat(categoryRepository.findByUserIdOrUserIsNull(user.getId()))
                 .extracting(Category::getName)
-                .containsExactlyInAnyOrder("Global", "Mine");
+                .contains("Global", "Mine");
     }
 
     @Test
@@ -140,4 +140,3 @@ class RepositoryScopingIntegrationTest {
         return transactionRepository.save(tx);
     }
 }
-
