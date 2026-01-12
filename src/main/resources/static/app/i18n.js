@@ -144,7 +144,7 @@
       landing_footer_tagline: 'FinGuard — страница продукта без лишнего шума.',
       landing_footer_privacy: 'Приватность',
       landing_footer_terms: 'Условия',
-      landing_footer_contact: 'Контакты',
+      landing_footer_contact: 'Telegram',
 
       // Auth: login/register
       login_title: 'Smart Wallet | Вход',
@@ -413,7 +413,7 @@
       landing_footer_tagline: 'FinGuard — product page without the noise.',
       landing_footer_privacy: 'Privacy',
       landing_footer_terms: 'Terms',
-      landing_footer_contact: 'Contact',
+      landing_footer_contact: 'Telegram',
 
       // Auth: login/register
       login_title: 'Smart Wallet | Sign in',
