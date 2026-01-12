@@ -103,6 +103,7 @@ public class SecurityConfig {
                         "/app/auth.js",
                         "/app/recover.js",
                         "/app/verify.js",
+                        "/app/i18n.js",
                         "/app/api.js",
                         "/app/theme.js",
                         "/app/landing.js",
