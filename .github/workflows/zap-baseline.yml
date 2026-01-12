@@ -54,6 +54,7 @@ jobs:
           fail_action: false
           cmd_options: "-a"
           allow_issue_writing: false
+          artifact_name: zap-report
 
       - name: Stop app
         if: always()
@@ -61,13 +62,3 @@ jobs:
           if [ -f app.pid ]; then
             kill $(cat app.pid) || true
           fi
-
-      - name: Upload ZAP report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: |
-            report_html.html
-            report_md.md
-          if-no-files-found: warn
