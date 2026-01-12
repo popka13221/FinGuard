@@ -1,5 +1,7 @@
 # FinGuard — Personal Finance & Alerts Platform
 
+[English](README.md) | Русский
+
 [![CI](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml)
 
