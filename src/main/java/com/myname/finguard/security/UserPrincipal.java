@@ -20,7 +20,8 @@ public class UserPrincipal implements UserDetails {
         this.id = user.getId();
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
-        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        String roleName = user.getRole() == null ? "USER" : user.getRole().name();
+        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
         this.tokenVersion = user.getTokenVersion();
         this.emailVerified = user.isEmailVerified();
     }
