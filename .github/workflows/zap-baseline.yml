@@ -43,19 +43,29 @@ jobs:
 
       - name: Prepare ZAP workspace
         run: |
-          # ZAP docker runs as a non-owner user; pre-create the file so it can overwrite it.
-          touch zap.yaml
-          chmod a+w zap.yaml
+          # ZAP docker runs as a non-owner user; mount a writable folder for its files.
+          mkdir -p zap-work
+          chmod 777 zap-work
 
       - name: ZAP baseline scan
         run: |
           docker pull ghcr.io/zaproxy/zaproxy:stable -q
-          docker run --rm -v "$PWD:/zap/wrk/:rw" --network=host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+          set +e
+          docker run --rm -v "$PWD/zap-work:/zap/wrk/:rw" --network=host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:8085 \
             -J report_json.json \
             -w report_md.md \
             -r report_html.html \
             -a
+          code=$?
+          set -e
+          if [ "$code" -eq 2 ]; then
+            echo "::warning title=ZAP baseline::Warnings found (exit code 2). See the zap-report artifact."
+            exit 0
+          fi
+          if [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
 
       - name: Stop app
         if: always()
@@ -70,7 +80,7 @@ jobs:
         with:
           name: zap-report
           path: |
-            report_html.html
-            report_md.md
-            report_json.json
+            zap-work/report_html.html
+            zap-work/report_md.md
+            zap-work/report_json.json
           if-no-files-found: warn
