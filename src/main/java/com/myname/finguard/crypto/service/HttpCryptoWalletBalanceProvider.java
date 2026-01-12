@@ -109,7 +109,39 @@ public class HttpCryptoWalletBalanceProvider implements CryptoWalletBalanceProvi
             case BTC -> fetchBtc(addressNormalized, asOf);
             case ETH -> fetchEth(addressNormalized, asOf);
             case ARBITRUM -> fetchArbitrum(addressNormalized, asOf);
+            case EVM -> fetchEvm(addressNormalized, asOf);
         };
+    }
+
+    private WalletBalance fetchEvm(String address, Instant asOf) {
+        BigDecimal total = BigDecimal.ZERO;
+        boolean hasAny = false;
+
+        try {
+            WalletBalance eth = fetchEth(address, asOf);
+            if (eth != null && eth.balance() != null) {
+                total = total.add(eth.balance());
+                hasAny = true;
+            }
+        } catch (Exception e) {
+            log.debug("EVM balance: ETH fetch failed for address={}", Redaction.maskWalletAddress(address), e);
+        }
+
+        try {
+            WalletBalance arb = fetchArbitrum(address, asOf);
+            if (arb != null && arb.balance() != null) {
+                total = total.add(arb.balance());
+                hasAny = true;
+            }
+        } catch (Exception e) {
+            log.debug("EVM balance: Arbitrum fetch failed for address={}", Redaction.maskWalletAddress(address), e);
+        }
+
+        if (!hasAny) {
+            throw new IllegalStateException("Empty EVM balance response");
+        }
+
+        return new WalletBalance(CryptoNetwork.EVM, address, total.setScale(DISPLAY_SCALE, RoundingMode.DOWN), asOf);
     }
 
     private WalletBalance fetchBtc(String address, Instant asOf) {

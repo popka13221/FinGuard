@@ -152,6 +152,12 @@ public class CryptoWalletService {
             BigDecimal tokenValueInBase = computeArbitrumTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
             valueInBase = mergeValues(valueInBase, tokenValueInBase, baseCurrency);
         }
+        if (wallet.getNetwork() == CryptoNetwork.EVM) {
+            BigDecimal ethTokens = computeEthTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
+            BigDecimal arbTokens = computeArbitrumTokenValueInBase(wallet.getAddressNormalized(), baseCurrency);
+            valueInBase = mergeValues(valueInBase, ethTokens, baseCurrency);
+            valueInBase = mergeValues(valueInBase, arbTokens, baseCurrency);
+        }
         return new CryptoWalletDto(
                 wallet.getId(),
                 wallet.getNetwork().name(),
@@ -274,6 +280,7 @@ public class CryptoWalletService {
             case BTC -> "BTC";
             case ETH -> "ETH";
             case ARBITRUM -> "ETH";
+            case EVM -> "ETH";
         };
     }
 
@@ -322,6 +329,7 @@ public class CryptoWalletService {
             case ETH -> normalizeEthAddress(trimmed);
             case BTC -> normalizeBtcAddress(trimmed);
             case ARBITRUM -> normalizeEthAddress(trimmed);
+            case EVM -> normalizeEthAddress(trimmed);
         };
     }
 

@@ -88,6 +88,7 @@ public class E2eStubProvidersConfig {
                 case BTC -> new BigDecimal("0.12345678");
                 case ETH -> new BigDecimal("1.50000000");
                 case ARBITRUM -> new BigDecimal("1.50000000");
+                case EVM -> new BigDecimal("3.00000000");
             };
             return new CryptoWalletBalanceProvider.WalletBalance(network, addressNormalized, balance, FIXED_AS_OF);
         };

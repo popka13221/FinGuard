@@ -131,3 +131,23 @@ test('arbitrum wallet shows total value including tokens', async ({ page }) => {
   await expect(wallet).toContainText('Arbitrum');
   await expect(wallet).toContainText('≈ 5,000.00 USD');
 });
+
+test('evm total wallet shows combined ETH + Arbitrum value', async ({ page }) => {
+  const email = uniqueEmail('e2e-wallet-evm');
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+
+  await page.click('#btn-add-wallet');
+  await expect(page.locator('#add-wallet-overlay')).toBeVisible();
+
+  await page.fill('#newWalletLabel', 'Total Wallet');
+  await page.selectOption('#newWalletNetwork', 'EVM');
+  await page.fill('#newWalletAddress', '0x00000000219ab540356cbb839cbe05303d7705fa');
+  await page.click('#btn-add-wallet-create');
+
+  await expect(page.locator('#add-wallet-overlay')).toBeHidden();
+
+  const wallet = page.locator('#walletsList .wallet-item', { hasText: 'Total Wallet' });
+  await expect(wallet).toBeVisible();
+  await expect(wallet).toContainText('Total');
+  await expect(wallet).toContainText('≈ 10,000.00 USD');
+});

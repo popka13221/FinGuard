@@ -1419,12 +1419,14 @@
   function walletNetworkLabel(network) {
     const code = (network || '').toUpperCase();
     if (code === 'ARBITRUM') return 'Arbitrum (ETH)';
+    if (code === 'EVM') return 'Total (ETH + Arbitrum)';
     return code;
   }
 
   function walletNativeAsset(network) {
     const code = (network || '').toUpperCase();
     if (code === 'ARBITRUM') return 'ETH';
+    if (code === 'EVM') return 'ETH';
     return code;
   }
 
