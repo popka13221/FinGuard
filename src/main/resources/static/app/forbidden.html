@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Доступ запрещен</title>
+  <title data-i18n="forbidden_title">Доступ запрещен</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
   <style>
@@ -36,17 +36,19 @@
 <body>
   <div class="page-center">
     <div class="blocked-card">
-      <div class="badge alt">Доступ запрещен</div>
-      <h2>Сессия недействительна</h2>
-      <p>Сессия недействительна или у вас нет прав для этой страницы.</p>
+      <div class="badge alt" data-i18n="forbidden_badge">Доступ запрещен</div>
+      <h2 data-i18n="forbidden_header">Сессия недействительна</h2>
+      <p data-i18n="forbidden_sub">Сессия недействительна или у вас нет прав для этой страницы.</p>
 
       <div class="actions center" style="margin: 16px 0 10px;">
-        <a class="secondary" href="/">Вернуться к входу</a>
+        <a class="secondary" href="/" data-i18n="forbidden_back">Вернуться к входу</a>
+        <button type="button" class="ghost" id="btn-lang">EN</button>
       </div>
-      <div class="muted">Если это ошибка, попробуйте перелогиниться.</div>
+      <div class="muted" data-i18n="forbidden_hint">Если это ошибка, попробуйте перелогиниться.</div>
     </div>
   </div>
 
+  <script src="/app/i18n.js"></script>
   <script src="/app/theme.js"></script>
   <script>Theme.apply();</script>
 </body>

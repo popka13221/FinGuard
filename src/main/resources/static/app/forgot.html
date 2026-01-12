@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Wallet | Восстановление пароля</title>
+  <title data-i18n="forgot_title">Smart Wallet | Восстановление пароля</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
 </head>
@@ -15,21 +15,24 @@
           <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style="height:48px;">
           <h1>Smart Wallet</h1>
         </div>
-        <div class="muted">Восстановление доступа · Шаг 1</div>
+        <div class="muted" data-i18n="forgot_step">Восстановление доступа · Шаг 1</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="btn-lang">EN</button>
       </div>
     </header>
 
     <div class="hero">
-      <h2>Забыли пароль?</h2>
-      <p>Введите email, мы отправим одноразовый код. После отправки введите код из письма и продолжите.</p>
+      <h2 data-i18n="forgot_hero_title">Забыли пароль?</h2>
+      <p data-i18n="forgot_hero_sub">Введите email, мы отправим одноразовый код. После отправки введите код из письма и продолжите.</p>
     </div>
 
     <div class="recover-grid">
       <div class="card">
         <div class="card-title-row">
           <div>
-            <div class="badge">Шаг 1 · Письмо</div>
-            <h3 style="margin:8px 0 0;">Отправить код</h3>
+            <div class="badge" data-i18n="forgot_badge">Шаг 1 · Письмо</div>
+            <h3 style="margin:8px 0 0;" data-i18n="forgot_card_title">Отправить код</h3>
           </div>
         </div>
         <div class="form" id="form-forgot" autocomplete="off">
@@ -39,23 +42,24 @@
             <div id="fpEmailError" class="error-text" style="display:none;"></div>
           </div>
           <div class="field slide-panel" id="inline-token" aria-live="polite">
-            <label>Код из письма</label>
+            <label data-i18n="forgot_token_label">Код из письма</label>
             <div class="row-inline">
-              <input id="fpToken" placeholder="Вставьте код" aria-label="Код из письма">
-              <button type="button" class="ghost" id="btn-continue-reset" aria-label="Перейти к смене пароля">Продолжить</button>
+              <input id="fpToken" placeholder="Вставьте код" data-i18n-placeholder="forgot_token_placeholder" aria-label="Код из письма">
+              <button type="button" class="ghost" id="btn-continue-reset" aria-label="Перейти к смене пароля" data-i18n="forgot_continue">Продолжить</button>
             </div>
             <div id="fpTokenError" class="error-text" style="display:none;"></div>
           </div>
           <div id="forgotStatus" class="alert" role="alert" aria-live="polite" style="display:none;"></div>
           <div class="actions">
-            <button type="button" class="secondary" id="btn-forgot">Отправить код</button>
-            <a class="ghost" href="/app/login.html">Назад ко входу</a>
+            <button type="button" class="secondary" id="btn-forgot" data-i18n="forgot_send">Отправить код</button>
+            <a class="ghost" href="/app/login.html" data-i18n="back_to_login">Назад ко входу</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/app/i18n.js"></script>
   <script src="/app/theme.js"></script>
   <script src="/app/api.js"></script>
   <script src="/app/recover.js"></script>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Wallet | Подтверждение email</title>
+  <title data-i18n="verify_title">Smart Wallet | Подтверждение email</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
 </head>
@@ -15,21 +15,24 @@
           <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style="height:48px;">
           <h1>Smart Wallet</h1>
         </div>
-        <div class="muted">Подтверждение email</div>
+        <div class="muted" data-i18n="verify_header">Подтверждение email</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="btn-lang">EN</button>
       </div>
     </header>
 
     <div class="hero">
-      <h2>Подтвердите адрес</h2>
-      <p>Введите код из письма или перейдите по ссылке из письма. Если письмо не пришло — запросите новый код.</p>
+      <h2 data-i18n="verify_hero_title">Подтвердите адрес</h2>
+      <p data-i18n="verify_hero_sub">Введите код из письма или перейдите по ссылке из письма. Если письмо не пришло — запросите новый код.</p>
     </div>
 
     <div class="recover-grid">
       <div class="card">
         <div class="card-title-row">
           <div>
-            <div class="badge">Код из письма</div>
-            <h3 style="margin:8px 0 0;">Проверить код</h3>
+            <div class="badge" data-i18n="verify_badge">Код из письма</div>
+            <h3 style="margin:8px 0 0;" data-i18n="verify_card_title">Проверить код</h3>
           </div>
         </div>
         <div class="form" id="form-verify" autocomplete="off">
@@ -39,23 +42,24 @@
             <div id="verifyEmailError" class="error-text" style="display:none;"></div>
           </div>
           <div class="field">
-            <label>Код</label>
+            <label data-i18n="verify_code_label">Код</label>
             <div class="row-inline">
-              <input id="verifyToken" placeholder="Вставьте код" aria-label="Код из письма">
-              <button type="button" class="ghost" id="btn-verify">Подтвердить</button>
+              <input id="verifyToken" placeholder="Вставьте код" data-i18n-placeholder="verify_code_placeholder" aria-label="Код из письма">
+              <button type="button" class="ghost" id="btn-verify" data-i18n="verify_confirm">Подтвердить</button>
             </div>
             <div id="verifyTokenError" class="error-text" style="display:none;"></div>
           </div>
           <div id="verifyStatus" class="alert" role="alert" aria-live="polite" style="display:none;"></div>
           <div class="actions">
-            <button type="button" class="secondary" id="btn-request">Запросить код</button>
-            <a class="ghost" href="/app/login.html">Назад ко входу</a>
+            <button type="button" class="secondary" id="btn-request" data-i18n="verify_request">Запросить код</button>
+            <a class="ghost" href="/app/login.html" data-i18n="back_to_login">Назад ко входу</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/app/i18n.js"></script>
   <script src="/app/theme.js"></script>
   <script src="/app/api.js"></script>
   <script src="/app/verify.js"></script>

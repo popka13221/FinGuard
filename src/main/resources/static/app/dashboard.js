@@ -282,13 +282,25 @@
     }
   };
 
+  function detectBrowserLang() {
+    const rawList = Array.isArray(navigator.languages) && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const raw of rawList) {
+      const normalized = String(raw || '').toLowerCase().split(/[-_]/)[0];
+      if (normalized === 'en' || normalized === 'ru') return normalized;
+    }
+    return 'en';
+  }
+
   function loadLang() {
     try {
       const stored = localStorage.getItem(LANG_STORAGE_KEY);
-      return stored === 'en' || stored === 'ru' ? stored : 'ru';
+      if (stored === 'en' || stored === 'ru') return stored;
     } catch (_) {
-      return 'ru';
+      // ignore
     }
+    return detectBrowserLang();
   }
 
   let currentLang = loadLang();

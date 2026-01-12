@@ -10,6 +10,13 @@
     btnRequest: '#btn-request'
   };
 
+  function t(key, vars) {
+    if (window.I18n && typeof window.I18n.t === 'function') {
+      return window.I18n.t(key, vars);
+    }
+    return key;
+  }
+
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   const qs = (sel) => document.querySelector(sel);
@@ -45,11 +52,11 @@
 
   function validateEmail(email) {
     if (!email) {
-      showFieldError(selectors.email, 'Введите email');
+      showFieldError(selectors.email, t('msg_enter_email'));
       return false;
     }
     if (!emailRegex.test(email)) {
-      showFieldError(selectors.email, 'Введите корректный email');
+      showFieldError(selectors.email, t('msg_enter_valid_email'));
       return false;
     }
     showFieldError(selectors.email, '');
@@ -65,22 +72,22 @@
     const res = await Api.call('/api/auth/verify/request', 'POST', { email: emailVal }, false);
     if (btn) btn.disabled = false;
     if (res.ok) {
-      setStatus('Если email существует и не подтвержден — отправили код. Проверьте почту.', true);
+      setStatus(t('msg_verify_sent_if_needed'), true);
     } else {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '429001') {
-        setStatus('Слишком много попыток. Попробуйте позже.', false);
+        setStatus(t('msg_forgot_too_many_attempts'), false);
       } else if (code === '400002') {
-        showFieldError(selectors.email, 'Введите корректный email');
+        showFieldError(selectors.email, t('msg_enter_valid_email'));
       } else {
-        setStatus('Не удалось отправить код. Попробуйте позже.', false);
+        setStatus(t('msg_verify_send_failed'), false);
       }
     }
   }
 
   function validateToken(token) {
     if (!token) {
-      showFieldError(selectors.token, 'Введите код');
+      showFieldError(selectors.token, t('msg_enter_email_code'));
       return false;
     }
     showFieldError(selectors.token, '');
@@ -97,17 +104,17 @@
     const res = await Api.call('/api/auth/verify', 'POST', { email: emailVal, token: tokenVal }, false);
     if (btn) btn.disabled = false;
     if (res.ok) {
-      setStatus('Email подтвержден. Теперь можно войти.', true);
+      setStatus(t('msg_verify_success'), true);
       const target = `/app/login.html?verified=1&email=${encodeURIComponent(emailVal)}`;
       setTimeout(() => { window.location.href = target; }, 600);
     } else {
       const code = res.data && res.data.code ? res.data.code : '';
       if (code === '100005') {
-        setStatus('Код недействителен или истек. Запросите новый.', false);
+        setStatus(t('msg_verify_code_invalid'), false);
       } else if (code === '429001') {
-        setStatus('Слишком много попыток. Попробуйте позже.', false);
+        setStatus(t('msg_forgot_too_many_attempts'), false);
       } else {
-        setStatus('Не удалось подтвердить код. Попробуйте снова.', false);
+        setStatus(t('msg_verify_failed_retry'), false);
       }
     }
   }

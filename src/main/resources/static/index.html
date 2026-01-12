@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FinGuard — Финансы под контролем</title>
+  <title data-i18n="landing_title">FinGuard — Финансы под контролем</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
   <style>
@@ -565,17 +565,18 @@
         <strong>FinGuard</strong>
       </a>
       <nav class="nav-links">
-        <a href="#overview">Обзор</a>
-        <a href="#rules">Правила</a>
-        <a href="#goals">Цели</a>
-        <a href="#onchain">On-chain</a>
-        <a href="#roadmap">Дорожная карта</a>
-        <a href="#security">Безопасность</a>
-        <a href="#faq">FAQ</a>
+        <a href="#overview" data-i18n="landing_nav_overview">Обзор</a>
+        <a href="#rules" data-i18n="landing_nav_rules">Правила</a>
+        <a href="#goals" data-i18n="landing_nav_goals">Цели</a>
+        <a href="#onchain" data-i18n="landing_nav_onchain">On-chain</a>
+        <a href="#roadmap" data-i18n="landing_nav_roadmap">Дорожная карта</a>
+        <a href="#security" data-i18n="landing_nav_security">Безопасность</a>
+        <a href="#faq" data-i18n="landing_nav_faq">FAQ</a>
       </nav>
       <div class="actions">
-        <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
+        <a class="btn primary" href="/app/dashboard.html" data-i18n="landing_open_demo">Открыть демо</a>
         <a class="btn github" href="https://github.com/popka13221/FinGuard" target="_blank" rel="noreferrer">GitHub</a>
+        <button type="button" class="btn" id="btn-lang">EN</button>
       </div>
     </header>
 
@@ -584,49 +585,49 @@
         <div class="hero-grid">
           <div class="stack">
             <span class="label">FINANCE, GUARDED.</span>
-            <h1 id="hero-title">FinGuard. Личные финансы под контролем.</h1>
-            <p id="hero-subtitle">Учет, цели и правила, которые предупреждают раньше, чем появляется проблема.</p>
+            <h1 id="hero-title" data-i18n="landing_hero_title">FinGuard. Личные финансы под контролем.</h1>
+            <p id="hero-subtitle" data-i18n="landing_hero_subtitle">Учет, цели и правила, которые предупреждают раньше, чем появляется проблема.</p>
             <div class="actions" style="gap:10px; justify-content:center;">
-              <a class="btn primary" href="/app/dashboard.html">Открыть демо</a>
+              <a class="btn primary" href="/app/dashboard.html" data-i18n="landing_open_demo">Открыть демо</a>
               <a class="btn ghost" href="https://github.com/popka13221/FinGuard" target="_blank" rel="noreferrer">GitHub</a>
             </div>
-            <div class="microline">Правила и уведомления · Валюты и активы · On-chain аудит</div>
+            <div class="microline" data-i18n="landing_microline">Правила и уведомления · Валюты и активы · On-chain аудит</div>
           </div>
           <div class="hero-visual">
             <div class="dash-mock">
               <div class="status-grid">
                 <div class="status-card">
-                  <h4>Итого на счетах</h4>
-                  <p>$22 650 · сумма по всем счетам</p>
+                  <h4 data-i18n="landing_mock_total_title">Итого на счетах</h4>
+                  <p data-i18n="landing_mock_total_sub">$22 650 · сумма по всем счетам</p>
                 </div>
                 <div class="status-card">
-                  <h4>Активные правила</h4>
-                  <p>лимиты · пороги · подписки</p>
+                  <h4 data-i18n="landing_mock_rules_title">Активные правила</h4>
+                  <p data-i18n="landing_mock_rules_sub">лимиты · пороги · подписки</p>
                 </div>
                 <div class="status-card">
-                  <h4>Курсы и портфель</h4>
-                  <p>BTC/USD 118936,62 · портфель +2,4%</p>
+                  <h4 data-i18n="landing_mock_rates_title">Курсы и портфель</h4>
+                  <p data-i18n="landing_mock_rates_sub">BTC/USD 118936,62 · портфель +2,4%</p>
                 </div>
               </div>
               <div class="alert-feed">
                 <div class="alert-item">
                   <div>
-                    <h4>Лимит на подписки</h4>
-                    <p>Потрачено 78% · предупредим при 90%.</p>
+                    <h4 data-i18n="landing_mock_alert1_title">Лимит на подписки</h4>
+                    <p data-i18n="landing_mock_alert1_sub">Потрачено 78% · предупредим при 90%.</p>
                   </div>
-                  <span class="alert-pill soft">Настроить</span>
+                  <span class="alert-pill soft" data-i18n="landing_mock_alert1_cta">Настроить</span>
                 </div>
                 <div class="alert-item">
                   <div>
-                    <h4>Порог по USD/RUB</h4>
-                    <p>96,20 достигнут · отправлено в Telegram.</p>
+                    <h4 data-i18n="landing_mock_alert2_title">Порог по USD/RUB</h4>
+                    <p data-i18n="landing_mock_alert2_sub">96,20 достигнут · отправлено в Telegram.</p>
                   </div>
-                  <span class="alert-pill danger">История</span>
+                  <span class="alert-pill danger" data-i18n="landing_mock_alert2_cta">История</span>
                 </div>
               </div>
               <div class="status-card">
-                <h4>Финансовая подушка</h4>
-                <p>Готово 62% · осталось $3,2k · темп $480/мес.</p>
+                <h4 data-i18n="landing_mock_fund_title">Финансовая подушка</h4>
+                <p data-i18n="landing_mock_fund_sub">Готово 62% · осталось $3,2k · темп $480/мес.</p>
               </div>
             </div>
           </div>
@@ -634,39 +635,39 @@
       </section>
 
       <section class="section reveal fullscreen centered snap-section" id="intro">
-        <h2 class="hero-mega">Не просто учет. Это система контроля бюджета.</h2>
-        <p class="lead">FinGuard собирает счета, транзакции и отчеты в одном месте — и добавляет главное: правила. Вы задаете условия, и система сама следит и уведомляет.</p>
+        <h2 class="hero-mega" data-i18n="landing_intro_title">Не просто учет. Это система контроля бюджета.</h2>
+        <p class="lead" data-i18n="landing_intro_sub">FinGuard собирает счета, транзакции и отчеты в одном месте — и добавляет главное: правила. Вы задаете условия, и система сама следит и уведомляет.</p>
         <div class="flow hero-flow">
-          <div class="flow-chip">Данные</div>
+          <div class="flow-chip" data-i18n="landing_flow_data">Данные</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-chip">Правила</div>
+          <div class="flow-chip" data-i18n="landing_flow_rules">Правила</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-chip">Уведомления</div>
+          <div class="flow-chip" data-i18n="landing_flow_alerts">Уведомления</div>
         </div>
       </section>
 
       <section class="section reveal fullscreen snap-section" id="goals">
-        <h2 class="hero-mega">Главное — три вещи.</h2>
+        <h2 class="hero-mega" data-i18n="landing_goals_title">Главное — три вещи.</h2>
         <div class="feature-pack hero-pack">
           <div class="feature-tile tone-a">
-            <div class="feature-pill">Правила</div>
+            <div class="feature-pill" data-i18n="landing_goal_rules_pill">Правила</div>
             <div>
-              <h3 style="margin:8px 0 6px;">Правила, которые работают за вас.</h3>
-              <p class="muted">Лимиты, пороги и повторяющиеся списания — сигнал приходит, когда ещё можно спокойно исправить.</p>
+              <h3 style="margin:8px 0 6px;" data-i18n="landing_goal_rules_title">Правила, которые работают за вас.</h3>
+              <p class="muted" data-i18n="landing_goal_rules_sub">Лимиты, пороги и повторяющиеся списания — сигнал приходит, когда ещё можно спокойно исправить.</p>
             </div>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">Цели</div>
+            <div class="feature-pill" data-i18n="landing_goal_goals_pill">Цели</div>
             <div>
-              <h3 style="margin:8px 0 6px;">Цели с понятным прогрессом.</h3>
-              <p class="muted">Срок, сумма, темп — FinGuard показывает, сколько откладывать в месяц, чтобы дойти до цели.</p>
+              <h3 style="margin:8px 0 6px;" data-i18n="landing_goal_goals_title">Цели с понятным прогрессом.</h3>
+              <p class="muted" data-i18n="landing_goal_goals_sub">Срок, сумма, темп — FinGuard показывает, сколько откладывать в месяц, чтобы дойти до цели.</p>
             </div>
           </div>
           <div class="feature-tile tone-c" id="assets">
-            <div class="feature-pill">Валюты и активы</div>
+            <div class="feature-pill" data-i18n="landing_goal_assets_pill">Валюты и активы</div>
             <div>
-              <h3 style="margin:8px 0 6px;">Валюты и активы — в одной панели.</h3>
-              <p class="muted">Курсы и изменения — чтобы видеть ситуацию целиком, не переключаясь между сервисами.</p>
+              <h3 style="margin:8px 0 6px;" data-i18n="landing_goal_assets_title">Валюты и активы — в одной панели.</h3>
+              <p class="muted" data-i18n="landing_goal_assets_sub">Курсы и изменения — чтобы видеть ситуацию целиком, не переключаясь между сервисами.</p>
             </div>
           </div>
         </div>
@@ -675,36 +676,36 @@
       <section class="section reveal snap-section" id="rules">
         <div class="story-grid">
           <div class="sticky-col">
-            <h2 class="hero-mega" style="font-size: clamp(32px, 5vw, 64px);">Уведомления, которые не шумят — и срабатывают по делу.</h2>
+            <h2 class="hero-mega" style="font-size: clamp(32px, 5vw, 64px);" data-i18n="landing_rules_title">Уведомления, которые не шумят — и срабатывают по делу.</h2>
           </div>
           <div class="story-visuals">
             <div class="story-card">
               <div class="story-icon">
                 <img src="/app/assets/bell_ring_icon_136887.svg" alt="Автоматизация и уведомления">
               </div>
-              <h3>Правила, которые работают сами.</h3>
-              <p class="muted">Условие + расписание — FinGuard проверяет и даёт сигнал, когда важно среагировать.</p>
+              <h3 data-i18n="landing_rules_card1_title">Правила, которые работают сами.</h3>
+              <p class="muted" data-i18n="landing_rules_card1_sub">Условие + расписание — FinGuard проверяет и даёт сигнал, когда важно среагировать.</p>
             </div>
             <div class="story-card">
               <div class="story-icon">
                 <img src="/app/assets/donut_chart_icon_207654.svg" alt="Лимиты по категориям">
               </div>
-              <h3>Лимиты по категориям.</h3>
-              <p class="muted">“Еда”, “Транспорт”, “Подписки” — уведомление приходит, когда вы подходите к лимиту.</p>
+              <h3 data-i18n="landing_rules_card2_title">Лимиты по категориям.</h3>
+              <p class="muted" data-i18n="landing_rules_card2_sub">“Еда”, “Транспорт”, “Подписки” — уведомление приходит, когда вы подходите к лимиту.</p>
             </div>
             <div class="story-card">
               <div class="story-icon">
                 <img src="/app/assets/linechart_120376.svg" alt="Пороги по курсам и активам">
               </div>
-              <h3>Пороги по курсам и активам.</h3>
-              <p class="muted">Когда курс достигает порога — вы узнаёте об этом сразу.</p>
+              <h3 data-i18n="landing_rules_card3_title">Пороги по курсам и активам.</h3>
+              <p class="muted" data-i18n="landing_rules_card3_sub">Когда курс достигает порога — вы узнаёте об этом сразу.</p>
             </div>
             <div class="story-card">
               <div class="story-icon">
                 <img src="/app/assets/subscription_notifications_communication_updates_email_alerts_icon_260969.svg" alt="Регулярные списания">
               </div>
-              <h3>Регулярные списания.</h3>
-              <p class="muted">Выделяет регулярные списания отдельно — чтобы подписки не терялись в ленте.</p>
+              <h3 data-i18n="landing_rules_card4_title">Регулярные списания.</h3>
+              <p class="muted" data-i18n="landing_rules_card4_sub">Выделяет регулярные списания отдельно — чтобы подписки не терялись в ленте.</p>
             </div>
           </div>
         </div>
@@ -712,25 +713,25 @@
 
       <section class="section reveal snap-section" id="how">
         <div class="section-header">
-          <h2 class="hero-mega">Три шага — и контроль включён.</h2>
+          <h2 class="hero-mega" data-i18n="landing_how_title">Три шага — и контроль включён.</h2>
         </div>
         <div class="feature-pack">
             <div class="feature-tile tone-c">
-              <div class="feature-pill">Структура</div>
+              <div class="feature-pill" data-i18n="landing_how_structure_pill">Структура</div>
               <div>
-                <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);">Создайте счета, категории и базовую валюту.</p>
+                <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);" data-i18n="landing_how_structure_sub">Создайте счета, категории и базовую валюту.</p>
               </div>
             </div>
           <div class="feature-tile tone-a">
-            <div class="feature-pill">Транзакции</div>
+            <div class="feature-pill" data-i18n="landing_how_transactions_pill">Транзакции</div>
             <div>
-              <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);">Добавляйте доходы и траты.</p>
+              <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);" data-i18n="landing_how_transactions_sub">Добавляйте доходы и траты.</p>
             </div>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">Правила</div>
+            <div class="feature-pill" data-i18n="landing_how_rules_pill">Правила</div>
             <div>
-              <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);">Включите правила и уведомления. FinGuard следит — вы решаете.</p>
+              <p class="muted" style="text-align:center; font-size: clamp(18px, 3vw, 22px);" data-i18n="landing_how_rules_sub">Включите правила и уведомления. FinGuard следит — вы решаете.</p>
             </div>
           </div>
         </div>
@@ -738,107 +739,107 @@
 
       <section class="section reveal snap-section" id="modules">
         <div class="section-header">
-          <h2 class="hero-mega">Возможности</h2>
+          <h2 class="hero-mega" data-i18n="landing_modules_title">Возможности</h2>
         </div>
         <div class="modules">
-          <div class="module"><strong>Счета и транзакции</strong><p class="muted">История, фильтры и актуальный баланс.</p></div>
-          <div class="module"><strong>Отчеты</strong><p class="muted">Сводка периода, cash-flow, категории.</p></div>
-          <div class="module"><strong>Цели</strong><p class="muted">Прогресс, срок и расчет темпа.</p></div>
-          <div class="module"><strong>Правила</strong><p class="muted">Лимиты, пороги и условия срабатывания.</p></div>
-          <div class="module"><strong>Уведомления</strong><p class="muted">Email, Telegram и встроенные уведомления.</p></div>
-          <div class="module"><strong>Валюты и активы</strong><p class="muted">FX и цены активов, изменения, пороги.</p></div>
+          <div class="module"><strong data-i18n="landing_module_accounts_title">Счета и транзакции</strong><p class="muted" data-i18n="landing_module_accounts_sub">История, фильтры и актуальный баланс.</p></div>
+          <div class="module"><strong data-i18n="landing_module_reports_title">Отчеты</strong><p class="muted" data-i18n="landing_module_reports_sub">Сводка периода, cash-flow, категории.</p></div>
+          <div class="module"><strong data-i18n="landing_module_goals_title">Цели</strong><p class="muted" data-i18n="landing_module_goals_sub">Прогресс, срок и расчет темпа.</p></div>
+          <div class="module"><strong data-i18n="landing_module_rules_title">Правила</strong><p class="muted" data-i18n="landing_module_rules_sub">Лимиты, пороги и условия срабатывания.</p></div>
+          <div class="module"><strong data-i18n="landing_module_notifications_title">Уведомления</strong><p class="muted" data-i18n="landing_module_notifications_sub">Email, Telegram и встроенные уведомления.</p></div>
+          <div class="module"><strong data-i18n="landing_module_assets_title">Валюты и активы</strong><p class="muted" data-i18n="landing_module_assets_sub">FX и цены активов, изменения, пороги.</p></div>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="onchain">
         <div class="section-header">
-          <h2 class="hero-mega">On-chain аудит: проверяемость без раскрытия деталей.</h2>
+          <h2 class="hero-mega" data-i18n="landing_onchain_title">On-chain аудит: проверяемость без раскрытия деталей.</h2>
         </div>
         <div class="feature-pack">
           <div class="feature-tile tone-c">
-            <div class="feature-pill">Метки аудита</div>
-            <p class="muted">Фиксация контрольного отпечатка отчета/правил.</p>
+            <div class="feature-pill" data-i18n="landing_onchain_audit_pill">Метки аудита</div>
+            <p class="muted" data-i18n="landing_onchain_audit_sub">Фиксация контрольного отпечатка отчета/правил.</p>
           </div>
           <div class="feature-tile tone-a">
-            <div class="feature-pill">Политики кошелька</div>
-            <p class="muted">Лимиты и правила могут исполняться на уровне Vault.</p>
+            <div class="feature-pill" data-i18n="landing_onchain_policy_pill">Политики кошелька</div>
+            <p class="muted" data-i18n="landing_onchain_policy_sub">Лимиты и правила могут исполняться на уровне Vault.</p>
           </div>
           <div class="feature-tile tone-b">
-            <div class="feature-pill">Сейф-цели</div>
-            <p class="muted">Цель может быть escrow с условиями разблокировки.</p>
+            <div class="feature-pill" data-i18n="landing_onchain_safe_goals_pill">Сейф-цели</div>
+            <p class="muted" data-i18n="landing_onchain_safe_goals_sub">Цель может быть escrow с условиями разблокировки.</p>
           </div>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="perspective">
         <div class="section-header">
-          <h2 class="hero-mega" id="persp-title">Один продукт — несколько сценариев роста.</h2>
+          <h2 class="hero-mega" id="persp-title" data-i18n="landing_perspective_title">Один продукт — несколько сценариев роста.</h2>
         </div>
         <div class="story-four">
-          <div class="story-block"><strong>Для личного использования</strong><p class="muted">Контроль бюджета и привычек: учет + цели + правила.</p></div>
-          <div class="story-block"><strong>Для команд</strong><p class="muted">Бюджеты, роли и лимиты — контроль расходов по направлениям.</p></div>
-          <div class="story-block"><strong>Как модуль для систем</strong><p class="muted">Rules/Alerts engine: события → правила → действия. Подходит для финтеха и внутренних систем контроля.</p></div>
-          <div class="story-block"><strong>Как платформа</strong><p class="muted">Интеграции, расширяемость, документация.</p></div>
+          <div class="story-block"><strong data-i18n="landing_persp_personal_title">Для личного использования</strong><p class="muted" data-i18n="landing_persp_personal_sub">Контроль бюджета и привычек: учет + цели + правила.</p></div>
+          <div class="story-block"><strong data-i18n="landing_persp_team_title">Для команд</strong><p class="muted" data-i18n="landing_persp_team_sub">Бюджеты, роли и лимиты — контроль расходов по направлениям.</p></div>
+          <div class="story-block"><strong data-i18n="landing_persp_module_title">Как модуль для систем</strong><p class="muted" data-i18n="landing_persp_module_sub">Rules/Alerts engine: события → правила → действия. Подходит для финтеха и внутренних систем контроля.</p></div>
+          <div class="story-block"><strong data-i18n="landing_persp_platform_title">Как платформа</strong><p class="muted" data-i18n="landing_persp_platform_sub">Интеграции, расширяемость, документация.</p></div>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="roadmap">
         <div class="section-header">
-          <h2 class="hero-mega">Дорожная карта. Поэтапно и прозрачно.</h2>
+          <h2 class="hero-mega" data-i18n="landing_roadmap_title">Дорожная карта. Поэтапно и прозрачно.</h2>
         </div>
         <div class="roadmap-grid">
           <div class="roadmap-item top">
             <span class="roadmap-step">V1</span>
-            <strong>Основа</strong>
-            <p class="muted">Счета · Транзакции · Отчеты · Базовые правила · Уведомления</p>
+            <strong data-i18n="landing_roadmap_v1_title">Основа</strong>
+            <p class="muted" data-i18n="landing_roadmap_v1_sub">Счета · Транзакции · Отчеты · Базовые правила · Уведомления</p>
           </div>
           <div class="roadmap-item bottom">
             <span class="roadmap-step">V2</span>
-            <strong>Инсайты</strong>
-            <p class="muted">Цели · Подписки · Расширенные правила · Улучшенная аналитика</p>
+            <strong data-i18n="landing_roadmap_v2_title">Инсайты</strong>
+            <p class="muted" data-i18n="landing_roadmap_v2_sub">Цели · Подписки · Расширенные правила · Улучшенная аналитика</p>
           </div>
           <div class="roadmap-item top">
             <span class="roadmap-step">V3</span>
-            <strong>Интеграции</strong>
-            <p class="muted">Импорт CSV · Провайдеры FX · Активы · Webhooks</p>
+            <strong data-i18n="landing_roadmap_v3_title">Интеграции</strong>
+            <p class="muted" data-i18n="landing_roadmap_v3_sub">Импорт CSV · Провайдеры FX · Активы · Webhooks</p>
           </div>
           <div class="roadmap-item bottom">
             <span class="roadmap-step">V4</span>
-            <strong>On-chain</strong>
-            <p class="muted">Метки аудита · Политики Vault · Escrow-цели</p>
+            <strong data-i18n="landing_roadmap_v4_title">On-chain</strong>
+            <p class="muted" data-i18n="landing_roadmap_v4_sub">Метки аудита · Политики Vault · Escrow-цели</p>
           </div>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="security">
         <div class="section-header">
-          <h2 class="hero-mega">Безопасность — часть продукта.</h2>
+          <h2 class="hero-mega" data-i18n="landing_security_title">Безопасность — часть продукта.</h2>
         </div>
         <div class="story-four">
-          <div class="story-block"><strong>Доступ</strong><p class="muted">Защищенные сессии и контроль действий.</p></div>
-          <div class="story-block"><strong>Восстановление</strong><p class="muted">Надежные потоки верификации и reset.</p></div>
-          <div class="story-block"><strong>Приватность</strong><p class="muted">Контроль данных и минимизация сведений в интеграциях.</p></div>
+          <div class="story-block"><strong data-i18n="landing_security_access_title">Доступ</strong><p class="muted" data-i18n="landing_security_access_sub">Защищенные сессии и контроль действий.</p></div>
+          <div class="story-block"><strong data-i18n="landing_security_recovery_title">Восстановление</strong><p class="muted" data-i18n="landing_security_recovery_sub">Надежные потоки верификации и reset.</p></div>
+          <div class="story-block"><strong data-i18n="landing_security_privacy_title">Приватность</strong><p class="muted" data-i18n="landing_security_privacy_sub">Контроль данных и минимизация сведений в интеграциях.</p></div>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="faq">
         <div class="section-header">
-          <h2 class="hero-mega">FAQ</h2>
+          <h2 class="hero-mega" data-i18n="landing_faq_title">FAQ</h2>
         </div>
         <div class="accordion">
-          <details><summary>Это банк?</summary><p class="muted">Нет. FinGuard не хранит деньги и не проводит платежи — он помогает учитывать, планировать и контролировать.</p></details>
-          <details><summary>Где хранятся данные?</summary><p class="muted">Локально или на вашем сервере — вы контролируете данные.</p></details>
-          <details><summary>Как работают правила?</summary><p class="muted">Вы задаёте правило (лимит/порог/период). FinGuard проверяет по расписанию и отправляет уведомление.</p></details>
-          <details><summary>Какие уведомления есть?</summary><p class="muted">Встроенные уведомления, а также Email и Telegram (по настройке).</p></details>
-          <details><summary>Есть импорт транзакций?</summary><p class="muted">Импорт CSV — в разработке. Банковские интеграции — отдельный этап.</p></details>
-          <details><summary>Поддерживаются валюты и активы?</summary><p class="muted">Да: курсы, изменения, пороги и уведомления.</p></details>
-          <details><summary>Как начать?</summary><p class="muted">Откройте демо или разверните проект через Docker.</p></details>
+          <details><summary data-i18n="landing_faq_q1">Это банк?</summary><p class="muted" data-i18n="landing_faq_a1">Нет. FinGuard не хранит деньги и не проводит платежи — он помогает учитывать, планировать и контролировать.</p></details>
+          <details><summary data-i18n="landing_faq_q2">Где хранятся данные?</summary><p class="muted" data-i18n="landing_faq_a2">Локально или на вашем сервере — вы контролируете данные.</p></details>
+          <details><summary data-i18n="landing_faq_q3">Как работают правила?</summary><p class="muted" data-i18n="landing_faq_a3">Вы задаёте правило (лимит/порог/период). FinGuard проверяет по расписанию и отправляет уведомление.</p></details>
+          <details><summary data-i18n="landing_faq_q4">Какие уведомления есть?</summary><p class="muted" data-i18n="landing_faq_a4">Встроенные уведомления, а также Email и Telegram (по настройке).</p></details>
+          <details><summary data-i18n="landing_faq_q5">Есть импорт транзакций?</summary><p class="muted" data-i18n="landing_faq_a5">Импорт CSV — в разработке. Банковские интеграции — отдельный этап.</p></details>
+          <details><summary data-i18n="landing_faq_q6">Поддерживаются валюты и активы?</summary><p class="muted" data-i18n="landing_faq_a6">Да: курсы, изменения, пороги и уведомления.</p></details>
+          <details><summary data-i18n="landing_faq_q7">Как начать?</summary><p class="muted" data-i18n="landing_faq_a7">Откройте демо или разверните проект через Docker.</p></details>
         </div>
       </section>
 
       <section class="section reveal snap-section" id="cta">
         <div class="section-header">
-          <h2 class="hero-mega">Подключите FinGuard сейчас.</h2>
+          <h2 class="hero-mega" data-i18n="landing_cta_title">Подключите FinGuard сейчас.</h2>
         </div>
       </section>
     </main>
@@ -846,18 +847,19 @@
     <footer class="footer">
       <div class="actions" style="gap:10px; flex-wrap:wrap;">
         <a href="https://github.com/popka13221/FinGuard" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="#roadmap">Roadmap</a>
-        <a href="#security">Security</a>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="#faq">FAQ</a>
-        <a href="https://t.me/popka13221" target="_blank" rel="noreferrer">Contact</a>
+        <a href="#roadmap" data-i18n="landing_nav_roadmap">Roadmap</a>
+        <a href="#security" data-i18n="landing_nav_security">Security</a>
+        <a href="/privacy" data-i18n="landing_footer_privacy">Privacy</a>
+        <a href="/terms" data-i18n="landing_footer_terms">Terms</a>
+        <a href="#faq" data-i18n="landing_nav_faq">FAQ</a>
+        <a href="https://t.me/popka13221" target="_blank" rel="noreferrer" data-i18n="landing_footer_contact">Contact</a>
         <a href="https://t.me/popka13221" target="_blank" rel="noreferrer">@popka13221</a>
       </div>
-      <small>FinGuard — страница продукта без лишнего шума.</small>
+      <small data-i18n="landing_footer_tagline">FinGuard — страница продукта без лишнего шума.</small>
     </footer>
   </div>
 
+  <script src="/app/i18n.js"></script>
   <script src="/app/theme.js"></script>
   <script src="/app/landing.js"></script>
 </body>

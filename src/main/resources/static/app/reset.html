@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Wallet | Смена пароля</title>
+  <title data-i18n="reset_title">Smart Wallet | Смена пароля</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
 </head>
@@ -15,51 +15,55 @@
           <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" style="height:48px;">
           <h1>Smart Wallet</h1>
         </div>
-        <div class="muted">Восстановление доступа · Шаг 2</div>
+        <div class="muted" data-i18n="reset_step">Восстановление доступа · Шаг 2</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="btn-lang">EN</button>
       </div>
     </header>
 
     <div class="hero">
-      <h2>Смена пароля</h2>
-      <p>Введите код из письма и задайте новый пароль. Код одноразовый и действует ограниченное время.</p>
+      <h2 data-i18n="reset_hero_title">Смена пароля</h2>
+      <p data-i18n="reset_hero_sub">Введите код из письма и задайте новый пароль. Код одноразовый и действует ограниченное время.</p>
     </div>
 
     <div class="recover-grid">
         <div class="card">
           <div class="card-title-row">
             <div>
-              <div class="badge alt">Шаг 2 · Новый пароль</div>
-              <h3 style="margin:8px 0 0;">Сменить пароль по коду</h3>
+              <div class="badge alt" data-i18n="reset_badge">Шаг 2 · Новый пароль</div>
+              <h3 style="margin:8px 0 0;" data-i18n="reset_card_title">Сменить пароль по коду</h3>
             </div>
           </div>
         <div class="form" id="form-reset" autocomplete="off">
           <div class="field">
-            <label>Новый пароль</label>
+            <label data-i18n="reset_new_password">Новый пароль</label>
             <div class="row-inline">
-              <input id="resetPassword" type="password" placeholder="Новый пароль" autocomplete="new-password" aria-label="Новый пароль">
-              <button type="button" class="ghost" id="show-reset-password" aria-label="Показать пароль">Показать</button>
+              <input id="resetPassword" type="password" placeholder="Новый пароль" data-i18n-placeholder="reset_new_password_placeholder" autocomplete="new-password" aria-label="Новый пароль">
+              <button type="button" class="ghost" id="show-reset-password" data-i18n="msg_show" data-i18n-aria="toggle_password_visibility_aria">Показать</button>
             </div>
-            <div class="muted">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
+            <div class="muted" data-i18n="login_password_help">Не менее 10 символов, верхний/нижний регистр, цифра и спецсимвол.</div>
             <div id="resetPasswordError" class="error-text" style="display:none;"></div>
           </div>
           <div class="field">
-            <label>Повторите пароль</label>
+            <label data-i18n="reset_confirm_password">Повторите пароль</label>
             <div class="row-inline">
-              <input id="resetPasswordConfirm" type="password" placeholder="Ещё раз" autocomplete="new-password" aria-label="Подтверждение пароля">
-              <button type="button" class="ghost" id="show-reset-confirm" aria-label="Показать пароль">Показать</button>
+              <input id="resetPasswordConfirm" type="password" placeholder="Ещё раз" data-i18n-placeholder="reset_confirm_password_placeholder" autocomplete="new-password" aria-label="Подтверждение пароля">
+              <button type="button" class="ghost" id="show-reset-confirm" data-i18n="msg_show" data-i18n-aria="toggle_password_visibility_aria">Показать</button>
             </div>
             <div id="resetConfirmError" class="error-text" style="display:none;"></div>
           </div>
           <div id="resetStatus" class="alert success" role="status" aria-live="polite" style="display:none;"></div>
           <div class="actions">
-            <button type="button" id="btn-reset">Сменить пароль</button>
-            <a class="ghost" href="/app/login.html">Перейти ко входу</a>
+            <button type="button" id="btn-reset" data-i18n="reset_submit">Сменить пароль</button>
+            <a class="ghost" href="/app/login.html" data-i18n="go_to_login">Перейти ко входу</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/app/i18n.js"></script>
   <script src="/app/theme.js"></script>
   <script src="/app/api.js"></script>
   <script src="/app/recover.js"></script>

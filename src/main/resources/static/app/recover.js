@@ -21,6 +21,13 @@
     showResetConfirm: '#show-reset-confirm'
   };
 
+  function t(key, vars) {
+    if (window.I18n && typeof window.I18n.t === 'function') {
+      return window.I18n.t(key, vars);
+    }
+    return key;
+  }
+
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/;
   const resendCooldown = 60;
@@ -96,10 +103,10 @@
     if (!input) return;
     if (input.type === 'password') {
       input.type = 'text';
-      if (btn) btn.textContent = 'Скрыть';
+      if (btn) btn.textContent = t('msg_hide');
     } else {
       input.type = 'password';
-      if (btn) btn.textContent = 'Показать';
+      if (btn) btn.textContent = t('msg_show');
     }
   }
 
@@ -112,16 +119,16 @@
     if (resetCountdown <= 0) {
       return;
     }
-    setAlert(selectors.resetStatus, `Сессия сброса активна: ${formatTimer(resetCountdown)}`, 'success');
+    setAlert(selectors.resetStatus, t('msg_reset_session_active', { time: formatTimer(resetCountdown) }), 'success');
     resetCountdownTimer = setInterval(() => {
       resetCountdown -= 1;
       if (resetCountdown <= 0) {
         clearInterval(resetCountdownTimer);
         resetCountdownTimer = null;
         resetSessionToken = '';
-        setAlert(selectors.resetStatus, 'Сессия сброса истекла. Введите код снова.', 'error');
+        setAlert(selectors.resetStatus, t('msg_reset_session_expired'), 'error');
       } else {
-        setAlert(selectors.resetStatus, `Сессия сброса активна: ${formatTimer(resetCountdown)}`, 'success');
+        setAlert(selectors.resetStatus, t('msg_reset_session_active', { time: formatTimer(resetCountdown) }), 'success');
       }
     }, 1000);
   }
@@ -137,16 +144,16 @@
     const btn = qs(selectors.forgotButton);
     if (!btn) return;
     if (cooldownRemaining > 0) {
-      btn.textContent = `Отправить код повторно (${cooldownRemaining}s)`;
+      btn.textContent = t('msg_send_code_again', { sec: cooldownRemaining });
     } else {
-      btn.textContent = forgotButtonText || 'Отправить код';
+      btn.textContent = forgotButtonText || t('forgot_send');
     }
   }
 
   function startCooldown(secondsOverride) {
     const btn = qs(selectors.forgotButton);
     if (!btn) return;
-    if (!forgotButtonText) forgotButtonText = btn.textContent || 'Отправить код';
+    if (!forgotButtonText) forgotButtonText = btn.textContent || t('forgot_send');
     cooldownRemaining = typeof secondsOverride === 'number' ? Math.max(secondsOverride, 0) : resendCooldown;
     if (cooldownRemaining <= 0) {
       btn.disabled = false;
@@ -179,11 +186,11 @@
     clearFieldErrors();
     const email = (val(selectors.forgotEmail) || '').trim().toLowerCase();
     if (!email) {
-      showFieldError('fpEmail', 'Введите email');
+      showFieldError('fpEmail', t('msg_enter_email'));
       return { valid: false, email };
     }
     if (!emailRegex.test(email)) {
-      showFieldError('fpEmail', 'Введите корректный email');
+      showFieldError('fpEmail', t('msg_enter_valid_email'));
       return { valid: false, email };
     }
     return { valid: true, email };
@@ -206,22 +213,22 @@
 
   async function continueToReset() {
     if (tokenAttempts >= maxTokenAttempts) {
-      setAlert(selectors.forgotStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+      setAlert(selectors.forgotStatus, t('msg_forgot_too_many_wrong_attempts'), 'error');
       return;
     }
     clearFieldErrors();
     const tokenVal = (val(selectors.forgotToken) || '').trim();
     const emailVal = (val(selectors.forgotEmail) || '').trim().toLowerCase();
     if (!emailVal || !emailRegex.test(emailVal)) {
-      showFieldError('fpEmail', 'Введите корректный email');
+      showFieldError('fpEmail', t('msg_enter_valid_email'));
       return;
     }
     if (!tokenVal) {
-      showFieldError('fpToken', 'Введите код из письма');
+      showFieldError('fpToken', t('msg_forgot_enter_code'));
       return;
     }
     if (tokenVal.length < 6) {
-      showFieldError('fpToken', 'Код слишком короткий');
+      showFieldError('fpToken', t('msg_forgot_code_too_short'));
       return;
     }
     setAlert(selectors.forgotStatus, '');
@@ -247,30 +254,30 @@
     if (code === '100005') {
       tokenAttempts += 1;
       if (tokenAttempts >= maxTokenAttempts) {
-        setAlert(selectors.forgotStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+        setAlert(selectors.forgotStatus, t('msg_forgot_too_many_wrong_attempts'), 'error');
         disableTokenEntry();
       } else {
-        setAlert(selectors.forgotStatus, 'Код неверный или устарел. Запросите новый.', 'error');
+        setAlert(selectors.forgotStatus, t('msg_forgot_code_invalid'), 'error');
       }
     } else if (code === '429001') {
-      setAlert(selectors.forgotStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
+      setAlert(selectors.forgotStatus, t('msg_forgot_too_many_attempts'), 'error');
     } else {
-      setAlert(selectors.forgotStatus, 'Не удалось подтвердить код. Попробуйте снова.', 'error');
+      setAlert(selectors.forgotStatus, t('msg_forgot_confirm_failed'), 'error');
     }
   }
 
   async function confirmResetSession(tokenVal, emailVal) {
     if (tokenAttempts >= maxTokenAttempts) {
-      setAlert(selectors.resetStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+      setAlert(selectors.resetStatus, t('msg_forgot_too_many_wrong_attempts'), 'error');
       disableTokenEntry();
       return;
     }
     if (!tokenVal) {
-      setAlert(selectors.resetStatus, 'Код не найден. Вернитесь и запросите новый.', 'error');
+      setAlert(selectors.resetStatus, t('msg_reset_code_missing'), 'error');
       return;
     }
     if (!emailVal || !emailRegex.test(emailVal)) {
-      setAlert(selectors.resetStatus, 'Укажите email, на который пришел код.', 'error');
+      setAlert(selectors.resetStatus, t('msg_reset_enter_email_for_code'), 'error');
       return;
     }
     const res = await Api.call('/api/auth/reset/confirm', 'POST', { token: tokenVal, email: emailVal }, false);
@@ -279,15 +286,15 @@
       if (code === '100005') {
         tokenAttempts += 1;
         if (tokenAttempts >= maxTokenAttempts) {
-          setAlert(selectors.resetStatus, 'Слишком много неверных попыток. Запросите новый код.', 'error');
+          setAlert(selectors.resetStatus, t('msg_forgot_too_many_wrong_attempts'), 'error');
           disableTokenEntry();
         } else {
-          setAlert(selectors.resetStatus, 'Код неверный или устарел. Запросите новый.', 'error');
+          setAlert(selectors.resetStatus, t('msg_forgot_code_invalid'), 'error');
         }
       } else if (code === '429001') {
-        setAlert(selectors.resetStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
+        setAlert(selectors.resetStatus, t('msg_forgot_too_many_attempts'), 'error');
       } else {
-        setAlert(selectors.resetStatus, 'Не удалось подтвердить код. Попробуйте снова.', 'error');
+        setAlert(selectors.resetStatus, t('msg_forgot_confirm_failed'), 'error');
       }
       resetSessionToken = '';
       return;
@@ -307,23 +314,23 @@
     const confirm = (val(selectors.resetPasswordConfirm) || '').trim();
 
     if (!sessionToken) {
-      setAlert(selectors.resetStatus, 'Сначала подтвердите код из письма.', 'error');
+      setAlert(selectors.resetStatus, t('msg_reset_confirm_code_first'), 'error');
       valid = false;
     }
 
     if (!password) {
-      showFieldError('resetPassword', 'Введите новый пароль');
+      showFieldError('resetPassword', t('msg_enter_new_password'));
       valid = false;
     } else if (!strongRegex.test(password)) {
-      showFieldError('resetPassword', 'Пароль должен быть не короче 10 символов, содержать верхний/нижний регистр, цифру и спецсимвол');
+      showFieldError('resetPassword', t('msg_password_requirements'));
       valid = false;
     }
 
     if (!confirm) {
-      showFieldError('resetPasswordConfirm', 'Повторите пароль');
+      showFieldError('resetPasswordConfirm', t('msg_repeat_password'));
       valid = false;
     } else if (confirm !== password) {
-      showFieldError('resetPasswordConfirm', 'Пароли не совпадают');
+      showFieldError('resetPasswordConfirm', t('msg_reset_password_mismatch'));
       valid = false;
     }
 
@@ -348,11 +355,11 @@
     } else {
       const code = result.data && result.data.code ? result.data.code : '';
       if (code === '400002') {
-        showFieldError('fpEmail', 'Введите корректный email');
+        showFieldError('fpEmail', t('msg_enter_valid_email'));
       } else if (code === '429001') {
-        setAlert(selectors.forgotStatus, 'Слишком много попыток. Попробуйте позже.', 'error');
+        setAlert(selectors.forgotStatus, t('msg_forgot_too_many_attempts'), 'error');
       } else {
-        setAlert(selectors.forgotStatus, 'Не получилось отправить письмо. Попробуйте ещё раз позже.');
+        setAlert(selectors.forgotStatus, t('msg_forgot_send_failed'), 'error');
       }
     }
   }
@@ -361,14 +368,14 @@
     switch (code) {
       case '100003':
       case '400003':
-        showFieldError('resetPassword', 'Пароль слишком слабый: нужен верхний/нижний регистр, цифра и спецсимвол.');
+        showFieldError('resetPassword', t('msg_password_requirements'));
         break;
       case '100005':
         resetSessionToken = '';
-        setAlert(selectors.resetStatus, 'Сессия сброса устарела или уже использована. Запросите новый код.', 'error');
+        setAlert(selectors.resetStatus, t('msg_reset_session_invalid'), 'error');
         break;
       default:
-        setAlert(selectors.resetStatus, 'Не удалось обновить пароль. Проверьте данные или повторите позже.');
+        setAlert(selectors.resetStatus, t('msg_reset_failed'), 'error');
     }
   }
 
@@ -382,7 +389,7 @@
     submittingReset = false;
     setSubmitting([selectors.resetButton], false);
     if (result.ok) {
-      setAlert(selectors.resetStatus, 'Пароль обновлен. Сейчас перенаправим на экран входа.', 'success');
+      setAlert(selectors.resetStatus, t('msg_reset_password_updated'), 'success');
       setTimeout(() => {
         window.location.href = '/app/login.html';
       }, 900);

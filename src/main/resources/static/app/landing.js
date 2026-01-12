@@ -18,6 +18,7 @@
 
   function initAudience() {
     const buttons = document.querySelectorAll('.aud-btn');
+    if (!buttons.length) return;
     const heroTitle = document.getElementById('hero-title');
     const heroSubtitle = document.getElementById('hero-subtitle');
     const perspTitle = document.getElementById('persp-title');
