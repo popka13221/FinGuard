@@ -6,6 +6,7 @@ import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
+import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
 import com.myname.finguard.crypto.service.CryptoWalletService;
 import com.myname.finguard.security.RateLimiterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,6 +76,17 @@ public class CryptoWalletController {
         Long userId = resolveUserId(authentication);
         enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
         return ResponseEntity.ok(cryptoWalletService.listWallets(userId));
+    }
+
+    @GetMapping("/summary")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Wallets summary", description = "Returns watch-only wallets with total value in base currency.")
+    @ApiResponse(responseCode = "200", description = "Summary returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletSummaryResponse> summary(Authentication authentication) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
+        return ResponseEntity.ok(cryptoWalletService.walletsSummary(userId));
     }
 
     @PostMapping

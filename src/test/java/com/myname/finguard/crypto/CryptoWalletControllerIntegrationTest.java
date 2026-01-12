@@ -131,6 +131,18 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(wallet.get("valueInBase").decimalValue()).isEqualByComparingTo("8024.69");
         assertThat(wallet.get("baseCurrency").asText()).isEqualTo("USD");
 
+        String summaryResponse = mockMvc.perform(get("/api/crypto/wallets/summary")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode summary = objectMapper.readTree(summaryResponse);
+        assertThat(summary.get("wallets").isArray()).isTrue();
+        assertThat(summary.get("wallets").size()).isEqualTo(1);
+        assertThat(summary.get("totalValueInBase").decimalValue()).isEqualByComparingTo("8024.69");
+        assertThat(summary.get("baseCurrency").asText()).isEqualTo("USD");
+
         long id = wallet.get("id").asLong();
         mockMvc.perform(delete("/api/crypto/wallets/{id}", id)
                         .header("Authorization", "Bearer " + token))
@@ -148,6 +160,16 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode after = objectMapper.readTree(listAfterDelete);
         assertThat(after.isArray()).isTrue();
         assertThat(after.size()).isEqualTo(0);
+
+        String summaryAfterDeleteResponse = mockMvc.perform(get("/api/crypto/wallets/summary")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode summaryAfterDelete = objectMapper.readTree(summaryAfterDeleteResponse);
+        assertThat(summaryAfterDelete.get("wallets").size()).isEqualTo(0);
+        assertThat(summaryAfterDelete.get("totalValueInBase").decimalValue()).isEqualByComparingTo("0");
 
         mockMvc.perform(post("/api/crypto/wallets")
                         .header("Authorization", "Bearer " + token)

@@ -9,6 +9,7 @@ import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.CryptoRatesService;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
+import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
 import com.myname.finguard.crypto.model.CryptoNetwork;
 import com.myname.finguard.crypto.model.CryptoWallet;
 import com.myname.finguard.crypto.repository.CryptoWalletRepository;
@@ -120,6 +121,34 @@ public class CryptoWalletService {
         return wallets.stream()
                 .map(wallet -> toDto(wallet, baseCurrency, prices))
                 .toList();
+    }
+
+    public CryptoWalletSummaryResponse walletsSummary(Long userId) {
+        if (userId == null) {
+            throw unauthorized();
+        }
+        User user = userRepository.findById(userId).orElseThrow(this::unauthorized);
+        String baseCurrency = normalizeCurrency(user.getBaseCurrency());
+        Map<String, BigDecimal> prices = fetchPrices(baseCurrency);
+
+        List<CryptoWallet> wallets = cryptoWalletRepository.findByUserIdAndArchivedFalseOrderByCreatedAtDesc(userId);
+        if (wallets.isEmpty()) {
+            return new CryptoWalletSummaryResponse(List.of(), BigDecimal.ZERO, baseCurrency);
+        }
+
+        List<CryptoWalletDto> dtos = wallets.stream()
+                .map(wallet -> toDto(wallet, baseCurrency, prices))
+                .toList();
+
+        BigDecimal total = null;
+        boolean hasUnknown = dtos.stream().anyMatch(dto -> dto == null || dto.valueInBase() == null);
+        if (!hasUnknown) {
+            total = dtos.stream()
+                    .map(CryptoWalletDto::valueInBase)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        return new CryptoWalletSummaryResponse(dtos, total, baseCurrency);
     }
 
     public void deleteWallet(Long userId, Long walletId) {

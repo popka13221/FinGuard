@@ -425,6 +425,9 @@
 
   let baseCurrency = 'USD';
   let balanceRenderId = 0;
+  let cryptoWalletTotalInBase = NaN;
+  let lastBalanceSnapshot = null;
+  let lastBalanceConversion = null;
 
   function normalizeCurrency(code) {
     return (code || '').trim().toUpperCase();
@@ -690,7 +693,7 @@
     }
   }
 
-  function renderBalance(summary, conversion) {
+  function renderBalance(summary, conversion, cryptoTotalInBase) {
     const totals = Array.isArray(summary.totalsByCurrency) ? summary.totalsByCurrency : [];
     const accounts = Array.isArray(summary.accounts) ? summary.accounts : [];
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
@@ -708,17 +711,23 @@
       return acc + value;
     }, 0);
 
+    const cryptoValue = toNumber(cryptoTotalInBase);
+    const cryptoOk = Number.isFinite(cryptoValue);
     if (totalBalanceEl) {
       if (!totals.length) {
-        totalBalanceEl.textContent = formatMoney(0, base);
+        totalBalanceEl.textContent = formatMoney(cryptoOk ? cryptoValue : 0, base);
       } else if (totalOk) {
-        totalBalanceEl.textContent = formatMoney(totalInBase, base);
+        totalBalanceEl.textContent = formatMoney(totalInBase + (cryptoOk ? cryptoValue : 0), base);
       } else {
         const baseItem = totals.find((item) => normalizeCurrency(item?.currency) === base);
         const fallback = baseItem || totals[0];
         const fallbackCurrency = normalizeCurrency(fallback?.currency) || base;
         const fallbackAmount = toNumber(fallback?.total);
-        totalBalanceEl.textContent = formatMoney(Number.isFinite(fallbackAmount) ? fallbackAmount : 0, fallbackCurrency);
+        const canAddCrypto = cryptoOk && normalizeCurrency(fallbackCurrency) === base;
+        totalBalanceEl.textContent = formatMoney(
+          (Number.isFinite(fallbackAmount) ? fallbackAmount : 0) + (canAddCrypto ? cryptoValue : 0),
+          fallbackCurrency
+        );
       }
     }
 
@@ -757,6 +766,11 @@
     }
 
     showBalanceError(totalOk && creditOk && conversion && conversion.ok ? '' : t('base_currency_conversion_failed'));
+  }
+
+  function rerenderBalanceSnapshot() {
+    if (!lastBalanceSnapshot || !lastBalanceConversion) return;
+    renderBalance(lastBalanceSnapshot, lastBalanceConversion, cryptoWalletTotalInBase);
   }
 
   function renderAccountsList(accounts, conversion) {
@@ -1079,8 +1093,10 @@
     ];
     const conversion = await buildConversionContext(baseCurrency, currencyList);
     if (renderId !== balanceRenderId) return;
+    lastBalanceSnapshot = { accounts, totalsByCurrency };
+    lastBalanceConversion = conversion;
     renderAccountsList(accounts, conversion);
-    renderBalance({ accounts, totalsByCurrency }, conversion);
+    rerenderBalanceSnapshot();
   }
 
   async function loadFxRates() {
@@ -1491,12 +1507,19 @@
     if (list) {
       list.innerHTML = `<div class="muted">${t('loading')}</div>`;
     }
-    const res = await Api.call('/api/crypto/wallets', 'GET', null, true);
+    const res = await Api.call('/api/crypto/wallets/summary', 'GET', null, true);
     if (!res.ok) {
       if (list) list.innerHTML = `<div class="amount-negative">${t('wallets_loading_failed')}</div>`;
+      cryptoWalletTotalInBase = NaN;
+      rerenderBalanceSnapshot();
       return;
     }
-    renderWallets(res.data || []);
+    const payload = res.data && typeof res.data === 'object' ? res.data : {};
+    const wallets = Array.isArray(payload.wallets) ? payload.wallets : [];
+    renderWallets(wallets);
+    const total = toNumber(payload.totalValueInBase);
+    cryptoWalletTotalInBase = Number.isFinite(total) ? total : NaN;
+    rerenderBalanceSnapshot();
   }
 
   function showAddWalletError(message) {
