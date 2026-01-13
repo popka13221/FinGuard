@@ -25,7 +25,7 @@
 - [x] 2) Auth: сущность User, регистрация/логин, JWT, базовая защита `/api/**`.
 - [x] 3) Accounts/Categories/Transactions: CRUD + пересчёт баланса, тесты.
 - [x] 4) Reports: сервис агрегаций + эндпоинты summary/by-category/cash-flow.
-- [ ] 5) FX: сущность FXRate, API записи/получения, утилита конвертации.
+- [x] 5) FX: сущность FXRate, API записи/получения, утилита конвертации.
 - [ ] 6) Rules/Notifications: сущности, проверка простого правила, scheduler, эндпоинты уведомлений.
 - [ ] 7) Goals: сущность, CRUD, сервис расчётов progress и requiredMonthly.
 - [ ] 8) Косметика: README, Swagger скрины, пример запросов/ответов, ER-диаграмма, релизы.
