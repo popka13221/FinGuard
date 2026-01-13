@@ -63,6 +63,7 @@
     baseCurrencyCloseBtn: '#btn-base-currency-close',
     baseCurrencyError: '#baseCurrencyError',
     incomeExpenseNet: '#incomeExpenseNet',
+    incomeExpenseDetails: '#incomeExpenseDetails',
     paymentRentAmount: '#paymentRentAmount',
     paymentSpotifyAmount: '#paymentSpotifyAmount',
     paymentMobileAmount: '#paymentMobileAmount'
@@ -78,7 +79,9 @@
       credit: 'Кредит',
       credit_placeholder: 'Кредит: —',
       income_expense_month: 'Доход / Расход (мес.)',
-      income_expense_details: 'Доход: 4 200 · Расход: 2 350',
+      income_expense_details: 'Доход: — · Расход: —',
+      income_label: 'Доход',
+      expense_label: 'Расход',
       your_cards: 'Ваши карты',
       add: 'Добавить',
       loading_balance: 'Загружаем баланс…',
@@ -183,7 +186,9 @@
       credit: 'Credit',
       credit_placeholder: 'Credit: —',
       income_expense_month: 'Income / Expense (mo.)',
-      income_expense_details: 'Income: 4 200 · Expense: 2 350',
+      income_expense_details: 'Income: — · Expense: —',
+      income_label: 'Income',
+      expense_label: 'Expense',
       your_cards: 'Your cards',
       add: 'Add',
       loading_balance: 'Loading balance…',
@@ -425,6 +430,7 @@
 
   let baseCurrency = 'USD';
   let balanceRenderId = 0;
+  let lastAccountsTotalInBase = NaN;
   let cryptoWalletTotalInBase = NaN;
   let lastBalanceSnapshot = null;
   let lastBalanceConversion = null;
@@ -773,6 +779,183 @@
     renderBalance(lastBalanceSnapshot, lastBalanceConversion, cryptoWalletTotalInBase);
   }
 
+  function renderIncomeExpenseSummary(summary) {
+    const netEl = document.querySelector(selectors.incomeExpenseNet);
+    const detailsEl = document.querySelector(selectors.incomeExpenseDetails);
+    if (!netEl && !detailsEl) return;
+
+    const base = normalizeCurrency(summary && summary.baseCurrency ? summary.baseCurrency : baseCurrency) || 'USD';
+    const income = toNumber(summary && summary.income);
+    const expense = toNumber(summary && summary.expense);
+    const net = toNumber(summary && summary.net);
+
+    if (netEl) {
+      netEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
+    }
+    if (detailsEl) {
+      detailsEl.textContent = Number.isFinite(income) && Number.isFinite(expense)
+        ? `${t('income_label')}: ${formatMoney(income, base)} · ${t('expense_label')}: ${formatMoney(expense, base)}`
+        : t('income_expense_details');
+    }
+  }
+
+  function computeAccountsTotalInBase() {
+    if (Number.isFinite(lastAccountsTotalInBase)) {
+      return lastAccountsTotalInBase;
+    }
+    if (!lastBalanceSnapshot || !lastBalanceConversion || !lastBalanceConversion.ok) {
+      return NaN;
+    }
+    const totals = Array.isArray(lastBalanceSnapshot.totalsByCurrency) ? lastBalanceSnapshot.totalsByCurrency : [];
+    let hasAny = false;
+    const sum = totals.reduce((acc, item) => {
+      const value = convertToBaseAmount(item?.total, item?.currency, lastBalanceConversion);
+      if (!Number.isFinite(value)) {
+        return acc;
+      }
+      hasAny = true;
+      return acc + value;
+    }, 0);
+    if (!totals.length) {
+      return 0;
+    }
+    return hasAny ? sum : NaN;
+  }
+
+  function computeCurrentTotalInBase() {
+    const accounts = computeAccountsTotalInBase();
+    const wallets = toNumber(cryptoWalletTotalInBase);
+    const walletOk = Number.isFinite(wallets);
+    const accountsOk = Number.isFinite(accounts);
+    if (!accountsOk && !walletOk) {
+      return NaN;
+    }
+    return (accountsOk ? accounts : 0) + (walletOk ? wallets : 0);
+  }
+
+  async function loadReportSummary() {
+    const netEl = document.querySelector(selectors.incomeExpenseNet);
+    if (netEl) netEl.textContent = t('loading');
+
+    const params = new URLSearchParams();
+    params.set('period', 'MONTH');
+    const res = await Api.call(`/api/reports/summary?${params}`, 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (netEl) netEl.textContent = '—';
+      return null;
+    }
+    const payload = res.data;
+    const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
+    if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
+      baseCurrency = serverBase;
+      updateCurrencyLabels();
+    }
+    renderIncomeExpenseSummary(payload);
+    return payload;
+  }
+
+  async function loadReportByCategory() {
+    const target = document.querySelector(selectors.expenseChart);
+    if (target) target.innerHTML = `<div class="muted">${t('loading')}</div>`;
+
+    const params = new URLSearchParams();
+    params.set('period', 'MONTH');
+    params.set('limit', '5');
+    const res = await Api.call(`/api/reports/by-category?${params}`, 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (target) target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      return null;
+    }
+    const payload = res.data;
+    const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
+    if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
+      baseCurrency = serverBase;
+      updateCurrencyLabels();
+    }
+
+    const expenses = Array.isArray(payload.expenses) ? payload.expenses : [];
+    const palette = ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa', '#8b5cf6'];
+    const items = expenses
+      .map((item, idx) => {
+        const value = toNumber(item && item.total);
+        return {
+          label: item && item.categoryName ? String(item.categoryName) : '',
+          value: Number.isFinite(value) ? Math.max(value, 0) : NaN,
+          color: palette[idx % palette.length]
+        };
+      })
+      .filter((item) => item.label && Number.isFinite(item.value) && item.value > 0);
+
+    if (!items.length) {
+      if (target) target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      return payload;
+    }
+
+    renderBarChart(selectors.expenseChart, items, baseCurrency);
+    return payload;
+  }
+
+  async function loadBalanceTrend() {
+    const target = document.querySelector(selectors.balanceChart);
+    if (target) target.innerHTML = `<div class="muted">${t('loading')}</div>`;
+
+    const now = new Date();
+    const start = new Date(now);
+    start.setMonth(now.getMonth() - 5);
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const params = new URLSearchParams();
+    params.set('from', start.toISOString());
+    params.set('to', now.toISOString());
+    const res = await Api.call(`/api/reports/cash-flow?${params}`, 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
+      return null;
+    }
+    const payload = res.data;
+    const points = Array.isArray(payload.points) ? payload.points : [];
+
+    const byMonth = {};
+    points.forEach((point) => {
+      const rawDate = point && point.date ? String(point.date) : '';
+      if (rawDate.length < 7) return;
+      const key = rawDate.slice(0, 7);
+      const net = toNumber(point && point.net);
+      if (!Number.isFinite(net)) return;
+      byMonth[key] = (byMonth[key] || 0) + net;
+    });
+
+    const monthKeys = [];
+    const cursor = new Date(now);
+    cursor.setDate(1);
+    cursor.setHours(0, 0, 0, 0);
+    cursor.setMonth(cursor.getMonth() - 5);
+    for (let i = 0; i < 6; i += 1) {
+      monthKeys.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    const monthNet = monthKeys.map((key) => toNumber(byMonth[key]) || 0);
+    const currentTotal = computeCurrentTotalInBase();
+    const netSum = monthNet.reduce((acc, v) => acc + v, 0);
+
+    let running = Number.isFinite(currentTotal) ? (currentTotal - netSum) : 0;
+    const series = monthNet.map((v) => {
+      running += v;
+      return running;
+    });
+
+    renderLineChart(selectors.balanceChart, series, baseCurrency);
+    return payload;
+  }
+
+  async function loadReports() {
+    await loadReportSummary();
+    await loadReportByCategory();
+    await loadBalanceTrend();
+  }
+
   function renderAccountsList(accounts, conversion) {
     const list = document.querySelector(selectors.accountsList);
     if (!list) return;
@@ -1081,9 +1264,17 @@
     if (!res.ok) {
       showBalanceError(t('balance_load_failed'));
       if (list) list.innerHTML = `<div class="amount-negative">${t('balance_load_failed_short')}</div>`;
+      lastAccountsTotalInBase = NaN;
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
+    const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
+    if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
+      baseCurrency = serverBase;
+      updateCurrencyLabels();
+    }
+    const serverTotalInBase = toNumber(payload.totalInBase);
+    lastAccountsTotalInBase = Number.isFinite(serverTotalInBase) ? serverTotalInBase : NaN;
     const accounts = Array.isArray(payload.accounts) ? payload.accounts : [];
     const totalsByCurrency = Array.isArray(payload.totalsByCurrency) ? payload.totalsByCurrency : [];
     const renderId = (balanceRenderId += 1);
@@ -1685,7 +1876,6 @@
   async function updateDemoAmounts() {
     const base = normalizeCurrency(baseCurrency) || 'USD';
     const entries = [
-      { selector: selectors.incomeExpenseNet, amount: 1850, currency: 'USD' },
       { selector: selectors.paymentRentAmount, amount: -700, currency: 'USD' },
       { selector: selectors.paymentSpotifyAmount, amount: -4.99, currency: 'USD' },
       { selector: selectors.paymentMobileAmount, amount: -15, currency: 'USD' }
@@ -1777,12 +1967,7 @@
           loadWallets(),
           updateDemoAmounts()
         ]);
-        renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
-        renderBarChart(
-          selectors.expenseChart,
-          demoData.expenses.map((item) => ({ ...item, label: t(item.labelKey) })),
-          baseCurrency
-        );
+        await loadReports();
       } finally {
         submitting = false;
         saveBtn.disabled = false;
@@ -1957,31 +2142,36 @@
   document.addEventListener('DOMContentLoaded', async () => {
     const root = document.documentElement;
     if (root) root.style.visibility = 'hidden';
-    Theme.apply();
-    const res = await Api.call('/api/auth/me', 'GET', null, true);
-    if (!res.ok) {
-      Api.clearToken();
-      window.location.href = '/app/login.html';
-      return;
+    try {
+      Theme.apply();
+      applyLanguage(currentLang);
+      bindLangToggle();
+
+      const res = await Api.call('/api/auth/me', 'GET', null, true);
+      if (!res.ok) {
+        Api.clearToken();
+        window.location.href = '/app/login.html';
+        return;
+      }
+      renderProfile(res.data || {});
+      bindLogout();
+      bindBaseCurrencyMenu();
+
+      await loadBalance();
+      await loadFxCurrencies();
+      bindFxControls();
+      await loadFxRates();
+      await loadCryptoRates();
+      await loadWallets();
+      await updateDemoAmounts();
+      await loadReports();
+
+      bindAddAccountMenu();
+      bindAddWalletMenu();
+    } catch (e) {
+      console.error('Dashboard init failed', e);
+    } finally {
+      if (root) root.style.visibility = 'visible';
     }
-    renderProfile(res.data || {});
-    bindLogout();
-    bindBaseCurrencyMenu();
-    await loadBalance();
-    await loadFxCurrencies();
-    bindFxControls();
-    await loadFxRates();
-    await loadCryptoRates();
-    await loadWallets();
-    await updateDemoAmounts();
-    renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
-    renderBarChart(
-      selectors.expenseChart,
-      demoData.expenses.map((item) => ({ ...item, label: t(item.labelKey) })),
-      baseCurrency
-    );
-    bindAddAccountMenu();
-    bindAddWalletMenu();
-    if (root) root.style.visibility = 'visible';
   });
 })();
