@@ -7,17 +7,6 @@ English | [Русский](README.ru.md)
 
 Portfolio-ready personal finance tracker: accounts, transactions, reports, FX/crypto rates, and a static dashboard UI.
 
-## Screenshots
-![Dashboard](docs/screenshots/dashboard-en.png)
-![Swagger UI](docs/screenshots/swagger-ui.png)
-
-<details>
-  <summary>More screenshots</summary>
-
-  ![Landing](docs/screenshots/landing-en.png)
-  ![Login](docs/screenshots/login-en.png)
-</details>
-
 ## Features (v1)
 - Auth: registration + email verification, login, refresh, optional OTP; JWT in httpOnly cookies (or `Authorization: Bearer`).
 - Accounts: CRUD, archive, balances recalculated from transactions.

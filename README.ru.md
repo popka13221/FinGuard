@@ -7,10 +7,6 @@
 
 Портфолио‑проект: учёт личных финансов (счета/транзакции/отчёты), курсы валют и крипты, статический dashboard.
 
-## Скриншоты
-![Dashboard](docs/screenshots/dashboard-ru.png)
-![Swagger UI](docs/screenshots/swagger-ui.png)
-
 ## Возможности (v1)
 - Auth: регистрация + подтверждение email, логин, refresh, опциональный OTP; JWT в httpOnly cookie (или `Authorization: Bearer`).
 - Счета: CRUD, архивирование, баланс пересчитывается по транзакциям.
