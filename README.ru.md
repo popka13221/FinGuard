@@ -50,7 +50,7 @@
    - Health: `http://localhost:8080/actuator/health`
 
 ## Быстрый демо (UI + Swagger)
-1) Зарегистрируйтесь в UI (`/app/login.html`) и подтвердите email (в dev по умолчанию код `654321`, настройка: `app.security.tokens.fixed-code`).
+1) Зарегистрируйтесь в UI (`/app/login.html`) и подтвердите email (для локальной разработки поставьте `APP_SECURITY_TOKENS_FIXED_CODE=654321`, чтобы код был предсказуемым).
 2) Создайте пару счетов/транзакций через Swagger (или `docs/API_EXAMPLES.ru.md`) и обновите `/app/dashboard.html`.
 
 ## Конфигурация (env)
@@ -58,6 +58,7 @@
 - JWT: `JWT_SECRET` обязателен (Base64, 32+ байта).
 - CSRF: `APP_SECURITY_CSRF_ENABLED=true|false` (для быстрых экспериментов с curl/Swagger можно отключить).
 - OTP: `OTP_ENABLED=true|false`.
+- Для разработки: `APP_SECURITY_TOKENS_FIXED_CODE=654321` (не использовать в prod).
 
 ## Примеры API
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`

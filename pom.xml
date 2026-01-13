@@ -109,6 +109,16 @@
                         </goals>
                         <configuration>
                             <propertyName>jacocoArgLine</propertyName>
+                            <includes>
+                                <include>com/myname/finguard/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>java/*</exclude>
+                                <exclude>javax/*</exclude>
+                                <exclude>jdk/*</exclude>
+                                <exclude>sun/*</exclude>
+                                <exclude>com/sun/*</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                     <execution>

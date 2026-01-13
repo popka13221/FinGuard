@@ -50,7 +50,7 @@ Portfolio-ready personal finance tracker: accounts, transactions, reports, FX/cr
    - Health: `http://localhost:8080/actuator/health`
 
 ## Demo (UI + Swagger)
-1) Register in UI (`/app/login.html`) and verify email (default code in dev is `654321`, config: `app.security.tokens.fixed-code`).
+1) Register in UI (`/app/login.html`) and verify email (for local dev, set `APP_SECURITY_TOKENS_FIXED_CODE=654321` to use a predictable code).
 2) Create a couple of accounts/transactions via Swagger (or `docs/API_EXAMPLES.md`), then refresh `/app/dashboard.html`.
 
 ## Configuration (env)
@@ -58,6 +58,7 @@ Portfolio-ready personal finance tracker: accounts, transactions, reports, FX/cr
 - JWT: `JWT_SECRET` is required (Base64, 32+ bytes).
 - CSRF: `APP_SECURITY_CSRF_ENABLED=true|false` (disable for quick curl/Swagger experiments).
 - OTP: `OTP_ENABLED=true|false`.
+- Dev convenience: `APP_SECURITY_TOKENS_FIXED_CODE=654321` (do not use in prod).
 
 ## API examples
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
