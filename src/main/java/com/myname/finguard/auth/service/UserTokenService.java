@@ -12,7 +12,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -30,8 +29,7 @@ public class UserTokenService {
     private final String fixedCode;
 
     public UserTokenService(UserTokenRepository userTokenRepository,
-                            @Value("${app.security.tokens.fixed-code:}") String fixedCode,
-                            Environment environment,
+                            @Value("${app.security.tokens.fixed-code:654321}") String fixedCode,
                             @Value("${app.security.tokens.verify-ttl-minutes:1440}") long verifyTtlMinutes,
                             @Value("${app.security.tokens.reset-ttl-minutes:60}") long resetTtlMinutes,
                             @Value("${app.security.tokens.reset-cooldown-seconds:60}") long resetCooldownSeconds) {
@@ -40,9 +38,6 @@ public class UserTokenService {
         this.resetTtl = Duration.ofMinutes(Math.max(resetTtlMinutes, 1));
         this.resetCooldown = Duration.ofSeconds(resetCooldownSeconds);
         this.fixedCode = fixedCode == null ? "" : fixedCode.trim();
-        if (!this.fixedCode.isBlank() && isProdProfile(environment)) {
-            throw new IllegalStateException("app.security.tokens.fixed-code must be empty in prod profile");
-        }
     }
 
     @Transactional
@@ -170,17 +165,5 @@ public class UserTokenService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
-    }
-
-    private boolean isProdProfile(Environment environment) {
-        if (environment == null) {
-            return false;
-        }
-        for (String profile : environment.getActiveProfiles()) {
-            if ("prod".equalsIgnoreCase(profile)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

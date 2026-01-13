@@ -45,14 +45,11 @@ BASE="http://localhost:8080"
 EMAIL="demo-$(date +%s)@example.com"
 PASS="StrongPass1!"
 
-# Опционально (рекомендуется для локальной разработки): сделать verification/reset код предсказуемым.
-export APP_SECURITY_TOKENS_FIXED_CODE=654321
-
 curl -sS -X POST "$BASE/api/auth/register" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Demo User\",\"baseCurrency\":\"USD\"}"
 
-# Подтверждение email (используем фиксированный код выше)
+# По умолчанию verification code фиксированный 654321 (настройка: app.security.tokens.fixed-code)
 TOKEN="$(curl -sS -X POST "$BASE/api/auth/verify" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"token\":\"654321\"}" | python -c "import sys,json; print(json.load(sys.stdin)['token'])")"
