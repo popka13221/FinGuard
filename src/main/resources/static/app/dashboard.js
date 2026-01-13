@@ -139,6 +139,9 @@
       balance_by_currency: 'Баланс по валютам',
       no_accounts: 'Счета пока не добавлены.',
       account: 'Счет',
+      account_remove: 'Удалить',
+      account_delete_confirm: 'Удалить счет “{name}”?',
+      account_delete_failed: 'Не удалось удалить счет.',
       archived: 'Архив',
       balance_load_failed: 'Не удалось загрузить баланс.',
       balance_load_failed_short: 'Не удалось загрузить баланс',
@@ -246,6 +249,9 @@
       balance_by_currency: 'Balance by currency',
       no_accounts: 'No accounts added yet.',
       account: 'Account',
+      account_remove: 'Delete',
+      account_delete_confirm: 'Delete account “{name}”?',
+      account_delete_failed: 'Failed to delete account.',
       archived: 'Archived',
       balance_load_failed: 'Failed to load balance.',
       balance_load_failed_short: 'Failed to load balance',
@@ -969,18 +975,43 @@
       const amountText = Number.isFinite(value) ? formatMoney(value, base) : formatMoney(acc.balance || 0, acc.currency);
       const balanceValue = toNumber(acc.balance);
       const signClass = Number.isFinite(balanceValue) && balanceValue < 0 ? 'amount-negative' : 'amount-positive';
-      const safeName = escapeHtml(acc.name || t('account'));
+      const rawName = acc && acc.name ? String(acc.name) : t('account');
+      const safeName = escapeHtml(rawName);
       const safeCurrency = escapeHtml(acc.currency || baseCurrency);
+      const safeId = escapeHtml(acc && acc.id != null ? String(acc.id) : '');
       return `
         <div class="list-item">
           <div>
             <div style="font-weight:800;">${safeName}</div>
             <small>${safeCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
           </div>
-          <div class="${signClass}">${amountText}</div>
+          <div class="account-actions">
+            <div class="${signClass}">${amountText}</div>
+            <button type="button" class="ghost account-remove" data-account-id="${safeId}" data-account-name="${safeName}" title="${t('account_remove')}" aria-label="${t('account_remove')}">✕</button>
+          </div>
         </div>
       `;
     }).join('');
+
+    list.querySelectorAll('[data-account-id]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.accountId;
+        if (!id) return;
+        const name = btn.dataset.accountName || t('account');
+        const ok = window.confirm(t('account_delete_confirm', { name }));
+        if (!ok) return;
+
+        showBalanceError('');
+        const res = await Api.call(`/api/accounts/${encodeURIComponent(id)}`, 'DELETE', null, true);
+        if (!res.ok) {
+          const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
+          showBalanceError(message || t('account_delete_failed'));
+          return;
+        }
+        await loadBalance();
+        await loadReports();
+      });
+    });
   }
 
   function hashString(value) {

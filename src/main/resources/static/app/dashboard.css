@@ -149,6 +149,12 @@ body.dashboard.light .card {
   gap: 10px;
 }
 
+.dashboard .account-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .dashboard .wallet-right {
   display: grid;
   gap: 2px;
@@ -156,6 +162,15 @@ body.dashboard.light .card {
 }
 
 .dashboard .wallet-remove {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard .account-remove {
   width: 34px;
   height: 34px;
   padding: 0;
