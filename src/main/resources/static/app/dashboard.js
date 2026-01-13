@@ -18,6 +18,9 @@
     creditValue: '#creditValue',
     totalsByCurrency: '#totalsByCurrency',
     accountsList: '#accountsList',
+    transactionsList: '#transactionsList',
+    txPeriodButtons: '.tx-period-btn',
+    addTransactionBtn: '#btn-add-transaction',
     balanceError: '#balanceError',
     fxStatus: '#fxStatus',
     fxBase: '#fxBase',
@@ -44,6 +47,18 @@
     addAccountCreateBtn: '#btn-add-account-create',
     addAccountCloseBtn: '#btn-add-account-close',
     addAccountError: '#addAccountError',
+    addTransactionOverlay: '#add-transaction-overlay',
+    addTransactionMenu: '#add-transaction-menu',
+    addTransactionAccount: '#newTxAccount',
+    addTransactionType: '#newTxType',
+    addTransactionCategory: '#newTxCategory',
+    addTransactionAmount: '#newTxAmount',
+    addTransactionDate: '#newTxDate',
+    addTransactionDescription: '#newTxDescription',
+    addTransactionCancelBtn: '#btn-add-transaction-cancel',
+    addTransactionCreateBtn: '#btn-add-transaction-create',
+    addTransactionCloseBtn: '#btn-add-transaction-close',
+    addTransactionError: '#addTransactionError',
     walletsList: '#walletsList',
     addWalletBtn: '#btn-add-wallet',
     addWalletOverlay: '#add-wallet-overlay',
@@ -70,6 +85,7 @@
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
+  const TX_PERIOD_STORAGE_KEY = 'finguard:txPeriodDays';
   const I18N = {
     ru: {
       dashboard_title: 'Личный кабинет',
@@ -142,6 +158,34 @@
       account_remove: 'Удалить',
       account_delete_confirm: 'Удалить счет “{name}”?',
       account_delete_failed: 'Не удалось удалить счет.',
+      recent_transactions_title: 'Последние транзакции',
+      transactions_empty: 'Транзакций пока нет.',
+      transactions_load_failed: 'Не удалось загрузить транзакции.',
+      transactions_load_failed_short: 'Не удалось загрузить транзакции',
+      add_transaction_menu_aria: 'Добавить транзакцию',
+      add_transaction_title: 'Добавить транзакцию',
+      add_transaction_subtitle: 'Доход или расход — баланс пересчитается автоматически.',
+      transaction_account_label: 'Счёт',
+      transaction_account_aria: 'Счёт',
+      transaction_type_label: 'Тип',
+      transaction_type_aria: 'Тип',
+      transaction_type_expense: 'Расход',
+      transaction_type_income: 'Доход',
+      transaction_category_label: 'Категория',
+      transaction_category_aria: 'Категория',
+      transaction_amount_label: 'Сумма',
+      transaction_amount_placeholder: '0.00',
+      transaction_date_label: 'Дата',
+      transaction_date_aria: 'Дата и время',
+      transaction_description_label: 'Комментарий',
+      transaction_description_placeholder: 'Например: Кофе',
+      transaction_no_accounts: 'Сначала создайте счёт.',
+      transaction_no_categories: 'Нет подходящих категорий.',
+      transaction_select_account: 'Выберите счёт.',
+      transaction_select_category: 'Выберите категорию.',
+      transaction_enter_amount: 'Введите сумму.',
+      transaction_invalid_amount: 'Некорректная сумма.',
+      transaction_create_failed: 'Не удалось добавить транзакцию.',
       archived: 'Архив',
       balance_load_failed: 'Не удалось загрузить баланс.',
       balance_load_failed_short: 'Не удалось загрузить баланс',
@@ -252,6 +296,34 @@
       account_remove: 'Delete',
       account_delete_confirm: 'Delete account “{name}”?',
       account_delete_failed: 'Failed to delete account.',
+      recent_transactions_title: 'Recent transactions',
+      transactions_empty: 'No transactions yet.',
+      transactions_load_failed: 'Failed to load transactions.',
+      transactions_load_failed_short: 'Failed to load transactions',
+      add_transaction_menu_aria: 'Add transaction',
+      add_transaction_title: 'Add transaction',
+      add_transaction_subtitle: 'Income or expense — balance is recalculated automatically.',
+      transaction_account_label: 'Account',
+      transaction_account_aria: 'Account',
+      transaction_type_label: 'Type',
+      transaction_type_aria: 'Type',
+      transaction_type_expense: 'Expense',
+      transaction_type_income: 'Income',
+      transaction_category_label: 'Category',
+      transaction_category_aria: 'Category',
+      transaction_amount_label: 'Amount',
+      transaction_amount_placeholder: '0.00',
+      transaction_date_label: 'Date',
+      transaction_date_aria: 'Date and time',
+      transaction_description_label: 'Description',
+      transaction_description_placeholder: 'e.g. Coffee',
+      transaction_no_accounts: 'Create an account first.',
+      transaction_no_categories: 'No matching categories.',
+      transaction_select_account: 'Select an account.',
+      transaction_select_category: 'Select a category.',
+      transaction_enter_amount: 'Enter amount.',
+      transaction_invalid_amount: 'Invalid amount.',
+      transaction_create_failed: 'Failed to add transaction.',
       archived: 'Archived',
       balance_load_failed: 'Failed to load balance.',
       balance_load_failed_short: 'Failed to load balance',
@@ -314,7 +386,18 @@
     return detectBrowserLang();
   }
 
+  function loadTxPeriodDays() {
+    try {
+      const stored = localStorage.getItem(TX_PERIOD_STORAGE_KEY);
+      if (stored === '7' || stored === '30') return Number(stored);
+    } catch (_) {
+      // ignore
+    }
+    return 30;
+  }
+
   let currentLang = loadLang();
+  let txPeriodDays = loadTxPeriodDays();
 
   function t(key, vars) {
     const langTable = I18N[currentLang] || I18N.ru;
@@ -440,6 +523,9 @@
   let cryptoWalletTotalInBase = NaN;
   let lastBalanceSnapshot = null;
   let lastBalanceConversion = null;
+  const txListLimit = 20;
+  let txCategories = [];
+  let txCategoriesById = new Map();
 
   function normalizeCurrency(code) {
     return (code || '').trim().toUpperCase();
@@ -1011,6 +1097,392 @@
         await loadBalance();
         await loadReports();
       });
+    });
+  }
+
+  function applyTxPeriodButtons() {
+    document.querySelectorAll(selectors.txPeriodButtons).forEach((btn) => {
+      const period = Number(btn.dataset.period);
+      btn.classList.toggle('active', Number.isFinite(period) && period === txPeriodDays);
+    });
+  }
+
+  function bindTxPeriodButtons() {
+    const buttons = Array.from(document.querySelectorAll(selectors.txPeriodButtons));
+    if (!buttons.length) return;
+    applyTxPeriodButtons();
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const period = Number(btn.dataset.period);
+        if (!Number.isFinite(period) || (period !== 7 && period !== 30)) return;
+        txPeriodDays = period;
+        try {
+          localStorage.setItem(TX_PERIOD_STORAGE_KEY, String(period));
+        } catch (_) {
+          // ignore
+        }
+        applyTxPeriodButtons();
+        loadRecentTransactions();
+      });
+    });
+  }
+
+  async function loadTransactionCategories() {
+    const res = await Api.call('/api/categories', 'GET', null, true);
+    if (!res.ok || !Array.isArray(res.data)) {
+      txCategories = [];
+      txCategoriesById = new Map();
+      return;
+    }
+    txCategories = res.data
+      .filter((item) => item && item.id != null && item.name)
+      .map((item) => ({
+        id: Number(item.id),
+        name: String(item.name),
+        type: String(item.type || ''),
+        system: Boolean(item.system)
+      }));
+    txCategories.sort((a, b) => {
+      if (a.system !== b.system) return a.system ? -1 : 1;
+      return String(a.name).localeCompare(String(b.name), getLocale());
+    });
+    txCategoriesById = new Map(txCategories.map((item) => [item.id, item]));
+  }
+
+  function isCategoryCompatible(categoryType, transactionType) {
+    const cat = String(categoryType || '').toUpperCase();
+    const tx = String(transactionType || '').toUpperCase();
+    if (!cat || !tx) return false;
+    if (cat === 'BOTH') return true;
+    return cat === tx;
+  }
+
+  function toLocalDateTimeInputValue(date) {
+    const d = date instanceof Date ? date : new Date();
+    if (Number.isNaN(d.getTime())) return '';
+    const pad = (v) => String(v).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function formatTxTimestamp(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderTransactionsList(transactions) {
+    const list = document.querySelector(selectors.transactionsList);
+    if (!list) return;
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      list.innerHTML = `<div class="muted">${t('transactions_empty')}</div>`;
+      return;
+    }
+
+    const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts) ? lastBalanceSnapshot.accounts : [];
+    const accountById = new Map(
+      accounts
+        .filter((acc) => acc && acc.id != null)
+        .map((acc) => [Number(acc.id), acc])
+    );
+
+    list.innerHTML = transactions.map((tx) => {
+      const type = String(tx && tx.type ? tx.type : '').toUpperCase();
+      const isIncome = type === 'INCOME';
+      const amount = toNumber(tx && tx.amount);
+      const accountId = tx && tx.accountId != null ? Number(tx.accountId) : NaN;
+      const account = accountById.get(accountId);
+      const accountName = account && account.name ? String(account.name) : '';
+
+      const categoryId = tx && tx.categoryId != null ? Number(tx.categoryId) : NaN;
+      const category = txCategoriesById.get(categoryId);
+      const categoryName = category ? String(category.name) : (Number.isFinite(categoryId) ? `#${categoryId}` : '');
+
+      const currency = normalizeCurrency(tx && tx.currency) || normalizeCurrency(account && account.currency) || normalizeCurrency(baseCurrency) || 'USD';
+      const signed = Number.isFinite(amount) ? (isIncome ? amount : -amount) : NaN;
+      let amountText = Number.isFinite(signed) ? formatMoney(signed, currency) : '—';
+      if (isIncome && Number.isFinite(amount) && !amountText.trim().startsWith('+')) {
+        amountText = `+${amountText}`;
+      }
+
+      const signClass = isIncome ? 'amount-positive' : 'amount-negative';
+      const safeCategory = escapeHtml(categoryName || t('transaction_category_label'));
+      const safeAccount = escapeHtml(accountName || t('transaction_account_label'));
+      const safeWhen = escapeHtml(formatTxTimestamp(tx && tx.transactionDate) || '');
+      const description = tx && tx.description ? String(tx.description) : '';
+      const safeDesc = description ? escapeHtml(description) : '';
+      const descPart = safeDesc ? `<span>·</span><span class="tx-desc">${safeDesc}</span>` : '';
+      const accountPart = safeAccount ? `<span>·</span><span>${safeAccount}</span>` : '';
+      const meta = safeWhen ? `${safeWhen}${accountPart}${descPart}` : `${safeAccount}${descPart}`;
+
+      return `
+        <div class="list-item">
+          <div>
+            <div style="font-weight:800;">${safeCategory}</div>
+            <small class="tx-meta">${meta}</small>
+          </div>
+          <div class="${signClass}">${amountText}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function loadRecentTransactions() {
+    const list = document.querySelector(selectors.transactionsList);
+    if (list) {
+      list.innerHTML = `<div class="muted">${t('loading')}</div>`;
+    }
+
+    const now = new Date();
+    const from = new Date(now.getTime() - txPeriodDays * 24 * 60 * 60 * 1000);
+    const params = new URLSearchParams();
+    params.set('from', from.toISOString());
+    params.set('to', now.toISOString());
+    params.set('limit', String(txListLimit));
+
+    const res = await Api.call(`/api/transactions?${params}`, 'GET', null, true);
+    if (!res.ok || !Array.isArray(res.data)) {
+      if (list) list.innerHTML = `<div class="amount-negative">${t('transactions_load_failed_short')}</div>`;
+      return;
+    }
+    renderTransactionsList(res.data);
+  }
+
+  function showAddTransactionError(message) {
+    const box = document.querySelector(selectors.addTransactionError);
+    if (!box) return;
+    if (message) {
+      box.style.display = 'block';
+      box.textContent = message;
+    } else {
+      box.style.display = 'none';
+      box.textContent = '';
+    }
+  }
+
+  function populateTransactionAccountSelect() {
+    const select = document.querySelector(selectors.addTransactionAccount);
+    if (!select) return;
+    select.innerHTML = '';
+    const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts) ? lastBalanceSnapshot.accounts : [];
+    const active = accounts
+      .filter((acc) => acc && acc.id != null && !acc.archived)
+      .map((acc) => ({
+        id: Number(acc.id),
+        name: String(acc.name || t('account')),
+        currency: normalizeCurrency(acc.currency)
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, getLocale()));
+
+    if (!active.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = t('transaction_no_accounts');
+      option.disabled = true;
+      option.selected = true;
+      select.appendChild(option);
+      return;
+    }
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = t('transaction_select_account');
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    active.forEach((acc) => {
+      const option = document.createElement('option');
+      option.value = String(acc.id);
+      option.textContent = acc.currency ? `${acc.name} (${acc.currency})` : acc.name;
+      select.appendChild(option);
+    });
+  }
+
+  function populateTransactionCategorySelect(transactionType) {
+    const select = document.querySelector(selectors.addTransactionCategory);
+    if (!select) return;
+    select.innerHTML = '';
+
+    const filtered = txCategories.filter((cat) => isCategoryCompatible(cat.type, transactionType));
+
+    if (!filtered.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = t('transaction_no_categories');
+      option.disabled = true;
+      option.selected = true;
+      select.appendChild(option);
+      return;
+    }
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = t('transaction_select_category');
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    filtered.forEach((cat) => {
+      const option = document.createElement('option');
+      option.value = String(cat.id);
+      option.textContent = cat.name;
+      select.appendChild(option);
+    });
+  }
+
+  function bindAddTransactionMenu() {
+    const btn = document.querySelector(selectors.addTransactionBtn);
+    const menu = document.querySelector(selectors.addTransactionMenu);
+    const overlay = document.querySelector(selectors.addTransactionOverlay);
+    const cancelBtn = document.querySelector(selectors.addTransactionCancelBtn);
+    const closeBtn = document.querySelector(selectors.addTransactionCloseBtn);
+    const createBtn = document.querySelector(selectors.addTransactionCreateBtn);
+    const typeSelect = document.querySelector(selectors.addTransactionType);
+    if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn || !typeSelect) return;
+
+    let open = false;
+    let submitting = false;
+
+    const close = () => {
+      open = false;
+      overlay.style.display = 'none';
+      menu.style.display = 'none';
+    };
+
+    const openDialog = () => {
+      open = true;
+      overlay.style.display = 'flex';
+      menu.style.display = 'grid';
+      showAddTransactionError('');
+
+      populateTransactionAccountSelect();
+      typeSelect.value = 'EXPENSE';
+      populateTransactionCategorySelect(typeSelect.value);
+
+      const amountEl = document.querySelector(selectors.addTransactionAmount);
+      const dateEl = document.querySelector(selectors.addTransactionDate);
+      const descEl = document.querySelector(selectors.addTransactionDescription);
+      if (amountEl) amountEl.value = '';
+      if (descEl) descEl.value = '';
+      if (dateEl) dateEl.value = toLocalDateTimeInputValue(new Date());
+
+      createBtn.disabled = false;
+      const accountEl = document.querySelector(selectors.addTransactionAccount);
+      if (accountEl) accountEl.focus();
+    };
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    cancelBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (open && e.key === 'Escape') {
+        close();
+      }
+    });
+
+    typeSelect.addEventListener('change', () => {
+      populateTransactionCategorySelect(typeSelect.value);
+    });
+
+    const parseOptionalNumber = (raw) => {
+      const value = (raw || '').trim();
+      if (!value) return null;
+      const normalized = value.replace(',', '.');
+      const num = Number(normalized);
+      return Number.isFinite(num) ? num : NaN;
+    };
+
+    const submit = async () => {
+      if (!open || submitting) return;
+      showAddTransactionError('');
+
+      const accountEl = document.querySelector(selectors.addTransactionAccount);
+      const categoryEl = document.querySelector(selectors.addTransactionCategory);
+      const amountEl = document.querySelector(selectors.addTransactionAmount);
+      const dateEl = document.querySelector(selectors.addTransactionDate);
+      const descEl = document.querySelector(selectors.addTransactionDescription);
+
+      const accountId = Number(accountEl?.value);
+      const categoryId = Number(categoryEl?.value);
+      const type = String(typeSelect.value || '').toUpperCase();
+      const amount = parseOptionalNumber(amountEl?.value || '');
+      const dateValue = (dateEl?.value || '').trim();
+      const description = (descEl?.value || '').trim();
+
+      if (accountEl) accountEl.classList.toggle('error', !Number.isFinite(accountId));
+      if (categoryEl) categoryEl.classList.toggle('error', !Number.isFinite(categoryId));
+      if (amountEl) amountEl.classList.toggle('error', amount == null || Number.isNaN(amount) || amount <= 0);
+
+      if (!Number.isFinite(accountId)) {
+        showAddTransactionError(t('transaction_select_account'));
+        if (accountEl) accountEl.focus();
+        return;
+      }
+      if (!Number.isFinite(categoryId)) {
+        showAddTransactionError(t('transaction_select_category'));
+        if (categoryEl) categoryEl.focus();
+        return;
+      }
+      if (amount == null) {
+        showAddTransactionError(t('transaction_enter_amount'));
+        if (amountEl) amountEl.focus();
+        return;
+      }
+      if (Number.isNaN(amount) || amount <= 0) {
+        showAddTransactionError(t('transaction_invalid_amount'));
+        if (amountEl) amountEl.focus();
+        return;
+      }
+
+      let txDate = new Date();
+      if (dateValue) {
+        const parsed = new Date(dateValue);
+        if (!Number.isNaN(parsed.getTime())) {
+          txDate = parsed;
+        }
+      }
+
+      submitting = true;
+      createBtn.disabled = true;
+      try {
+        const res = await Api.call('/api/transactions', 'POST', {
+          accountId,
+          categoryId,
+          type,
+          amount,
+          transactionDate: txDate.toISOString(),
+          description: description || null
+        }, true);
+        if (!res.ok) {
+          const message = res.data && typeof res.data === 'object'
+            ? (res.data.message || '')
+            : '';
+          showAddTransactionError(message || t('transaction_create_failed'));
+          return;
+        }
+        close();
+        await loadBalance();
+        await loadReports();
+        await loadRecentTransactions();
+      } finally {
+        submitting = false;
+        createBtn.disabled = false;
+      }
+    };
+
+    createBtn.addEventListener('click', submit);
+    menu.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
     });
   }
 
@@ -2187,18 +2659,25 @@
       renderProfile(res.data || {});
       bindLogout();
       bindBaseCurrencyMenu();
+      bindTxPeriodButtons();
+      bindAddAccountMenu();
+      bindAddWalletMenu();
+      bindAddTransactionMenu();
 
       await loadBalance();
       await loadFxCurrencies();
       bindFxControls();
-      await loadFxRates();
-      await loadCryptoRates();
-      await loadWallets();
-      await updateDemoAmounts();
-      await loadReports();
-
-      bindAddAccountMenu();
-      bindAddWalletMenu();
+      await Promise.all([
+        loadTransactionCategories(),
+        loadFxRates(),
+        loadCryptoRates(),
+        loadWallets(),
+        updateDemoAmounts()
+      ]);
+      await Promise.all([
+        loadReports(),
+        loadRecentTransactions()
+      ]);
     } catch (e) {
       console.error('Dashboard init failed', e);
     } finally {

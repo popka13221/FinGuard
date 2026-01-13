@@ -54,10 +54,11 @@ public class TransactionController {
     public ResponseEntity<List<TransactionDto>> list(
             @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Integer limit,
             Authentication authentication
     ) {
         Long userId = resolveUserId(authentication);
-        return ResponseEntity.ok(transactionService.listTransactions(userId, from, to));
+        return ResponseEntity.ok(transactionService.listTransactions(userId, from, to, limit));
     }
 
     @GetMapping("/{id}")
@@ -147,4 +148,3 @@ public class TransactionController {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
     }
 }
-

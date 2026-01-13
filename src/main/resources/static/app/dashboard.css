@@ -179,6 +179,42 @@ body.dashboard.light .card {
   justify-content: center;
 }
 
+.dashboard .tx-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard .tx-period {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard .tx-period .chip.active {
+  background: rgba(79, 139, 255, 0.2);
+  border-color: rgba(79, 139, 255, 0.4);
+  color: #e2e8f0;
+}
+
+.dashboard .tx-meta {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashboard .tx-desc {
+  display: inline-block;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .dashboard .chart-shell {
   border-radius: var(--dash-radius-sm);
   background: rgba(8, 11, 17, 0.55);

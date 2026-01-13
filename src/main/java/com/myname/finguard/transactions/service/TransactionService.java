@@ -20,11 +20,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TransactionService {
+
+    private static final int MAX_LIST_LIMIT = 200;
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
@@ -43,10 +46,10 @@ public class TransactionService {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.categoryService = categoryService;
-        this.accountBalanceService = accountBalanceService;
+            this.accountBalanceService = accountBalanceService;
     }
 
-    public List<TransactionDto> listTransactions(Long userId, Instant from, Instant to) {
+    public List<TransactionDto> listTransactions(Long userId, Instant from, Instant to, Integer limit) {
         if (userId == null) {
             throw unauthorized();
         }
@@ -56,7 +59,24 @@ public class TransactionService {
         if (end.isBefore(start)) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "`to` must be after `from`", HttpStatus.BAD_REQUEST);
         }
-        return transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, start, end).stream()
+
+        List<Transaction> rows;
+        if (limit != null) {
+            int bounded = Math.min(Math.max(limit, 1), MAX_LIST_LIMIT);
+            if (limit != bounded) {
+                throw new ApiException(ErrorCodes.BAD_REQUEST, "`limit` must be between 1 and " + MAX_LIST_LIMIT, HttpStatus.BAD_REQUEST);
+            }
+            rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(
+                    userId,
+                    start,
+                    end,
+                    PageRequest.of(0, bounded)
+            );
+        } else {
+            rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, start, end);
+        }
+
+        return rows.stream()
                 .map(this::toDto)
                 .toList();
     }
@@ -244,4 +264,3 @@ public class TransactionService {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
     }
 }
-
