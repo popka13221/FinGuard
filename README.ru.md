@@ -1,67 +1,72 @@
-# FinGuard — Personal Finance & Alerts Platform
+# FinGuard — Трекер личных финансов (Spring Boot)
 
 [English](README.md) | Русский
 
 [![CI](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml)
 
-Платформа для учёта личных финансов, целей и алертов по тратам/курсам/активам. Цель — показать продуманную доменную модель, работу с деньгами/датами/валютами, фоновые задачи и интеграции.
+Портфолио‑проект: учёт личных финансов (счета/транзакции/отчёты), курсы валют и крипты, статический dashboard.
 
-## Что внутри
-- **MVP**: пользователи + JWT, счета, категории, транзакции с пересчётом баланса, отчёты по периодам, курсы валют, простые правила с уведомлениями.
-- **Рост**: цели накоплений, интеграции с FX/криптой и кешированием, продвинутые правила, Email/Telegram, вынос rule-engine и очередь сообщений.
-- **Архитектура**: слоёный монолит (Controller → Service → Repository → Domain/Model + Config/Security/Scheduler).
+## Скриншоты
+![Dashboard](docs/screenshots/dashboard-ru.png)
+![Swagger UI](docs/screenshots/swagger-ui.png)
+
+## Возможности (v1)
+- Auth: регистрация + подтверждение email, логин, refresh, опциональный OTP; JWT в httpOnly cookie (или `Authorization: Bearer`).
+- Счета: CRUD, архивирование, баланс пересчитывается по транзакциям.
+- Категории: глобальные дефолты + пользовательские.
+- Транзакции: доход/расход, пересчёт баланса счёта.
+- Отчёты: summary/by-category/cash-flow с конвертацией в базовую валюту пользователя.
+- FX: хранение и выдача курсов (admin upsert API).
+- Crypto: курсы BTC/ETH + summary по крипто‑кошелькам.
+- UI: лендинг, auth страницы, dashboard (EN/RU + переключение базовой валюты).
 
 ## Стек
 - Java 17+, Spring Boot (Web, Security, Data JPA, Validation, Scheduling, Actuator)
 - PostgreSQL + Flyway
 - Maven, Docker Compose (Postgres)
-- Планируется: OpenFeign/WebClient, Kafka/RabbitMQ
+- Playwright (E2E)
 
-## Быстрый старт
-1) Подготовка окружения
-   - Java 17+, Maven
-   - Docker + Docker Compose (для Postgres)
-2) База (по умолчанию `finguard`/`finguard`)
+## Быстрый старт (локально)
+1) Требования: Java 17+, Maven, Docker
+2) Настройка env
+   - Скопируйте `.env.example` → `.env` и задайте `JWT_SECRET` (Base64, 32+ байта).
+   - `./scripts/run-local.sh` автоматически подхватывает `.env`.
+   - Сгенерировать секрет:
+     ```bash
+     python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(48)).decode())"
+     ```
+3) Поднять Postgres
    ```bash
-   docker compose up -d
+   docker compose up -d postgres
    ```
-   или заведите свою БД и пропишите переменные:
+4) Запустить backend
    ```bash
-   export DB_HOST=localhost DB_PORT=5432 DB_NAME=finguard DB_USER=finguard DB_PASSWORD=finguard
-   ```
-3) Запуск backend
-   ```bash
-   ./scripts/run-local.sh      # поднимет backend (и Postgres через docker compose, если доступен)
+   ./scripts/run-local.sh
    # или
    mvn spring-boot:run
    ```
-4) UI и API
-   - Статика: `http://localhost:8080/app/login.html` (вход/регистрация/восстановление пароля, дашборд).
-    - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-    - Health: `http://localhost:8080/health` или `/actuator/health`
+5) Открыть
+   - UI: `http://localhost:8080/`
+   - Вход: `http://localhost:8080/app/login.html`
+   - Dashboard: `http://localhost:8080/app/dashboard.html`
+   - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+   - Health: `http://localhost:8080/actuator/health`
 
-## Auth-флоу
-- Регистрация двухшаговая: `POST /api/auth/register` создаёт запись в `pending_registrations` и отправляет код на email; запись в `users` и токены выдаются только после `POST /api/auth/verify` (регистрация считается завершённой только после verify).
-- До verify пользователя в `users` нет, поэтому доступ к защищённым `/api/**` невозможен по определению.
-- Токены `FG_AUTH` и `FG_REFRESH` ставятся в httpOnly cookie после успешного `POST /api/auth/login` (или `POST /api/auth/login/otp`) и после `POST /api/auth/verify`; SameSite настраивается через `app.security.jwt.cookie-samesite`.
-- При попытке логина до подтверждения email возвращается 403, код `100006` (если пароль совпадает с pending-регистрацией).
-- Refresh: `POST /api/auth/refresh`
-- Верификация email: `POST /api/auth/verify/request`, `POST /api/auth/verify` (сейчас по умолчанию код фиксированный `654321`; можно переопределить через `app.security.tokens.fixed-code`)
-- Восстановление пароля (двухшаговый, без прямой смены по коду):
-  1) `POST /api/auth/forgot` — письмо/код.
-  2) `POST /api/auth/reset/confirm` — принимает `email+код`, выдаёт короткоживущий `resetSessionToken` (1 на пользователя, TTL ~10–15 мин, привязка IP/UA, отдельные rate limits).
-  3) `POST /api/auth/reset` — принимает `resetSessionToken` + новый пароль, инвалидация всех refresh-сессий.
-- OTP (опционально): после успешного пароля выдаётся challenge 202; лимиты на выдачу по email+IP, повторный вход в окне действия возвращает 202 без пересылки кода.
-- CORS: задайте `ALLOWED_ORIGINS` для фронтенда на другом домене, включено `credentials: true`.
-- Rate limit: фильтр по IP (`AuthRateLimitFilter`), доп. лимиты по email/IP в сервисе; за прокси включите `app.security.trust-proxy-headers=true` для чтения `X-Forwarded-For`.
+## Примеры API
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- Примеры запросов (curl + Postman): `docs/API_EXAMPLES.ru.md`
 
-## Frontend
-- Статический клиент (русский): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`; вкладки «Вход/Регистрация», формы для восстановления пароля, дашборд с проверкой health.
+## Тесты
+- Backend: `mvn test`
+- E2E:
+  ```bash
+  npm ci
+  npx playwright install --with-deps chromium
+  npm run e2e
+  ```
 
-## Тесты и покрытие
-- Backend: `mvn test` (JaCoCo отчёт: `target/site/jacoco/index.html`).
-- В GitHub Actions отчёт загружается как artifact `jacoco-report`.
-
-## Статус
-Собран каркас Spring Boot 3.2.5 с Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose для Postgres, базовый `application.yaml`, health-check, миграции V1 (users/accounts/categories/transactions) + V2/V3/V4 (токены/сессии + reset-сессии), JWT security и Auth API (register/login/refresh/verify/reset с session-token), статический клиент (русский UI) и Swagger UI. Далее — CRUD для Accounts/Categories/Transactions и отчёты.
+## Дорожная карта
+- Правила + уведомления: лимит расходов по категории за месяц + in‑app алерты.
+- Goals: прогресс + requiredMonthly.
+- Документация: ER‑диаграмма, release notes, cookbook по API.

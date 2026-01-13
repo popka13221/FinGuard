@@ -1,68 +1,79 @@
-# FinGuard — Personal Finance & Alerts Platform
+# FinGuard — Personal Finance Tracker (Spring Boot)
 
 English | [Русский](README.ru.md)
 
 [![CI](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/popka13221/FinGuard/actions/workflows/codeql.yml)
 
-Personal finance tracker with goals and alerts for spending/FX/assets. The main goal is to showcase a clean domain model, money/date/currency handling, background jobs, and integrations.
+Portfolio-ready personal finance tracker: accounts, transactions, reports, FX/crypto rates, and a static dashboard UI.
 
-## What’s inside
-- **MVP**: users + JWT, accounts, categories, transactions with balance recalculation, period reports, FX rates, simple rules with notifications.
-- **Growth**: savings goals, FX/crypto integrations with caching, advanced rules, Email/Telegram, extracting a rule-engine and a message queue.
-- **Architecture**: layered monolith (Controller → Service → Repository → Domain/Model + Config/Security/Scheduler).
+## Screenshots
+![Dashboard](docs/screenshots/dashboard-en.png)
+![Swagger UI](docs/screenshots/swagger-ui.png)
+
+<details>
+  <summary>More screenshots</summary>
+
+  ![Landing](docs/screenshots/landing-en.png)
+  ![Login](docs/screenshots/login-en.png)
+</details>
+
+## Features (v1)
+- Auth: registration + email verification, login, refresh, optional OTP; JWT in httpOnly cookies (or `Authorization: Bearer`).
+- Accounts: CRUD, archive, balances recalculated from transactions.
+- Categories: global defaults + user-defined categories.
+- Transactions: income/expense, recalculates account balance.
+- Reports: summary/by-category/cash-flow with conversion into user base currency.
+- FX: store and serve latest FX snapshots (admin upsert API).
+- Crypto: BTC/ETH rates + crypto wallet summary.
+- Static UI: landing, auth pages, dashboard (EN/RU + base currency switch).
 
 ## Tech stack
 - Java 17+, Spring Boot (Web, Security, Data JPA, Validation, Scheduling, Actuator)
 - PostgreSQL + Flyway
 - Maven, Docker Compose (Postgres)
-- Planned: OpenFeign/WebClient, Kafka/RabbitMQ
+- Playwright (E2E)
 
-## Quick start
-1) Prerequisites
-   - Java 17+, Maven
-   - Docker + Docker Compose (for Postgres)
-2) Database (defaults to `finguard`/`finguard`)
+## Quick start (local)
+1) Prerequisites: Java 17+, Maven, Docker
+2) Configure env
+   - Copy `.env.example` → `.env` and set `JWT_SECRET` (Base64, 32+ bytes).
+   - `./scripts/run-local.sh` loads `.env` automatically.
+   - Generate a local secret:
+     ```bash
+     python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(48)).decode())"
+     ```
+3) Start Postgres
    ```bash
-   docker compose up -d
+   docker compose up -d postgres
    ```
-   Or use your own DB and export env vars:
+4) Run backend
    ```bash
-   export DB_HOST=localhost DB_PORT=5432 DB_NAME=finguard DB_USER=finguard DB_PASSWORD=finguard
-   ```
-3) Run backend
-   ```bash
-   ./scripts/run-local.sh      # starts backend (and Postgres via docker compose if available)
+   ./scripts/run-local.sh
    # or
    mvn spring-boot:run
    ```
-4) UI and API
-   - Static UI: `http://localhost:8080/app/login.html` (login/registration/password recovery, dashboard)
+5) Open
+   - UI: `http://localhost:8080/`
+   - Login: `http://localhost:8080/app/login.html`
+   - Dashboard: `http://localhost:8080/app/dashboard.html`
    - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-   - Health: `http://localhost:8080/health` or `/actuator/health`
+   - Health: `http://localhost:8080/actuator/health`
 
-## Auth flow
-- Registration is 2-step: `POST /api/auth/register` creates a record in `pending_registrations` and sends a code by email; `users` record and tokens are only created after `POST /api/auth/verify` (registration is considered complete only after verify).
-- Before verify there is no user in `users`, so access to protected `/api/**` is impossible by design.
-- `FG_AUTH` and `FG_REFRESH` are set as httpOnly cookies after successful `POST /api/auth/login` (or `POST /api/auth/login/otp`) and after `POST /api/auth/verify`; SameSite is configured via `app.security.jwt.cookie-samesite`.
-- Login before email verification returns 403 with code `100006` (if the password matches pending registration).
-- Refresh: `POST /api/auth/refresh`
-- Email verification: `POST /api/auth/verify/request`, `POST /api/auth/verify` (currently the default code is fixed to `654321`; you can override it via `app.security.tokens.fixed-code`)
-- Password reset (2-step, no direct “change by code”):
-  1) `POST /api/auth/forgot` — email/code.
-  2) `POST /api/auth/reset/confirm` — takes `email+code`, returns a short-lived `resetSessionToken` (1 per user, TTL ~10–15 min, IP/UA binding, separate rate limits).
-  3) `POST /api/auth/reset` — takes `resetSessionToken` + new password, invalidates all refresh sessions.
-- OTP (optional): after a successful password check returns a 202 challenge; issuance rate limits by email+IP, and a repeated login within the TTL returns 202 without resending a code.
-- CORS: set `ALLOWED_ORIGINS` for frontend on another domain; `credentials: true` is enabled.
-- Rate limit: IP-based filter (`AuthRateLimitFilter`) + per email/IP limits in services; behind a proxy enable `app.security.trust-proxy-headers=true` to read `X-Forwarded-For`.
+## API examples
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- Examples (curl + Postman): `docs/API_EXAMPLES.md`
 
-## Frontend
-- Static client (Russian UI): `theme.js`, `api.js`, `auth.js`, `dashboard.js`, `recover.js`.
+## Tests
+- Backend: `mvn test`
+- E2E:
+  ```bash
+  npm ci
+  npx playwright install --with-deps chromium
+  npm run e2e
+  ```
 
-## Tests & coverage
-- Backend: `mvn test` (JaCoCo report: `target/site/jacoco/index.html`).
-- In GitHub Actions the report is uploaded as an artifact `jacoco-report`.
-
-## Status
-Spring Boot 3.2.5 scaffold with Web/Security/Data JPA/Validation/Scheduling/Actuator/Flyway/PostgreSQL, Docker Compose for Postgres, basic `application.yaml`, health-check, migrations V1 (users/accounts/categories/transactions) + V2/V3/V4 (tokens/sessions + reset sessions), JWT security and Auth API (register/login/refresh/verify/reset with session-token), static client (Russian UI), and Swagger UI. Next — CRUD for Accounts/Categories/Transactions and reports.
-
+## Roadmap
+- Rules + notifications: monthly category spending limit + in-app alerts.
+- Goals: progress + required monthly savings.
+- More docs: ER diagram, release notes, API cookbook.

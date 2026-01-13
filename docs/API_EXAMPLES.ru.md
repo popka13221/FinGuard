@@ -1,0 +1,72 @@
+# FinGuard — примеры API (Swagger / curl)
+
+Base URL (локально): `http://localhost:8080`
+
+## Публичные эндпоинты
+```bash
+curl -s http://localhost:8080/api/currencies
+curl -s "http://localhost:8080/api/fx/rates?base=USD&quote=EUR&quote=RUB"
+curl -s "http://localhost:8080/api/crypto/rates?base=USD"
+```
+
+## Авторизация (curl, самый простой локальный режим)
+По умолчанию CSRF включён (статический UI сам подставляет токен). Чтобы проще гонять curl‑запросы, локально можно отключить CSRF:
+
+```bash
+export APP_SECURITY_CSRF_ENABLED=false
+./scripts/run-local.sh
+```
+
+Регистрация → verify → получить JWT:
+
+```bash
+BASE="http://localhost:8080"
+EMAIL="demo-$(date +%s)@example.com"
+PASS="StrongPass1!"
+
+curl -sS -X POST "$BASE/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Demo User\",\"baseCurrency\":\"USD\"}"
+
+# По умолчанию verification code фиксированный 654321 (настройка: app.security.tokens.fixed-code)
+TOKEN="$(curl -sS -X POST "$BASE/api/auth/verify" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"token\":\"654321\"}" | python -c "import sys,json; print(json.load(sys.stdin)['token'])")"
+echo "$TOKEN" | head -c 24 && echo "…"
+```
+
+Создать данные:
+
+```bash
+# Счёт
+ACCOUNT_ID="$(curl -sS -X POST "$BASE/api/accounts" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Cash","currency":"USD","initialBalance":1200}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['id'])")"
+
+# Категория
+CATEGORY_ID="$(curl -sS -X POST "$BASE/api/categories" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Food","type":"EXPENSE"}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['id'])")"
+
+# Транзакция
+curl -sS -X POST "$BASE/api/transactions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"accountId\":$ACCOUNT_ID,\"categoryId\":$CATEGORY_ID,\"type\":\"EXPENSE\",\"amount\":35,\"transactionDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"description\":\"Coffee\"}" \
+  >/dev/null
+```
+
+Баланс и отчёты:
+
+```bash
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/accounts/balance"
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/reports/summary?period=MONTH"
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/reports/by-category?period=MONTH&limit=10"
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/reports/cash-flow"
+```
+
+## Подсказки по Swagger UI
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- Если CSRF включён, проще проходить auth через UI, либо отключить CSRF локально (см. выше) для быстрых экспериментов.
+

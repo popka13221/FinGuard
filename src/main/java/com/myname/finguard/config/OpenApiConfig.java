@@ -13,7 +13,7 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI finguardOpenApi() {
-        return new OpenAPI()
+                return new OpenAPI()
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
@@ -22,8 +22,8 @@ public class OpenApiConfig {
                         .description("JWT is stored in httpOnly cookie; for Swagger use Authorization: Bearer <token>")))
                 .info(new Info()
                         .title("FinGuard API")
-                        .description("Financial assistant: auth, profiles, currency reference data, and health checks. "
-                                + "Auth uses JWT stored in httpOnly cookies.")
+                        .description("Personal finance API: auth, accounts, categories, transactions, reports, FX rates, and crypto rates. "
+                                + "Auth uses JWT stored in httpOnly cookies; for API clients you can also pass Authorization: Bearer <token>.")
                         .version("0.0.1")
                         .contact(new Contact().name("FinGuard Team").email("support@finguard.local")));
     }
