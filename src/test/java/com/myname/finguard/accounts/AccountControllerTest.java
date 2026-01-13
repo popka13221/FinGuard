@@ -47,7 +47,7 @@ class AccountControllerTest {
         UserPrincipal principal = new UserPrincipal(user);
         Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
 
-        UserBalanceResponse expected = new UserBalanceResponse(Collections.emptyList(), Collections.emptyList());
+        UserBalanceResponse expected = new UserBalanceResponse(Collections.emptyList(), Collections.emptyList(), "USD", BigDecimal.ZERO);
         when(accountService.getUserBalance(10L)).thenReturn(expected);
 
         var response = controller.balance(auth);
@@ -64,7 +64,7 @@ class AccountControllerTest {
         User user = user(99L, "details@example.com");
         when(userRepository.findByEmail("details@example.com")).thenReturn(Optional.of(user));
 
-        UserBalanceResponse expected = new UserBalanceResponse(Collections.emptyList(), Collections.emptyList());
+        UserBalanceResponse expected = new UserBalanceResponse(Collections.emptyList(), Collections.emptyList(), "USD", BigDecimal.ZERO);
         when(accountService.getUserBalance(99L)).thenReturn(expected);
 
         controller.balance(auth);

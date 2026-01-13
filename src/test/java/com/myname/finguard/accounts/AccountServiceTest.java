@@ -17,6 +17,7 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.model.Role;
 import com.myname.finguard.common.service.CurrencyService;
+import com.myname.finguard.common.service.MoneyConversionService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -36,13 +37,15 @@ class AccountServiceTest {
     private CurrencyService currencyService;
     @Mock
     private AccountBalanceService accountBalanceService;
+    @Mock
+    private MoneyConversionService moneyConversionService;
 
     private AccountService accountService;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        accountService = new AccountService(accountRepository, userRepository, currencyService, accountBalanceService);
+        accountService = new AccountService(accountRepository, userRepository, currencyService, accountBalanceService, moneyConversionService);
     }
 
     @Test
@@ -59,6 +62,9 @@ class AccountServiceTest {
         Account eurActiveNull = account(3L, "EUR", null, false);
 
         when(accountRepository.findByUserId(42L)).thenReturn(List.of(usdActive, usdArchived, eurActiveNull));
+        when(userRepository.findById(42L)).thenReturn(Optional.of(user(42L, "user@example.com")));
+        when(moneyConversionService.sumToBaseOrNull(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
+                .thenReturn(new BigDecimal("10.50"));
 
         UserBalanceResponse result = accountService.getUserBalance(42L);
 
@@ -68,6 +74,8 @@ class AccountServiceTest {
                 new UserBalanceResponse.CurrencyBalance("EUR", BigDecimal.ZERO),
                 new UserBalanceResponse.CurrencyBalance("USD", new BigDecimal("10.50"))
         );
+        assertThat(result.baseCurrency()).isEqualTo("USD");
+        assertThat(result.totalInBase()).isEqualByComparingTo("10.50");
     }
 
     @Test

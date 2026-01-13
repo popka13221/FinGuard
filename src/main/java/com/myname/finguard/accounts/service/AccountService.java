@@ -11,6 +11,7 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.service.CurrencyService;
+import com.myname.finguard.common.service.MoneyConversionService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -26,17 +27,20 @@ public class AccountService {
     private final UserRepository userRepository;
     private final CurrencyService currencyService;
     private final AccountBalanceService accountBalanceService;
+    private final MoneyConversionService moneyConversionService;
 
     public AccountService(
             AccountRepository accountRepository,
             UserRepository userRepository,
             CurrencyService currencyService,
-            AccountBalanceService accountBalanceService
+            AccountBalanceService accountBalanceService,
+            MoneyConversionService moneyConversionService
     ) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.currencyService = currencyService;
         this.accountBalanceService = accountBalanceService;
+        this.moneyConversionService = moneyConversionService;
     }
 
     public List<AccountDto> listAccounts(Long userId) {
@@ -52,6 +56,9 @@ public class AccountService {
         if (userId == null) {
             throw unauthorized();
         }
+        User user = userRepository.findById(userId).orElseThrow(this::unauthorized);
+        String baseCurrency = user.getBaseCurrency();
+
         List<Account> accounts = accountRepository.findByUserId(userId);
         List<UserBalanceResponse.AccountBalance> accountBalances = accounts.stream()
                 .map(this::toAccountBalance)
@@ -66,12 +73,16 @@ public class AccountService {
                                 BigDecimal::add)
                 ));
 
+        BigDecimal totalInBase = moneyConversionService != null
+                ? moneyConversionService.sumToBaseOrNull(baseCurrency, totals)
+                : null;
+
         List<UserBalanceResponse.CurrencyBalance> totalsByCurrency = totals.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey(String.CASE_INSENSITIVE_ORDER))
                 .map(entry -> new UserBalanceResponse.CurrencyBalance(entry.getKey(), entry.getValue()))
                 .toList();
 
-        return new UserBalanceResponse(accountBalances, totalsByCurrency);
+        return new UserBalanceResponse(accountBalances, totalsByCurrency, baseCurrency, totalInBase);
     }
 
     public UserBalanceResponse.AccountBalance createAccount(Long userId, CreateAccountRequest request) {

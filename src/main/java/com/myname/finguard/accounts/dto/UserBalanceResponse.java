@@ -5,7 +5,9 @@ import java.util.List;
 
 public record UserBalanceResponse(
         List<AccountBalance> accounts,
-        List<CurrencyBalance> totalsByCurrency
+        List<CurrencyBalance> totalsByCurrency,
+        String baseCurrency,
+        BigDecimal totalInBase
 ) {
     public record AccountBalance(Long id, String name, String currency, BigDecimal balance, boolean archived) {
     }
