@@ -17,6 +17,27 @@ export APP_SECURITY_CSRF_ENABLED=false
 ./scripts/run-local.sh
 ```
 
+### curl с включённым CSRF (без отключения)
+Если CSRF включён, нужны и cookie `XSRF-TOKEN`, и заголовок `X-XSRF-TOKEN`. Простой вариант:
+
+```bash
+BASE="http://localhost:8080"
+COOKIE_JAR=".cookies.txt"
+
+csrf() {
+  curl -sS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE/api/auth/csrf" \
+    | python -c "import sys,json; print(json.load(sys.stdin)['token'])"
+}
+CSRF="$(csrf)"
+
+# Пример: регистрация (CSRF включён)
+EMAIL="demo-$(date +%s)@example.com"
+PASS="StrongPass1!"
+curl -sS -X POST "$BASE/api/auth/register" \
+  -b "$COOKIE_JAR" -c "$COOKIE_JAR" -H "X-XSRF-TOKEN: $CSRF" -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Demo User\",\"baseCurrency\":\"USD\"}"
+```
+
 Регистрация → verify → получить JWT:
 
 ```bash
@@ -68,5 +89,5 @@ curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/reports/cash-flow"
 
 ## Подсказки по Swagger UI
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- Если CSRF включён, проще проходить auth через UI, либо отключить CSRF локально (см. выше) для быстрых экспериментов.
-
+- Swagger генерирует запросы, но не подставляет CSRF заголовки автоматически. Для быстрых экспериментов проще отключить CSRF, либо использовать curl‑схему выше.
+- Postman: можно импортировать OpenAPI схему по `http://localhost:8080/v3/api-docs`.

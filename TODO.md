@@ -45,7 +45,7 @@
   - [ ] Тесты: unit на расчёты, интеграционные на CRUD.
 - [ ] 8) Косметика: README, Swagger скрины, пример запросов/ответов, ER-диаграмма, релизы.
   - [x] README EN/RU: актуальные фичи, запуск, env.
-  - [x] Скриншоты: dashboard + swagger (+ landing/login).
+  - [x] Скриншоты (опционально): генератор `scripts/capture-screenshots.js`, PNG не коммитим (`docs/screenshots/` в `.gitignore`).
   - [x] Примеры API: `docs/API_EXAMPLES.md` и `docs/API_EXAMPLES.ru.md`.
   - [ ] Swagger: добавить/проверить примеры request/response в контроллерах, описать auth/CSRF сценарии.
   - [ ] ER-диаграмма: Mermaid (`docs/ER_DIAGRAM.md`) + ссылка из README.

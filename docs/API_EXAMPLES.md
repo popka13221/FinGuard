@@ -17,6 +17,27 @@ export APP_SECURITY_CSRF_ENABLED=false
 ./scripts/run-local.sh
 ```
 
+### CSRF-enabled curl (without disabling CSRF)
+If you want to keep CSRF enabled, you need both the `XSRF-TOKEN` cookie and the `X-XSRF-TOKEN` header. One simple approach:
+
+```bash
+BASE="http://localhost:8080"
+COOKIE_JAR=".cookies.txt"
+
+csrf() {
+  curl -sS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE/api/auth/csrf" \
+    | python -c "import sys,json; print(json.load(sys.stdin)['token'])"
+}
+CSRF="$(csrf)"
+
+# Example: register (CSRF-enabled)
+EMAIL="demo-$(date +%s)@example.com"
+PASS="StrongPass1!"
+curl -sS -X POST "$BASE/api/auth/register" \
+  -b "$COOKIE_JAR" -c "$COOKIE_JAR" -H "X-XSRF-TOKEN: $CSRF" -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Demo User\",\"baseCurrency\":\"USD\"}"
+```
+
 Register → verify → get a JWT:
 
 ```bash
@@ -68,5 +89,5 @@ curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/reports/cash-flow"
 
 ## Swagger UI tips
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- If CSRF is enabled, use the UI for auth and CSRF, or disable CSRF in local env (see above) for quick API exploration.
-
+- Swagger can generate requests, but it does not automatically send CSRF headers. For quick local exploration either disable CSRF or use the curl flow above.
+- Postman: you can import OpenAPI schema from `http://localhost:8080/v3/api-docs`.
