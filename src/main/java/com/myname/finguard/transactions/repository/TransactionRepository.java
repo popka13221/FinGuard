@@ -62,6 +62,23 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<CashFlowRow> findCashFlowRows(@Param("userId") Long userId, @Param("from") Instant from, @Param("to") Instant to);
 
     @Query("""
+            select t.currency as currency, coalesce(sum(t.amount), 0) as total
+            from Transaction t
+            where t.user.id = :userId
+              and t.category.id = :categoryId
+              and t.type = :type
+              and t.transactionDate between :from and :to
+            group by t.currency
+            """)
+    List<CategoryCurrencyTotal> sumByCategoryAndTypeAndCurrency(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("type") TransactionType type,
+            @Param("from") Instant from,
+            @Param("to") Instant to
+    );
+
+    @Query("""
             select coalesce(sum(
                 case
                     when t.type = com.myname.finguard.transactions.model.TransactionType.INCOME then t.amount
@@ -101,5 +118,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         String getCurrency();
 
         BigDecimal getAmount();
+    }
+
+    interface CategoryCurrencyTotal {
+        String getCurrency();
+
+        BigDecimal getTotal();
     }
 }
