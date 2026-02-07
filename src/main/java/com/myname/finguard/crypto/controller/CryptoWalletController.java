@@ -6,6 +6,7 @@ import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisInsightsResponse;
+import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSeriesResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisStatusResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSummaryResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -136,6 +138,21 @@ public class CryptoWalletController {
         Long userId = resolveUserId(authentication);
         enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
         return ResponseEntity.ok(cryptoWalletAnalysisService.insights(userId, id));
+    }
+
+    @GetMapping("/{id}/analysis/series")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Wallet analysis series", description = "Returns portfolio time-series points for 7d/30d/90d ranges.")
+    @ApiResponse(responseCode = "200", description = "Analysis series returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletAnalysisSeriesResponse> analysisSeries(
+            @PathVariable Long id,
+            @RequestParam(name = "window", required = false, defaultValue = "30d") String window,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
+        return ResponseEntity.ok(cryptoWalletAnalysisService.series(userId, id, window));
     }
 
     @PostMapping

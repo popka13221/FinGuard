@@ -2121,6 +2121,20 @@ body.dashboard::before {
   min-height: 1.5em;
 }
 
+.dashboard .analysis-growth-spark {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(138, 178, 238, 0.16);
+  background: linear-gradient(180deg, rgba(9, 15, 28, 0.66), rgba(8, 13, 24, 0.52));
+  padding: 4px;
+  overflow: hidden;
+}
+
+.dashboard .analysis-growth-spark .spark-svg {
+  height: 30px;
+  opacity: 0.92;
+}
+
 .dashboard .analysis-card-value.is-positive {
   color: #6de9c5;
 }

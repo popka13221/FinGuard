@@ -32,6 +32,8 @@ test('wallet analysis strip shows progress and instant value cards', async ({ pa
   await expect(page.locator('#analysisDataSource')).toHaveText(/(Live|Live \+ Synthetic)/);
   await expect(page.locator('#analysisPortfolioValue')).toContainText('USD');
   await expect(page.locator('#analysisGrowthValue')).toContainText('%');
+  await expect(page.locator('#analysisGrowthSpark .spark-svg')).toBeVisible();
+  await expect(page.locator('#analysisRecurringMeta')).toContainText('%');
   await expect(page.locator('#analysisOutflowSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
   await expect(page.locator('#analysisRecurringSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
 });

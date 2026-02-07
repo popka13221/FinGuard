@@ -110,6 +110,7 @@
     analysisRecurringSource: '#analysisRecurringSource',
     analysisPortfolioValue: '#analysisPortfolioValue',
     analysisGrowthValue: '#analysisGrowthValue',
+    analysisGrowthSpark: '#analysisGrowthSpark',
     analysisOutflowValue: '#analysisOutflowValue',
     analysisRecurringValue: '#analysisRecurringValue',
     analysisPortfolioMeta: '#analysisPortfolioMeta',
@@ -312,7 +313,9 @@
       analysis_top_outflow_label: 'Крупнейший отток: {name}',
       analysis_top_outflow_estimated: 'Оценка оттока пока нет новых операций',
       analysis_recurring_live: 'Recurring по последним операциям',
-      analysis_recurring_estimated: 'Синтетическая оценка до завершения анализа'
+      analysis_recurring_estimated: 'Синтетическая оценка до завершения анализа',
+      analysis_recurring_meta_live: 'След.: {value} · {confidence}%',
+      analysis_recurring_meta_estimated: 'Оценка · {confidence}%'
     },
     en: {
       dashboard_page_title: 'FinGuard | Dashboard',
@@ -505,7 +508,9 @@
       analysis_top_outflow_label: 'Top outflow: {name}',
       analysis_top_outflow_estimated: 'Estimated outflow while activity is building',
       analysis_recurring_live: 'Recurring from recent activity',
-      analysis_recurring_estimated: 'Synthetic estimate until analysis is complete'
+      analysis_recurring_estimated: 'Synthetic estimate until analysis is complete',
+      analysis_recurring_meta_live: 'Next: {value} · {confidence}%',
+      analysis_recurring_meta_estimated: 'Estimate · {confidence}%'
     }
   };
 
@@ -695,6 +700,8 @@
     pollError: false,
     apiSummary: null,
     apiInsights: null,
+    apiSeries: null,
+    seriesWindow: '30d',
     lastDataFetchAt: 0
   };
   let recentTransactionsCache = [];
@@ -1245,6 +1252,13 @@
     return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
+  function formatShortDay(isoValue) {
+    if (!isoValue) return '';
+    const date = new Date(isoValue);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(getLocale(), { day: '2-digit', month: 'short' });
+  }
+
   function analysisStageLabel(stage) {
     const normalized = String(stage || '').toUpperCase();
     if (normalized === 'ENRICH_TX') return t('analysis_stage_enrich_tx');
@@ -1314,9 +1328,26 @@
         unit: String(item && item.unit ? item.unit : ''),
         currency: item && item.currency ? String(item.currency) : '',
         label: item && item.label ? String(item.label) : '',
+        avgAmount: toNumber(item && item.avgAmount),
+        nextEstimatedChargeAt: item && item.nextEstimatedChargeAt ? String(item.nextEstimatedChargeAt) : '',
         confidence: toNumber(item && item.confidence),
         synthetic: Boolean(item && item.synthetic)
       }))
+    };
+  }
+
+  function normalizeAnalysisSeries(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const points = Array.isArray(payload.points) ? payload.points : [];
+    return {
+      baseCurrency: normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD',
+      window: String(payload.window || '30d'),
+      synthetic: Boolean(payload.synthetic),
+      asOf: payload.asOf ? String(payload.asOf) : '',
+      points: points.map((item) => ({
+        at: item && item.at ? String(item.at) : '',
+        valueInBase: toNumber(item && item.valueInBase)
+      })).filter((item) => item.at && Number.isFinite(item.valueInBase))
     };
   }
 
@@ -1330,9 +1361,11 @@
 
   async function fetchAnalysisData(walletId) {
     if (!walletId) return;
-    const [summaryRes, insightsRes] = await Promise.all([
+    const seriesWindow = analysisState.seriesWindow || '30d';
+    const [summaryRes, insightsRes, seriesRes] = await Promise.all([
       Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/summary`, 'GET', null, true),
-      Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/insights`, 'GET', null, true)
+      Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/insights`, 'GET', null, true),
+      Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/series?window=${encodeURIComponent(seriesWindow)}`, 'GET', null, true)
     ]);
     if (walletId !== analysisState.activeWalletId) {
       return;
@@ -1347,6 +1380,12 @@
       const parsed = normalizeAnalysisInsights(insightsRes.data);
       if (parsed) {
         analysisState.apiInsights = parsed;
+      }
+    }
+    if (seriesRes.ok && seriesRes.data && typeof seriesRes.data === 'object') {
+      const parsed = normalizeAnalysisSeries(seriesRes.data);
+      if (parsed) {
+        analysisState.apiSeries = parsed;
       }
     }
     analysisState.lastDataFetchAt = Date.now();
@@ -1517,9 +1556,20 @@
     el.textContent = value;
   }
 
+  function renderAnalysisGrowthSpark(series) {
+    const sparkEl = q(selectors.analysisGrowthSpark);
+    if (!sparkEl) return;
+    if (!Array.isArray(series) || series.length < 2) {
+      sparkEl.innerHTML = '';
+      return;
+    }
+    renderSparkline(sparkEl, series, '#7cc4ff');
+  }
+
   function buildAnalysisInsightsModel() {
     const summaryApi = analysisState.apiSummary;
     const insightsApi = analysisState.apiInsights;
+    const seriesApi = analysisState.apiSeries;
     const portfolioApi = summaryApi ? toNumber(summaryApi.totalValueInBase) : NaN;
     const portfolio = Number.isFinite(portfolioApi)
       ? Math.max(0, portfolioApi)
@@ -1538,11 +1588,19 @@
     const growthFromApi = growthInsight && String(growthInsight.unit || '').toUpperCase() === 'PERCENT'
       ? toNumber(growthInsight.value)
       : NaN;
+    const seriesValues = seriesApi && Array.isArray(seriesApi.points)
+      ? seriesApi.points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value))
+      : [];
+    const growthFromSeries = seriesValues.length >= 2
+      ? ((seriesValues[seriesValues.length - 1] - seriesValues[0]) / Math.max(Math.abs(seriesValues[0]), 1)) * 100
+      : NaN;
     const growthBase = (random() * 9.2) - 1.8;
     const growthFallback = Number.isFinite(portfolio) ? growthBase + (ready ? 0.6 : -0.25) : NaN;
-    const growth = Number.isFinite(growthFromApi)
-      ? growthFromApi
-      : (summaryApi && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : growthFallback);
+    const growth = Number.isFinite(growthFromSeries)
+      ? growthFromSeries
+      : (Number.isFinite(growthFromApi)
+        ? growthFromApi
+        : (summaryApi && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : growthFallback));
 
     const expenses = recentTransactionsCache
       .map((tx) => {
@@ -1600,6 +1658,10 @@
       ? toNumber(recurringInsight.value)
       : NaN;
     const recurringLiveApi = Boolean(recurringInsight && !recurringInsight.synthetic);
+    const recurringConfidenceApi = toNumber(recurringInsight && recurringInsight.confidence);
+    const recurringNextChargeApi = recurringInsight && recurringInsight.nextEstimatedChargeAt
+      ? String(recurringInsight.nextEstimatedChargeAt)
+      : '';
 
     const portfolioLive = Boolean(summaryApi && !summaryApi.synthetic && Number.isFinite(portfolioApi));
 
@@ -1607,13 +1669,19 @@
       base,
       portfolio,
       growth,
+      growthSeries: seriesValues,
+      growthSeriesSynthetic: Boolean(seriesApi && seriesApi.synthetic),
       portfolioLive,
-      growthLive: Number.isFinite(growthFromApi),
+      growthLive: Number.isFinite(growthFromSeries) || Number.isFinite(growthFromApi),
       outflowValue: Number.isFinite(outflowValueApi) ? outflowValueApi : (topOutflow ? topOutflow.amount : syntheticOutflow),
       outflowLabel: outflowLabelApi || (topOutflow ? topOutflow.label : ''),
       outflowLive: Number.isFinite(outflowValueApi) ? outflowLiveApi : Boolean(topOutflow),
       recurringValue: Number.isFinite(recurringValueApi) ? recurringValueApi : (recurringFound ? recurringLive : recurringSynthetic),
-      recurringLive: Number.isFinite(recurringValueApi) ? recurringLiveApi : recurringFound
+      recurringLive: Number.isFinite(recurringValueApi) ? recurringLiveApi : recurringFound,
+      recurringConfidence: Number.isFinite(recurringConfidenceApi)
+        ? recurringConfidenceApi
+        : (Number.isFinite(recurringValueApi) ? 0.82 : 0.34),
+      recurringNextChargeAt: recurringNextChargeApi
     };
   }
 
@@ -1641,6 +1709,7 @@
       setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
+      renderAnalysisGrowthSpark([]);
       return;
     }
 
@@ -1663,21 +1732,33 @@
       selectors.analysisPortfolioMeta,
       updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : t('analysis_card_estimated')
     );
-    setText(selectors.analysisGrowthMeta, t('analysis_card_estimated'));
+    setText(
+      selectors.analysisGrowthMeta,
+      model.growthSeriesSynthetic ? t('analysis_card_estimated') : (updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : t('analysis_card_estimated'))
+    );
     setText(
       selectors.analysisOutflowMeta,
       model.outflowLive ? t('analysis_top_outflow_label', { name: model.outflowLabel }) : t('analysis_top_outflow_estimated')
     );
+    const recurringConfidencePct = Math.max(0, Math.min(99, Math.round((Number(model.recurringConfidence) || 0) * 100)));
+    const nextLabel = formatShortDay(model.recurringNextChargeAt);
     setText(
       selectors.analysisRecurringMeta,
-      model.recurringLive ? t('analysis_recurring_live') : t('analysis_recurring_estimated')
+      model.recurringLive && nextLabel
+        ? t('analysis_recurring_meta_live', { value: nextLabel, confidence: recurringConfidencePct })
+        : t('analysis_recurring_meta_estimated', { confidence: recurringConfidencePct })
     );
+
+    renderAnalysisGrowthSpark(model.growthSeries);
 
     setDataSourceBadge(
       selectors.analysisPortfolioSource,
       model.portfolioLive ? DATA_SOURCE.live : (Number.isFinite(model.portfolio) ? DATA_SOURCE.hybrid : DATA_SOURCE.pending)
     );
-    setDataSourceBadge(selectors.analysisGrowthSource, model.growthLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
+    setDataSourceBadge(
+      selectors.analysisGrowthSource,
+      model.growthLive ? (model.growthSeriesSynthetic ? DATA_SOURCE.synthetic : DATA_SOURCE.live) : DATA_SOURCE.synthetic
+    );
     setDataSourceBadge(selectors.analysisOutflowSource, model.outflowLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
     setDataSourceBadge(selectors.analysisRecurringSource, model.recurringLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
   }
@@ -1775,6 +1856,7 @@
       analysisState.pollError = false;
       analysisState.apiSummary = null;
       analysisState.apiInsights = null;
+      analysisState.apiSeries = null;
       analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       refreshAnalysisPanel();
@@ -1792,6 +1874,7 @@
       analysisState.pollError = false;
       analysisState.apiSummary = null;
       analysisState.apiInsights = null;
+      analysisState.apiSeries = null;
       analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       pollWalletAnalysisStatus();

@@ -358,6 +358,90 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(payload.get("baseCurrency").asText()).isEqualTo("USD");
         assertThat(payload.get("insights").isArray()).isTrue();
         assertThat(payload.get("insights").size()).isGreaterThanOrEqualTo(3);
+        JsonNode recurring = null;
+        for (JsonNode item : payload.get("insights")) {
+            if ("RECURRING_SPEND".equals(item.path("type").asText())) {
+                recurring = item;
+                break;
+            }
+        }
+        assertThat(recurring).isNotNull();
+        assertThat(recurring.has("avgAmount")).isTrue();
+        assertThat(recurring.has("nextEstimatedChargeAt")).isTrue();
+    }
+
+    @Test
+    @Transactional
+    void returnsWalletAnalysisSeriesForCurrentUser() throws Exception {
+        String email = "wallet-analysis-series-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String series30Response = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode payload30 = objectMapper.readTree(series30Response);
+        assertThat(payload30.get("window").asText()).isEqualTo("30d");
+        assertThat(payload30.get("baseCurrency").asText()).isEqualTo("USD");
+        assertThat(payload30.get("points").isArray()).isTrue();
+        assertThat(payload30.get("points").size()).isEqualTo(30);
+        assertThat(payload30.get("points").get(0).has("at")).isTrue();
+        assertThat(payload30.get("points").get(0).has("valueInBase")).isTrue();
+
+        String series7Response = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series?window=7d", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode payload7 = objectMapper.readTree(series7Response);
+        assertThat(payload7.get("window").asText()).isEqualTo("7d");
+        assertThat(payload7.get("points").size()).isEqualTo(7);
+    }
+
+    @Test
+    @Transactional
+    void rejectsUnsupportedWalletAnalysisSeriesWindow() throws Exception {
+        String email = "wallet-analysis-series-bad-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String response = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series?window=14d", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.BAD_REQUEST);
     }
 
     @Test

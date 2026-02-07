@@ -10,6 +10,8 @@ public record CryptoWalletAnalysisInsightItem(
         String unit,
         String currency,
         String label,
+        BigDecimal avgAmount,
+        Instant nextEstimatedChargeAt,
         BigDecimal confidence,
         Instant asOf,
         boolean synthetic

@@ -7,6 +7,7 @@ import com.myname.finguard.common.service.CryptoRatesService;
 import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisInsightItem;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisInsightsResponse;
+import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSeriesResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisStatusResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSummaryResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
@@ -28,6 +29,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +39,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,6 +172,8 @@ public class CryptoWalletAnalysisService {
                     "BASE_CURRENCY",
                     baseCurrency,
                     top.categoryName(),
+                    null,
+                    null,
                     BigDecimal.valueOf(0.92),
                     now,
                     false
@@ -178,6 +185,8 @@ public class CryptoWalletAnalysisService {
                     BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                     "BASE_CURRENCY",
                     baseCurrency,
+                    null,
+                    null,
                     null,
                     BigDecimal.valueOf(0.35),
                     now,
@@ -193,6 +202,8 @@ public class CryptoWalletAnalysisService {
                 "BASE_CURRENCY",
                 baseCurrency,
                 recurring.label(),
+                recurring.avgAmount(),
+                recurring.nextEstimatedChargeAt(),
                 recurring.confidence(),
                 now,
                 recurring.synthetic()
@@ -219,6 +230,8 @@ public class CryptoWalletAnalysisService {
                 "PERCENT",
                 null,
                 null,
+                null,
+                null,
                 BigDecimal.valueOf(0.72),
                 now,
                 false
@@ -232,12 +245,66 @@ public class CryptoWalletAnalysisService {
                 "COUNT",
                 null,
                 null,
+                null,
+                null,
                 anomaly.confidence(),
                 now,
                 anomaly.synthetic()
         ));
 
         return new CryptoWalletAnalysisInsightsResponse(baseCurrency, insights, now);
+    }
+
+    public CryptoWalletAnalysisSeriesResponse series(Long userId, Long walletId, String window) {
+        requireWallet(userId, walletId);
+        Instant now = Instant.now();
+        int windowDays = parseWindowDays(window);
+
+        CryptoWalletSummaryResponse walletSummary = cryptoWalletService.walletsSummary(userId);
+        String baseCurrency = normalizeCurrency(walletSummary == null ? null : walletSummary.baseCurrency());
+        BigDecimal total = safe(walletSummary == null ? null : walletSummary.totalValueInBase());
+
+        Instant from = now.minus(windowDays - 1L, ChronoUnit.DAYS);
+        List<Transaction> rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, from, now);
+        if (rows.isEmpty()) {
+            return buildSyntheticSeries(baseCurrency, windowDays, total, now, walletId);
+        }
+
+        List<Transaction> withAmounts = rows.stream()
+                .filter(tx -> tx != null
+                        && tx.getTransactionDate() != null
+                        && tx.getAmount() != null
+                        && tx.getCurrency() != null
+                        && !tx.getCurrency().isBlank())
+                .toList();
+        if (withAmounts.isEmpty()) {
+            return buildSyntheticSeries(baseCurrency, windowDays, total, now, walletId);
+        }
+
+        ConversionContext conversion = conversionContext(baseCurrency, withAmounts.stream().map(Transaction::getCurrency).toList());
+        NavigableMap<LocalDate, BigDecimal> netByDay = new TreeMap<>();
+        for (Transaction tx : withAmounts) {
+            LocalDate day = LocalDate.ofInstant(tx.getTransactionDate(), ZoneOffset.UTC);
+            BigDecimal amountInBase = convertToBase(tx.getAmount(), tx.getCurrency(), conversion);
+            BigDecimal signed = tx.getType() == TransactionType.INCOME ? amountInBase : amountInBase.negate();
+            netByDay.merge(day, signed, BigDecimal::add);
+        }
+
+        LocalDate endDay = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        LocalDate startDay = endDay.minusDays(windowDays - 1L);
+        Map<LocalDate, BigDecimal> valueAtDay = new HashMap<>();
+        BigDecimal running = total;
+        for (LocalDate day = endDay; !day.isBefore(startDay); day = day.minusDays(1)) {
+            valueAtDay.put(day, running.max(BigDecimal.ZERO).setScale(conversion.scale(), RoundingMode.HALF_UP));
+            running = running.subtract(safe(netByDay.get(day)));
+        }
+
+        List<CryptoWalletAnalysisSeriesResponse.SeriesPoint> points = new ArrayList<>(windowDays);
+        for (LocalDate day = startDay; !day.isAfter(endDay); day = day.plusDays(1)) {
+            BigDecimal value = valueAtDay.getOrDefault(day, BigDecimal.ZERO.setScale(conversion.scale(), RoundingMode.HALF_UP));
+            points.add(new CryptoWalletAnalysisSeriesResponse.SeriesPoint(day.atStartOfDay().toInstant(ZoneOffset.UTC), value));
+        }
+        return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizeWindow(windowDays), points, now, false);
     }
 
     protected CryptoWalletAnalysisJob latestJob(Long userId, Long walletId) {
@@ -370,7 +437,7 @@ public class CryptoWalletAnalysisService {
         Instant from = now.minus(120, ChronoUnit.DAYS);
         List<Transaction> rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, from, now);
         if (rows.isEmpty()) {
-            return syntheticRecurring(userId, baseCurrency);
+            return syntheticRecurring(userId, baseCurrency, now);
         }
 
         List<Transaction> expenses = rows.stream()
@@ -381,7 +448,7 @@ public class CryptoWalletAnalysisService {
                         && tx.getAmount().signum() > 0)
                 .toList();
         if (expenses.size() < 3) {
-            return syntheticRecurring(userId, baseCurrency);
+            return syntheticRecurring(userId, baseCurrency, now);
         }
 
         ConversionContext conversion = conversionContext(baseCurrency, expenses.stream().map(Transaction::getCurrency).toList());
@@ -400,14 +467,18 @@ public class CryptoWalletAnalysisService {
             group.sort(Comparator.comparing(Transaction::getTransactionDate));
 
             int cadenceHits = 0;
-            boolean weekly = false;
+            long cadenceDaysSum = 0;
+            int cadenceSamples = 0;
             for (int i = 1; i < group.size(); i += 1) {
                 long days = Duration.between(group.get(i - 1).getTransactionDate(), group.get(i).getTransactionDate()).toDays();
                 if (days >= 26 && days <= 33) {
                     cadenceHits += 1;
+                    cadenceDaysSum += days;
+                    cadenceSamples += 1;
                 } else if (days >= 6 && days <= 8) {
                     cadenceHits += 1;
-                    weekly = true;
+                    cadenceDaysSum += days;
+                    cadenceSamples += 1;
                 }
             }
             if (cadenceHits < 2) {
@@ -428,9 +499,12 @@ public class CryptoWalletAnalysisService {
                 continue;
             }
 
-            BigDecimal monthlyAmount = weekly
-                    ? avg.multiply(BigDecimal.valueOf(4)).setScale(2, RoundingMode.HALF_UP)
-                    : avg.setScale(2, RoundingMode.HALF_UP);
+            long cadenceDays = cadenceSamples <= 0 ? 30 : Math.max(1, Math.round((double) cadenceDaysSum / cadenceSamples));
+            BigDecimal monthlyMultiplier = BigDecimal.valueOf(30.0 / cadenceDays);
+            BigDecimal monthlyAmount = avg.multiply(monthlyMultiplier).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal avgAmount = avg.setScale(2, RoundingMode.HALF_UP);
+            Instant lastCharge = group.get(group.size() - 1).getTransactionDate();
+            Instant nextEstimatedChargeAt = lastCharge == null ? now.plus(14, ChronoUnit.DAYS) : lastCharge.plus(cadenceDays, ChronoUnit.DAYS);
             BigDecimal confidence = BigDecimal.valueOf(0.62
                             + Math.min(group.size(), 6) * 0.03
                             + Math.min(cadenceHits, 3) * 0.05
@@ -438,20 +512,34 @@ public class CryptoWalletAnalysisService {
                     .min(BigDecimal.valueOf(0.98))
                     .setScale(2, RoundingMode.HALF_UP);
 
-            RecurringCandidate candidate = new RecurringCandidate(monthlyAmount, prettifyRecurringLabel(entry.getKey()), confidence, false);
+            RecurringCandidate candidate = new RecurringCandidate(
+                    monthlyAmount,
+                    avgAmount,
+                    prettifyRecurringLabel(entry.getKey()),
+                    confidence,
+                    nextEstimatedChargeAt,
+                    false
+            );
             if (best == null || candidate.amount().compareTo(best.amount()) > 0) {
                 best = candidate;
             }
         }
 
-        return best == null ? syntheticRecurring(userId, baseCurrency) : best;
+        return best == null ? syntheticRecurring(userId, baseCurrency, now) : best;
     }
 
-    private RecurringCandidate syntheticRecurring(Long userId, String baseCurrency) {
+    private RecurringCandidate syntheticRecurring(Long userId, String baseCurrency, Instant now) {
         ReportSummaryResponse month = reportsService.summary(userId, ReportPeriod.MONTH, null, null);
         BigDecimal expense = safe(month == null ? null : month.expense());
         BigDecimal estimate = expense.multiply(BigDecimal.valueOf(0.26)).setScale(2, RoundingMode.HALF_UP);
-        return new RecurringCandidate(estimate, null, BigDecimal.valueOf(0.34), true);
+        return new RecurringCandidate(
+                estimate,
+                estimate,
+                null,
+                BigDecimal.valueOf(0.34),
+                now.plus(14, ChronoUnit.DAYS),
+                true
+        );
     }
 
     private AnomalyResult detectAnomalies(Long userId, String baseCurrency, Instant now) {
@@ -476,6 +564,75 @@ public class CryptoWalletAnalysisService {
         long count = outflows.stream().filter(v -> v.compareTo(threshold) > 0).count();
         BigDecimal confidence = BigDecimal.valueOf(Math.min(0.95, 0.55 + count * 0.12)).setScale(2, RoundingMode.HALF_UP);
         return new AnomalyResult(BigDecimal.valueOf(count).setScale(0, RoundingMode.HALF_UP), confidence, false);
+    }
+
+    private int parseWindowDays(String window) {
+        String normalized = window == null ? "" : window.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "7d" -> 7;
+            case "", "30d" -> 30;
+            case "90d" -> 90;
+            default -> throw new ApiException(
+                    ErrorCodes.BAD_REQUEST,
+                    "Unsupported analysis window. Use one of: 7d, 30d, 90d",
+                    HttpStatus.BAD_REQUEST
+            );
+        };
+    }
+
+    private String normalizeWindow(int days) {
+        if (days == 7) {
+            return "7d";
+        }
+        if (days == 90) {
+            return "90d";
+        }
+        return "30d";
+    }
+
+    private CryptoWalletAnalysisSeriesResponse buildSyntheticSeries(
+            String baseCurrency,
+            int windowDays,
+            BigDecimal total,
+            Instant now,
+            Long walletId
+    ) {
+        int scale = isCrypto(baseCurrency) ? 8 : 2;
+        long seed = Math.abs((walletId == null ? 0L : walletId) * 1103515245L + 12345L);
+        BigDecimal safeTotal = safe(total).max(BigDecimal.ZERO);
+        BigDecimal anchor = safeTotal.signum() > 0 ? safeTotal : BigDecimal.valueOf(100).setScale(scale, RoundingMode.HALF_UP);
+        BigDecimal floor = anchor.multiply(BigDecimal.valueOf(0.88)).setScale(scale, RoundingMode.HALF_UP);
+        BigDecimal ceiling = anchor.multiply(BigDecimal.valueOf(1.14)).setScale(scale, RoundingMode.HALF_UP);
+
+        LocalDate endDay = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        LocalDate startDay = endDay.minusDays(windowDays - 1L);
+        List<CryptoWalletAnalysisSeriesResponse.SeriesPoint> points = new ArrayList<>(windowDays);
+        for (int i = 0; i < windowDays; i += 1) {
+            LocalDate day = startDay.plusDays(i);
+            seed = (seed * 1664525L + 1013904223L) & 0x7fffffff;
+            double noise = ((seed % 1000L) / 1000.0) - 0.5;
+            double wave = Math.sin((i / Math.max(1.0, windowDays - 1)) * Math.PI * 2.0) * 0.035;
+            BigDecimal drift = anchor.multiply(BigDecimal.valueOf(wave + noise * 0.02));
+            BigDecimal trend = anchor.multiply(BigDecimal.valueOf(i * 0.0016));
+            BigDecimal value = anchor.add(trend).add(drift);
+            if (value.compareTo(floor) < 0) {
+                value = floor;
+            }
+            if (value.compareTo(ceiling) > 0) {
+                value = ceiling;
+            }
+            points.add(new CryptoWalletAnalysisSeriesResponse.SeriesPoint(
+                    day.atStartOfDay().toInstant(ZoneOffset.UTC),
+                    value.setScale(scale, RoundingMode.HALF_UP)
+            ));
+        }
+        if (!points.isEmpty()) {
+            points.set(points.size() - 1, new CryptoWalletAnalysisSeriesResponse.SeriesPoint(
+                    endDay.atStartOfDay().toInstant(ZoneOffset.UTC),
+                    safeTotal.setScale(scale, RoundingMode.HALF_UP)
+            ));
+        }
+        return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizeWindow(windowDays), points, now, true);
     }
 
     private void requireWallet(Long userId, Long walletId) {
@@ -647,7 +804,14 @@ public class CryptoWalletAnalysisService {
         return new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST);
     }
 
-    private record RecurringCandidate(BigDecimal amount, String label, BigDecimal confidence, boolean synthetic) {
+    private record RecurringCandidate(
+            BigDecimal amount,
+            BigDecimal avgAmount,
+            String label,
+            BigDecimal confidence,
+            Instant nextEstimatedChargeAt,
+            boolean synthetic
+    ) {
     }
 
     private record AnomalyResult(BigDecimal count, BigDecimal confidence, boolean synthetic) {
