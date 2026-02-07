@@ -44,7 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
         "app.crypto.cache-ttl-seconds=0",
         "app.crypto.wallet.cache-ttl-seconds=0",
         "app.crypto.wallet.eth.portfolio.cache-ttl-seconds=0",
-        "app.crypto.wallet.arbitrum.portfolio.cache-ttl-seconds=0"
+        "app.crypto.wallet.arbitrum.portfolio.cache-ttl-seconds=0",
+        "app.crypto.analysis.simulated-delay-ms=1"
 })
 class CryptoWalletControllerIntegrationTest {
 
@@ -188,6 +189,39 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode afterReAdd = objectMapper.readTree(listAfterReAdd);
         assertThat(afterReAdd.isArray()).isTrue();
         assertThat(afterReAdd.size()).isEqualTo(1);
+    }
+
+    @Test
+    @Transactional
+    void returnsWalletAnalysisStatusForCurrentUser() throws Exception {
+        String email = "wallet-analysis-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String statusResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/status", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode payload = objectMapper.readTree(statusResponse);
+        assertThat(payload.get("status").asText()).isIn("QUEUED", "RUNNING", "PARTIAL", "DONE");
+        assertThat(payload.get("progressPct").asInt()).isBetween(0, 100);
+        assertThat(payload.get("stage").asText()).isNotBlank();
+        assertThat(payload.has("partialReady")).isTrue();
     }
 
     @Test

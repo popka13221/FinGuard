@@ -5,8 +5,10 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
+import com.myname.finguard.crypto.dto.CryptoWalletAnalysisStatusResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
 import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
+import com.myname.finguard.crypto.service.CryptoWalletAnalysisService;
 import com.myname.finguard.crypto.service.CryptoWalletService;
 import com.myname.finguard.security.RateLimiterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CryptoWalletController {
 
     private final CryptoWalletService cryptoWalletService;
+    private final CryptoWalletAnalysisService cryptoWalletAnalysisService;
     private final UserRepository userRepository;
     private final RateLimiterService rateLimiterService;
     private final int walletsListLimit;
@@ -47,6 +50,7 @@ public class CryptoWalletController {
 
     public CryptoWalletController(
             CryptoWalletService cryptoWalletService,
+            CryptoWalletAnalysisService cryptoWalletAnalysisService,
             UserRepository userRepository,
             RateLimiterService rateLimiterService,
             @Value("${app.security.rate-limit.wallets.list.limit:120}") int walletsListLimit,
@@ -57,6 +61,7 @@ public class CryptoWalletController {
             @Value("${app.security.rate-limit.wallets.delete.window-ms:60000}") long walletsDeleteWindowMs
     ) {
         this.cryptoWalletService = cryptoWalletService;
+        this.cryptoWalletAnalysisService = cryptoWalletAnalysisService;
         this.userRepository = userRepository;
         this.rateLimiterService = rateLimiterService;
         this.walletsListLimit = walletsListLimit;
@@ -87,6 +92,20 @@ public class CryptoWalletController {
         Long userId = resolveUserId(authentication);
         enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
         return ResponseEntity.ok(cryptoWalletService.walletsSummary(userId));
+    }
+
+    @GetMapping("/{id}/analysis/status")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Wallet analysis status", description = "Returns async wallet bootstrap analysis progress.")
+    @ApiResponse(responseCode = "200", description = "Analysis status returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletAnalysisStatusResponse> analysisStatus(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
+        return ResponseEntity.ok(cryptoWalletAnalysisService.status(userId, id));
     }
 
     @PostMapping

@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CryptoWalletService {
 
+    private static final Logger log = LoggerFactory.getLogger(CryptoWalletService.class);
     private static final Pattern ETH_ADDRESS = Pattern.compile("^(0x)?[0-9a-fA-F]{40}$");
     private static final Pattern BTC_BASE58 = Pattern.compile("^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$");
     private static final Pattern BTC_BECH32 = Pattern.compile("^(?i)bc1[0-9a-z]{11,71}$");
@@ -40,6 +43,7 @@ public class CryptoWalletService {
     private final CurrencyService currencyService;
     private final EthWalletPortfolioService ethWalletPortfolioService;
     private final ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
+    private final CryptoWalletAnalysisService cryptoWalletAnalysisService;
     private final int maxWalletsPerUser;
 
     public CryptoWalletService(
@@ -50,6 +54,7 @@ public class CryptoWalletService {
             CurrencyService currencyService,
             EthWalletPortfolioService ethWalletPortfolioService,
             ArbitrumWalletPortfolioService arbitrumWalletPortfolioService,
+            CryptoWalletAnalysisService cryptoWalletAnalysisService,
             @Value("${app.crypto.wallet.max-per-user:25}") int maxWalletsPerUser
     ) {
         this.cryptoWalletRepository = cryptoWalletRepository;
@@ -59,6 +64,7 @@ public class CryptoWalletService {
         this.currencyService = currencyService;
         this.ethWalletPortfolioService = ethWalletPortfolioService;
         this.arbitrumWalletPortfolioService = arbitrumWalletPortfolioService;
+        this.cryptoWalletAnalysisService = cryptoWalletAnalysisService;
         this.maxWalletsPerUser = Math.max(0, maxWalletsPerUser);
     }
 
@@ -99,6 +105,13 @@ public class CryptoWalletService {
 
         try {
             CryptoWallet saved = cryptoWalletRepository.save(wallet);
+            try {
+                if (cryptoWalletAnalysisService != null) {
+                    cryptoWalletAnalysisService.enqueueInitialAnalysis(saved);
+                }
+            } catch (Exception ex) {
+                log.debug("Failed to enqueue wallet analysis for walletId={}: {}", saved.getId(), ex.getMessage());
+            }
             return new CryptoWalletDto(saved.getId(), saved.getNetwork().name(), saved.getLabel(), saved.getAddress(), null, null, user.getBaseCurrency(), null);
         } catch (DataIntegrityViolationException ex) {
             throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet already exists", HttpStatus.BAD_REQUEST);

@@ -21,6 +21,7 @@ import com.myname.finguard.crypto.model.CryptoWallet;
 import com.myname.finguard.crypto.repository.CryptoWalletRepository;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceProvider;
 import com.myname.finguard.crypto.service.CryptoWalletBalanceService;
+import com.myname.finguard.crypto.service.CryptoWalletAnalysisService;
 import com.myname.finguard.crypto.service.CryptoWalletService;
 import com.myname.finguard.crypto.service.ArbitrumWalletPortfolioService;
 import com.myname.finguard.crypto.service.EthWalletPortfolioProvider;
@@ -60,6 +61,9 @@ class CryptoWalletServiceTest {
     @Mock
     private ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
 
+    @Mock
+    private CryptoWalletAnalysisService cryptoWalletAnalysisService;
+
     private CryptoWalletService cryptoWalletService;
 
     @BeforeEach
@@ -73,6 +77,7 @@ class CryptoWalletServiceTest {
                 currencyService,
                 ethWalletPortfolioService,
                 arbitrumWalletPortfolioService,
+                cryptoWalletAnalysisService,
                 25
         );
     }
@@ -125,6 +130,7 @@ class CryptoWalletServiceTest {
         assertThat(saved.getAddressNormalized()).isEqualTo("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd");
         assertThat(saved.getLabel()).isEqualTo("Ledger");
         assertThat(saved.isArchived()).isFalse();
+        verify(cryptoWalletAnalysisService).enqueueInitialAnalysis(any(CryptoWallet.class));
     }
 
     @Test
