@@ -692,7 +692,10 @@
     inFlight: false,
     summaryTotal: NaN,
     summaryBase: 'USD',
-    pollError: false
+    pollError: false,
+    apiSummary: null,
+    apiInsights: null,
+    lastDataFetchAt: 0
   };
   let recentTransactionsCache = [];
 
@@ -1280,6 +1283,88 @@
     };
   }
 
+  function normalizeAnalysisSummary(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const allocation = Array.isArray(payload.allocation) ? payload.allocation : [];
+    return {
+      totalValueInBase: toNumber(payload.totalValueInBase),
+      baseCurrency: normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD',
+      delta24hPct: toNumber(payload.delta24hPct),
+      delta7dPct: toNumber(payload.delta7dPct),
+      allocation: allocation.map((item) => ({
+        code: item && item.code ? String(item.code) : '',
+        valueInBase: toNumber(item && item.valueInBase),
+        sharePct: toNumber(item && item.sharePct)
+      })),
+      synthetic: Boolean(payload.synthetic),
+      asOf: payload.asOf ? String(payload.asOf) : ''
+    };
+  }
+
+  function normalizeAnalysisInsights(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const insights = Array.isArray(payload.insights) ? payload.insights : [];
+    return {
+      baseCurrency: normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD',
+      asOf: payload.asOf ? String(payload.asOf) : '',
+      insights: insights.map((item) => ({
+        type: String(item && item.type ? item.type : ''),
+        title: String(item && item.title ? item.title : ''),
+        value: toNumber(item && item.value),
+        unit: String(item && item.unit ? item.unit : ''),
+        currency: item && item.currency ? String(item.currency) : '',
+        label: item && item.label ? String(item.label) : '',
+        confidence: toNumber(item && item.confidence),
+        synthetic: Boolean(item && item.synthetic)
+      }))
+    };
+  }
+
+  function findAnalysisInsight(type) {
+    if (!analysisState.apiInsights || !Array.isArray(analysisState.apiInsights.insights)) {
+      return null;
+    }
+    const normalized = String(type || '').toUpperCase();
+    return analysisState.apiInsights.insights.find((item) => String(item.type || '').toUpperCase() === normalized) || null;
+  }
+
+  async function fetchAnalysisData(walletId) {
+    if (!walletId) return;
+    const [summaryRes, insightsRes] = await Promise.all([
+      Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/summary`, 'GET', null, true),
+      Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/insights`, 'GET', null, true)
+    ]);
+    if (walletId !== analysisState.activeWalletId) {
+      return;
+    }
+    if (summaryRes.ok && summaryRes.data && typeof summaryRes.data === 'object') {
+      const parsed = normalizeAnalysisSummary(summaryRes.data);
+      if (parsed) {
+        analysisState.apiSummary = parsed;
+      }
+    }
+    if (insightsRes.ok && insightsRes.data && typeof insightsRes.data === 'object') {
+      const parsed = normalizeAnalysisInsights(insightsRes.data);
+      if (parsed) {
+        analysisState.apiInsights = parsed;
+      }
+    }
+    analysisState.lastDataFetchAt = Date.now();
+  }
+
+  async function maybeRefreshAnalysisData(force) {
+    if (!analysisState.activeWalletId) return;
+    const now = Date.now();
+    const stale = now - Number(analysisState.lastDataFetchAt || 0) > 8000;
+    if (!force && !stale) return;
+    try {
+      await fetchAnalysisData(analysisState.activeWalletId);
+      refreshAnalysisPanel();
+    } catch (_) {
+      // keep synthetic fallback
+    }
+  }
+
   function pickLatestWallet(wallets) {
     if (!Array.isArray(wallets) || wallets.length === 0) return null;
     return wallets.reduce((best, candidate) => {
@@ -1336,6 +1421,12 @@
       }
       analysisState.pollError = false;
       analysisState.status = normalizeAnalysisStatus(res.data);
+      const statusName = String(analysisState.status.status || '').toUpperCase();
+      if (analysisState.status.partialReady || statusName === 'DONE' || statusName === 'PARTIAL') {
+        await maybeRefreshAnalysisData(true);
+      } else {
+        await maybeRefreshAnalysisData(false);
+      }
       refreshAnalysisPanel();
       if (!isTerminalAnalysisStatus(analysisState.status.status)) {
         scheduleAnalysisPolling(analysisPollIntervalMs);
@@ -1427,14 +1518,31 @@
   }
 
   function buildAnalysisInsightsModel() {
-    const portfolio = Number.isFinite(analysisState.summaryTotal) ? Math.max(0, analysisState.summaryTotal) : NaN;
-    const base = normalizeCurrency(analysisState.summaryBase || baseCurrency) || 'USD';
+    const summaryApi = analysisState.apiSummary;
+    const insightsApi = analysisState.apiInsights;
+    const portfolioApi = summaryApi ? toNumber(summaryApi.totalValueInBase) : NaN;
+    const portfolio = Number.isFinite(portfolioApi)
+      ? Math.max(0, portfolioApi)
+      : (Number.isFinite(analysisState.summaryTotal) ? Math.max(0, analysisState.summaryTotal) : NaN);
+    const base = normalizeCurrency(
+      (summaryApi && summaryApi.baseCurrency)
+      || (insightsApi && insightsApi.baseCurrency)
+      || analysisState.summaryBase
+      || baseCurrency
+    ) || 'USD';
     const walletSeed = hashString(`${analysisState.activeWalletId || 0}:${Math.round((Number.isFinite(portfolio) ? portfolio : 0) * 100)}`);
     const random = seededRandom(walletSeed || 1);
     const ready = Boolean(analysisState.status && (analysisState.status.partialReady || analysisState.status.status === 'DONE' || analysisState.status.status === 'PARTIAL'));
 
+    const growthInsight = findAnalysisInsight('PORTFOLIO_30D_CHANGE');
+    const growthFromApi = growthInsight && String(growthInsight.unit || '').toUpperCase() === 'PERCENT'
+      ? toNumber(growthInsight.value)
+      : NaN;
     const growthBase = (random() * 9.2) - 1.8;
-    const growth = Number.isFinite(portfolio) ? growthBase + (ready ? 0.6 : -0.25) : NaN;
+    const growthFallback = Number.isFinite(portfolio) ? growthBase + (ready ? 0.6 : -0.25) : NaN;
+    const growth = Number.isFinite(growthFromApi)
+      ? growthFromApi
+      : (summaryApi && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : growthFallback);
 
     const expenses = recentTransactionsCache
       .map((tx) => {
@@ -1480,15 +1588,32 @@
     }
     const recurringSynthetic = Number.isFinite(portfolio) ? portfolio * (0.004 + random() * 0.012) : NaN;
 
+    const outflowInsight = findAnalysisInsight('TOP_OUTFLOW');
+    const outflowValueApi = outflowInsight && String(outflowInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
+      ? toNumber(outflowInsight.value)
+      : NaN;
+    const outflowLabelApi = outflowInsight && outflowInsight.label ? String(outflowInsight.label) : '';
+    const outflowLiveApi = Boolean(outflowInsight && !outflowInsight.synthetic);
+
+    const recurringInsight = findAnalysisInsight('RECURRING_SPEND');
+    const recurringValueApi = recurringInsight && String(recurringInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
+      ? toNumber(recurringInsight.value)
+      : NaN;
+    const recurringLiveApi = Boolean(recurringInsight && !recurringInsight.synthetic);
+
+    const portfolioLive = Boolean(summaryApi && !summaryApi.synthetic && Number.isFinite(portfolioApi));
+
     return {
       base,
       portfolio,
       growth,
-      outflowValue: topOutflow ? topOutflow.amount : syntheticOutflow,
-      outflowLabel: topOutflow ? topOutflow.label : '',
-      outflowLive: Boolean(topOutflow),
-      recurringValue: recurringFound ? recurringLive : recurringSynthetic,
-      recurringLive: recurringFound
+      portfolioLive,
+      growthLive: Number.isFinite(growthFromApi),
+      outflowValue: Number.isFinite(outflowValueApi) ? outflowValueApi : (topOutflow ? topOutflow.amount : syntheticOutflow),
+      outflowLabel: outflowLabelApi || (topOutflow ? topOutflow.label : ''),
+      outflowLive: Number.isFinite(outflowValueApi) ? outflowLiveApi : Boolean(topOutflow),
+      recurringValue: Number.isFinite(recurringValueApi) ? recurringValueApi : (recurringFound ? recurringLive : recurringSynthetic),
+      recurringLive: Number.isFinite(recurringValueApi) ? recurringLiveApi : recurringFound
     };
   }
 
@@ -1548,8 +1673,11 @@
       model.recurringLive ? t('analysis_recurring_live') : t('analysis_recurring_estimated')
     );
 
-    setDataSourceBadge(selectors.analysisPortfolioSource, Number.isFinite(model.portfolio) ? DATA_SOURCE.live : DATA_SOURCE.pending);
-    setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.synthetic);
+    setDataSourceBadge(
+      selectors.analysisPortfolioSource,
+      model.portfolioLive ? DATA_SOURCE.live : (Number.isFinite(model.portfolio) ? DATA_SOURCE.hybrid : DATA_SOURCE.pending)
+    );
+    setDataSourceBadge(selectors.analysisGrowthSource, model.growthLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
     setDataSourceBadge(selectors.analysisOutflowSource, model.outflowLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
     setDataSourceBadge(selectors.analysisRecurringSource, model.recurringLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
   }
@@ -1645,6 +1773,9 @@
       analysisState.activeWalletName = '';
       analysisState.status = null;
       analysisState.pollError = false;
+      analysisState.apiSummary = null;
+      analysisState.apiInsights = null;
+      analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       refreshAnalysisPanel();
       return;
@@ -1659,8 +1790,12 @@
     if (changed) {
       analysisState.status = null;
       analysisState.pollError = false;
+      analysisState.apiSummary = null;
+      analysisState.apiInsights = null;
+      analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       pollWalletAnalysisStatus();
+      maybeRefreshAnalysisData(true);
       return;
     }
     if (!analysisState.status || !isTerminalAnalysisStatus(analysisState.status.status)) {

@@ -5,7 +5,9 @@ import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
+import com.myname.finguard.crypto.dto.CryptoWalletAnalysisInsightsResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisStatusResponse;
+import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSummaryResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
 import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
 import com.myname.finguard.crypto.service.CryptoWalletAnalysisService;
@@ -106,6 +108,34 @@ public class CryptoWalletController {
         Long userId = resolveUserId(authentication);
         enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
         return ResponseEntity.ok(cryptoWalletAnalysisService.status(userId, id));
+    }
+
+    @GetMapping("/{id}/analysis/summary")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Wallet analysis summary", description = "Returns quick analysis summary for wallet insights.")
+    @ApiResponse(responseCode = "200", description = "Analysis summary returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletAnalysisSummaryResponse> analysisSummary(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
+        return ResponseEntity.ok(cryptoWalletAnalysisService.summary(userId, id));
+    }
+
+    @GetMapping("/{id}/analysis/insights")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Wallet analysis insights", description = "Returns recurring/outflow/trend/anomaly insights.")
+    @ApiResponse(responseCode = "200", description = "Analysis insights returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletAnalysisInsightsResponse> analysisInsights(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:list:user:" + userId, walletsListLimit, walletsListWindowMs);
+        return ResponseEntity.ok(cryptoWalletAnalysisService.insights(userId, id));
     }
 
     @PostMapping
