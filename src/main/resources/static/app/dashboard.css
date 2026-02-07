@@ -1180,3 +1180,543 @@ body.dashboard[data-ui-state='booting'] .dashboard-main {
     transform: translateY(14px);
   }
 }
+
+/* FinGuard Dashboard v2.1: minimal neon tune */
+body.dashboard {
+  --surface-1: rgba(8, 14, 26, 0.8);
+  --surface-2: rgba(10, 17, 31, 0.86);
+  --surface-3: rgba(13, 21, 38, 0.9);
+  --surface-border: rgba(132, 163, 221, 0.26);
+  --surface-border-soft: rgba(132, 163, 221, 0.16);
+
+  --text-main: #eef4ff;
+  --text-soft: #cad8ef;
+  --text-muted: #92a7ca;
+
+  --shadow-soft: 0 16px 34px rgba(1, 7, 20, 0.4);
+  --shadow-strong: 0 24px 50px rgba(1, 7, 20, 0.52);
+  --glow-blue: 0 0 0 1px rgba(120, 172, 255, 0.22), 0 10px 26px rgba(74, 141, 255, 0.2);
+  --glow-cyan: 0 0 0 1px rgba(110, 214, 255, 0.2), 0 8px 24px rgba(69, 208, 255, 0.18);
+
+  --ease-standard: cubic-bezier(0.2, 0.72, 0.2, 1);
+  --ease-float: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --timing-fast: 160ms;
+  --timing-mid: 280ms;
+  --timing-slow: 580ms;
+
+  --title-size: clamp(1.12rem, 1rem + 0.55vw, 1.38rem);
+  --value-size: clamp(1.66rem, 1.34rem + 1.1vw, 2.2rem);
+  --mouse-x: 50%;
+  --mouse-y: 20%;
+
+  font-family: "FinGuard Text", "Avenir Next", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.01em;
+  background:
+    radial-gradient(900px 640px at 8% -10%, rgba(85, 131, 232, 0.22), transparent 64%),
+    radial-gradient(880px 640px at 100% 0%, rgba(59, 197, 255, 0.16), transparent 62%),
+    linear-gradient(180deg, #040814 0%, #060b18 45%, #060b15 100%);
+}
+
+body.dashboard::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: -2;
+  background:
+    radial-gradient(700px 520px at var(--mouse-x) var(--mouse-y), rgba(96, 184, 255, 0.16), transparent 70%);
+  transition: opacity var(--timing-mid) var(--ease-standard);
+  animation: atmospherePulse 12s ease-in-out infinite alternate;
+}
+
+body.dashboard::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(rgba(186, 206, 241, 0.22) 0.4px, transparent 0.4px);
+  background-size: 3px 3px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 82%);
+}
+
+.dashboard .orb {
+  filter: blur(44px);
+  opacity: 0.28;
+  animation-duration: 22s;
+}
+
+.dashboard .grid-noise {
+  opacity: 0.05;
+  background-size: 60px 60px;
+}
+
+.dashboard .container {
+  max-width: 1320px;
+  padding: 20px 16px 64px;
+}
+
+.dashboard .nav {
+  top: 10px;
+  border-radius: 22px;
+  border: 1px solid rgba(137, 169, 228, 0.3);
+  background:
+    linear-gradient(180deg, rgba(9, 15, 29, 0.86), rgba(8, 14, 27, 0.74));
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard .brand-title {
+  font-family: "FinGuard Display", "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.dashboard .dashboard-main {
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dashboard .card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(136, 170, 230, 0.24);
+  background:
+    linear-gradient(170deg, rgba(11, 18, 33, 0.9), rgba(8, 14, 27, 0.82));
+  box-shadow: var(--shadow-soft);
+  will-change: transform, box-shadow;
+}
+
+.dashboard .card::after {
+  content: "";
+  position: absolute;
+  inset: -40% -20%;
+  background: radial-gradient(
+    300px 160px at var(--pointer-x, 50%) var(--pointer-y, -40%),
+    rgba(124, 204, 255, 0.18),
+    transparent 70%
+  );
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity var(--timing-mid) var(--ease-standard), transform var(--timing-mid) var(--ease-standard);
+  pointer-events: none;
+}
+
+.dashboard .card:hover,
+.dashboard .card.is-hovered {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-strong), var(--glow-blue);
+}
+
+.dashboard .card.is-hovered::after,
+.dashboard .card:hover::after {
+  opacity: 0.95;
+  transform: scale(1);
+}
+
+.dashboard .glow-card::before {
+  display: none;
+}
+
+.dashboard .section-head {
+  gap: 10px;
+}
+
+.dashboard .section-title {
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.dashboard .stat-card {
+  padding: 16px;
+}
+
+.dashboard .stat-value {
+  margin-top: 2px;
+  letter-spacing: -0.02em;
+}
+
+.dashboard #totalBalance {
+  background: linear-gradient(95deg, #9fd0ff 0%, #a9ffe4 45%, #ffffff 86%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dashboard .list-item,
+.dashboard .mini-coin,
+.dashboard .fx-card,
+.dashboard .fx-list-item,
+.dashboard .fx-detail,
+.dashboard .market-section,
+.dashboard .chart-shell {
+  border-color: rgba(132, 163, 221, 0.24);
+  background: linear-gradient(180deg, rgba(12, 20, 36, 0.82), rgba(10, 16, 30, 0.7));
+}
+
+.dashboard .list-item:hover,
+.dashboard .mini-coin:hover,
+.dashboard .fx-card:hover,
+.dashboard .fx-list-item:hover,
+.dashboard .fx-list-item.is-active {
+  box-shadow: var(--glow-cyan);
+}
+
+.dashboard .source-badge,
+.dashboard .pill-soft,
+.dashboard .badge,
+.dashboard .chip {
+  background: rgba(11, 19, 34, 0.74);
+}
+
+.dashboard .source-badge {
+  border-color: rgba(133, 168, 231, 0.3);
+  letter-spacing: 0.03em;
+}
+
+.dashboard .badge,
+.dashboard .pill-soft,
+.dashboard .chip {
+  border-color: rgba(133, 168, 231, 0.28);
+}
+
+.dashboard .tx-toolbar {
+  gap: 8px;
+}
+
+.dashboard button.ghost {
+  border-color: rgba(133, 168, 231, 0.28);
+  background: rgba(9, 15, 29, 0.72);
+}
+
+.dashboard button.ghost:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard button:not(.ghost) {
+  border-radius: 12px;
+  background: linear-gradient(120deg, #6a8eff 0%, #61d4ff 100%);
+  box-shadow: 0 10px 20px rgba(72, 161, 255, 0.24);
+}
+
+.dashboard button:not(.ghost):hover {
+  transform: translateY(-1px);
+}
+
+.dashboard .mini-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard .stat-chip .stat-value {
+  font-size: clamp(1rem, 0.85rem + 0.45vw, 1.22rem);
+}
+
+.dashboard [data-motion="reveal"] {
+  opacity: 0;
+  filter: blur(1px);
+  transform: translateY(12px);
+  animation: revealInSoft 680ms var(--ease-standard) both;
+}
+
+.dashboard .motion-pulse {
+  animation: pulseGlowSoft 900ms var(--ease-standard);
+}
+
+@media (max-width: 1023px) {
+  .dashboard .container {
+    padding: 16px 12px 48px;
+  }
+
+  .dashboard .nav {
+    border-radius: 18px;
+  }
+
+  .dashboard .dashboard-main {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .container {
+    padding: 12px 10px 38px;
+  }
+
+  .dashboard .nav {
+    top: 6px;
+  }
+
+  .dashboard .card {
+    border-radius: 18px;
+  }
+
+  .dashboard .section-title {
+    font-size: clamp(1.02rem, 0.94rem + 0.48vw, 1.2rem);
+  }
+
+  .dashboard .stat-value {
+    font-size: clamp(1.42rem, 1.15rem + 0.95vw, 1.82rem);
+  }
+}
+
+@keyframes revealInSoft {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlowSoft {
+  0% {
+    box-shadow: var(--shadow-soft), 0 0 0 rgba(96, 184, 255, 0);
+  }
+  35% {
+    box-shadow: var(--shadow-soft), 0 0 22px rgba(96, 184, 255, 0.24);
+  }
+  100% {
+    box-shadow: var(--shadow-soft), 0 0 0 rgba(96, 184, 255, 0);
+  }
+}
+
+@keyframes atmospherePulse {
+  from {
+    opacity: 0.78;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* FinGuard Dashboard v2.2: secure finance atmosphere */
+body.dashboard {
+  --secure-blue: #7cc4ff;
+  --secure-green: #63e6c2;
+  --secure-glass: rgba(132, 176, 246, 0.16);
+  --secure-grid-line: rgba(138, 175, 236, 0.18);
+  --secure-node: rgba(135, 206, 255, 0.78);
+  --secure-node-soft: rgba(120, 219, 189, 0.72);
+  font-family: "Avenir Next", "Manrope", "SF Pro Text", "Segoe UI", "Helvetica Neue", sans-serif;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(920px 700px at 12% -12%, rgba(88, 140, 242, 0.2), transparent 62%),
+    radial-gradient(820px 620px at 100% -8%, rgba(71, 182, 255, 0.14), transparent 64%),
+    radial-gradient(760px 580px at 46% 116%, rgba(73, 204, 170, 0.1), transparent 68%),
+    linear-gradient(180deg, #030912 0%, #050c18 48%, #040a14 100%);
+}
+
+.dashboard .brand-title,
+.dashboard .section-title,
+.dashboard .section-subtitle {
+  font-family: "Avenir Next Demi Bold", "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
+  font-weight: 700;
+}
+
+.dashboard .stat-value,
+.dashboard .fx-card-rate,
+.dashboard .fx-detail-price,
+.dashboard .amount-positive,
+.dashboard .amount-negative,
+.dashboard .fx-list-rate {
+  font-family: "Avenir Next Demi Bold", "IBM Plex Sans", "Avenir Next", "SF Pro Display", sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.dashboard .muted {
+  letter-spacing: 0.012em;
+}
+
+.dashboard .dash-atmosphere {
+  isolation: isolate;
+}
+
+.dashboard .secure-grid,
+.dashboard .vault-halo,
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dashboard .secure-grid {
+  opacity: 0.18;
+  transform: scale(1.06);
+  background-image:
+    repeating-linear-gradient(120deg, var(--secure-grid-line) 0 1px, transparent 1px 68px),
+    repeating-linear-gradient(32deg, rgba(138, 175, 236, 0.14) 0 1px, transparent 1px 68px);
+  mask-image: radial-gradient(circle at 50% 38%, black 24%, transparent 86%);
+  animation: secureGridDrift 42s linear infinite;
+}
+
+.dashboard .vault-halo {
+  inset: -14% -8%;
+  opacity: 0.38;
+  background:
+    radial-gradient(closest-side at 50% 42%, rgba(124, 196, 255, 0.16), transparent 72%),
+    conic-gradient(from 0deg at 50% 42%, transparent 0 17%, rgba(124, 196, 255, 0.18) 23%, transparent 30% 64%, rgba(99, 230, 194, 0.14) 70%, transparent 78% 100%);
+  filter: blur(1px);
+  animation: vaultRotate 34s linear infinite;
+}
+
+.dashboard .secure-scan {
+  inset: 0 -35%;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  transform: translate3d(-30%, 0, 0);
+  background: linear-gradient(102deg, transparent 42%, rgba(125, 199, 255, 0.12) 49%, rgba(99, 230, 194, 0.14) 53%, transparent 61%);
+  animation: secureSweep 18s cubic-bezier(0.26, 0.12, 0.24, 1) infinite;
+}
+
+.dashboard .signal-nodes {
+  opacity: 0.42;
+  background-image:
+    radial-gradient(circle at 12% 28%, var(--secure-node) 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 30% 62%, var(--secure-node-soft) 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 46% 34%, var(--secure-node) 0 1.6px, transparent 2.4px),
+    radial-gradient(circle at 64% 70%, var(--secure-node-soft) 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 78% 22%, var(--secure-node) 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 88% 56%, var(--secure-node-soft) 0 1.8px, transparent 2.6px);
+  animation: nodesBreathe 7.2s ease-in-out infinite alternate;
+}
+
+.dashboard .card,
+.dashboard .list-item,
+.dashboard .mini-coin,
+.dashboard .fx-card,
+.dashboard .fx-list-item,
+.dashboard .fx-detail,
+.dashboard .chart-shell,
+.dashboard .market-section {
+  background:
+    linear-gradient(165deg, rgba(10, 18, 34, 0.91), rgba(8, 14, 28, 0.83));
+}
+
+.dashboard .card {
+  border-color: rgba(133, 173, 238, 0.22);
+}
+
+.dashboard .card:hover,
+.dashboard .card.is-hovered {
+  box-shadow: var(--shadow-strong), 0 0 0 1px rgba(125, 193, 255, 0.22), 0 10px 24px rgba(92, 166, 255, 0.16);
+}
+
+.dashboard .source-badge[data-data-source="live"] {
+  color: #69eac6;
+  border-color: rgba(105, 234, 198, 0.34);
+}
+
+.dashboard .source-badge[data-data-source="synthetic"] {
+  color: #9ad6ff;
+}
+
+.dashboard .source-badge[data-data-source="demo"] {
+  color: #ffd08b;
+}
+
+.dashboard [data-motion="reveal"] {
+  opacity: 0;
+  filter: blur(1.8px);
+  transform: translateY(14px);
+  animation: none;
+}
+
+.dashboard [data-motion="reveal"].in-view {
+  animation: revealInSecure 680ms var(--ease-standard) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+@media (max-width: 767px) {
+  .dashboard .secure-grid {
+    opacity: 0.12;
+  }
+
+  .dashboard .vault-halo {
+    opacity: 0.24;
+  }
+
+  .dashboard .secure-scan {
+    opacity: 0.32;
+  }
+
+  .dashboard .signal-nodes {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .secure-grid,
+  .dashboard .vault-halo,
+  .dashboard .secure-scan,
+  .dashboard .signal-nodes {
+    animation: none !important;
+  }
+
+  .dashboard [data-motion="reveal"] {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+@keyframes secureGridDrift {
+  from {
+    transform: scale(1.06) translate3d(-1.6%, -1.2%, 0);
+  }
+  to {
+    transform: scale(1.06) translate3d(1.6%, 1.2%, 0);
+  }
+}
+
+@keyframes vaultRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes secureSweep {
+  0% {
+    transform: translate3d(-34%, 0, 0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.45;
+  }
+  62% {
+    opacity: 0.58;
+  }
+  100% {
+    transform: translate3d(34%, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes nodesBreathe {
+  from {
+    opacity: 0.26;
+  }
+  to {
+    opacity: 0.48;
+  }
+}
+
+@keyframes revealInSecure {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}

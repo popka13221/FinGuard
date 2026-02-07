@@ -758,28 +758,124 @@
   function initMotionController() {
     const root = q(selectors.root);
     if (!root) return;
-    const reduced = reducedMotionQuery.matches;
-    root.dataset.motionLevel = reduced ? 'reduced' : 'high';
     const cards = Array.from(document.querySelectorAll('.dashboard .card'));
-    if (!reduced) {
-      cards.forEach((card) => {
-        card.addEventListener('pointermove', (event) => {
-          const rect = card.getBoundingClientRect();
-          const x = (event.clientX - rect.left) / rect.width - 0.5;
-          const y = (event.clientY - rect.top) / rect.height - 0.5;
-          card.style.transform = `translateY(-4px) rotateX(${(-y * 2).toFixed(2)}deg) rotateY(${(x * 2.2).toFixed(2)}deg)`;
+    let rafId = 0;
+    let targetX = 50;
+    let targetY = 20;
+    let currentX = 50;
+    let currentY = 20;
+
+    const applyMotionPreference = () => {
+      const reduced = reducedMotionQuery.matches;
+      root.dataset.motionLevel = reduced ? 'reduced' : 'high';
+      if (reduced) {
+        root.style.setProperty('--mouse-x', '50%');
+        root.style.setProperty('--mouse-y', '20%');
+        cards.forEach((card) => {
+          card.classList.remove('is-hovered');
+          card.style.removeProperty('--pointer-x');
+          card.style.removeProperty('--pointer-y');
         });
-        card.addEventListener('pointerleave', () => {
-          card.style.transform = '';
-        });
-      });
+      }
+    };
+    applyMotionPreference();
+
+    if (typeof reducedMotionQuery.addEventListener === 'function') {
+      reducedMotionQuery.addEventListener('change', applyMotionPreference);
+    } else if (typeof reducedMotionQuery.addListener === 'function') {
+      reducedMotionQuery.addListener(applyMotionPreference);
     }
+
+    cards.forEach((card) => {
+      card.addEventListener('pointerenter', () => {
+        if (root.dataset.motionLevel === 'reduced') return;
+        card.classList.add('is-hovered');
+      });
+
+      card.addEventListener('pointermove', (event) => {
+        if (root.dataset.motionLevel === 'reduced') return;
+        const rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--pointer-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
+        card.style.setProperty('--pointer-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+      }, { passive: true });
+
+      card.addEventListener('pointerleave', () => {
+        card.classList.remove('is-hovered');
+        card.style.removeProperty('--pointer-x');
+        card.style.removeProperty('--pointer-y');
+      });
+    });
+
+    const animateAtmosphere = () => {
+      rafId = 0;
+      if (root.dataset.motionLevel === 'reduced' || document.hidden) return;
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      root.style.setProperty('--mouse-x', `${currentX.toFixed(2)}%`);
+      root.style.setProperty('--mouse-y', `${currentY.toFixed(2)}%`);
+      if (Math.abs(targetX - currentX) > 0.08 || Math.abs(targetY - currentY) > 0.08) {
+        rafId = requestAnimationFrame(animateAtmosphere);
+      }
+    };
+
+    document.addEventListener('pointermove', (event) => {
+      if (root.dataset.motionLevel === 'reduced') return;
+      const width = Math.max(window.innerWidth, 1);
+      const height = Math.max(window.innerHeight, 1);
+      targetX = 18 + (event.clientX / width) * 64;
+      targetY = 12 + (event.clientY / height) * 52;
+      if (!rafId && !document.hidden) {
+        rafId = requestAnimationFrame(animateAtmosphere);
+      }
+    }, { passive: true });
+
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         root.classList.add('motion-paused');
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
       } else {
         root.classList.remove('motion-paused');
+        if (root.dataset.motionLevel !== 'reduced' && !rafId) {
+          rafId = requestAnimationFrame(animateAtmosphere);
+        }
       }
+    });
+
+    if (root.dataset.motionLevel !== 'reduced') {
+      rafId = requestAnimationFrame(animateAtmosphere);
+    }
+  }
+
+  function initScrollReveal() {
+    const targets = Array.from(document.querySelectorAll('.dashboard [data-motion="reveal"]'));
+    if (!targets.length) return;
+
+    if (reducedMotionQuery.matches || typeof window.IntersectionObserver !== 'function') {
+      targets.forEach((el) => el.classList.add('in-view'));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      });
+    }, {
+      root: null,
+      threshold: 0.12,
+      rootMargin: '0px 0px -10% 0px'
+    });
+
+    targets.forEach((el, index) => {
+      el.style.setProperty('--reveal-delay', `${Math.min(index * 55, 240)}ms`);
+      observer.observe(el);
     });
   }
 
@@ -1668,6 +1764,11 @@
     };
 
     btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
       openDialog();
     });
@@ -2626,6 +2727,11 @@
       e.preventDefault();
       openDialog();
     });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openDialog();
+    });
     cancelBtn.addEventListener('click', close);
     closeBtn.addEventListener('click', close);
     overlay.addEventListener('click', (e) => {
@@ -2789,6 +2895,11 @@
       e.preventDefault();
       openDialog();
     });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openDialog();
+    });
     cancelBtn.addEventListener('click', close);
     closeBtn.addEventListener('click', close);
     overlay.addEventListener('click', (e) => {
@@ -2884,6 +2995,11 @@
     };
 
     btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog();
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
       openDialog();
     });
@@ -3018,7 +3134,12 @@
       applyLanguage(currentLang);
       bindLangToggle();
       initMotionController();
+      initScrollReveal();
       bindActionCtas();
+      bindTxPeriodButtons();
+      bindAddAccountMenu();
+      bindAddWalletMenu();
+      bindAddTransactionMenu();
 
       const res = await Api.call('/api/auth/me', 'GET', null, true);
       if (!res.ok) {
@@ -3029,10 +3150,6 @@
       renderProfile(res.data || {});
       bindLogout();
       bindBaseCurrencyMenu();
-      bindTxPeriodButtons();
-      bindAddAccountMenu();
-      bindAddWalletMenu();
-      bindAddTransactionMenu();
 
       await loadBalance();
       await loadFxCurrencies();

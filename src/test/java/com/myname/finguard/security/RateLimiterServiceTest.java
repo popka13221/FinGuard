@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.CannotAcquireLockException;
 
 class RateLimiterServiceTest {
 
@@ -73,5 +74,19 @@ class RateLimiterServiceTest {
         verify(repo).save(bucketCaptor.capture());
         assertThat(bucketCaptor.getValue().getBucketKey()).startsWith("rl:");
         assertThat(bucketCaptor.getValue().getBucketKey()).doesNotContain("user@example.com");
+    }
+
+    @Test
+    void allowsRequestWhenRepositoryIsUnderLockContention() {
+        RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
+        when(repo.findByBucketKey(anyString())).thenThrow(new CannotAcquireLockException("deadlock"));
+
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
+
+        RateLimiterService.Result result = limiter.check("public-rates:203.0.113.15", 5, 60_000);
+
+        assertThat(result.allowed()).isTrue();
+        assertThat(result.retryAfterMs()).isZero();
     }
 }
