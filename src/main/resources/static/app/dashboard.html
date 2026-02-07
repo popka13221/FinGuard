@@ -53,6 +53,72 @@
         </article>
       </section>
 
+      <section class="card analysis-strip" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal">
+        <div class="analysis-banner" id="walletAnalysisBanner" data-ui-state="idle">
+          <div class="analysis-banner-copy">
+            <div class="badge alt analysis-badge" data-i18n="analysis_banner_badge">Instant Value</div>
+            <h2 class="section-title analysis-title" id="analysisBannerTitle" data-i18n="analysis_banner_title_idle">Подключите кошелёк и получите анализ</h2>
+            <div class="muted analysis-subtitle" id="analysisBannerSubtitle" data-i18n="analysis_banner_subtitle_idle">После добавления кошелька метрики и инсайты появятся автоматически.</div>
+          </div>
+          <div class="analysis-banner-meta">
+            <div class="source-badge" id="analysisDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+            <div class="pill-soft" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</div>
+          </div>
+        </div>
+
+        <div class="analysis-progress-wrap">
+          <div class="analysis-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="analysisProgressBar">
+            <div class="analysis-progress-fill" id="analysisProgressFill"></div>
+          </div>
+          <div class="analysis-progress-meta">
+            <div class="muted" id="analysisStage" aria-live="polite" data-i18n="analysis_stage_fetch_tx">Сканируем транзакции</div>
+            <div class="analysis-progress-value" id="analysisProgressText">0%</div>
+          </div>
+        </div>
+
+        <div class="analysis-cards" id="analysisCards">
+          <article class="analysis-card" id="analysisCardPortfolio" data-ui-state="loading">
+            <div class="analysis-card-head">
+              <div class="analysis-card-title" data-i18n="analysis_card_portfolio">Portfolio value</div>
+              <div class="source-badge" id="analysisPortfolioSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+            </div>
+            <div class="analysis-card-value" id="analysisPortfolioValue">—</div>
+            <div class="muted analysis-card-meta" id="analysisPortfolioMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+          </article>
+
+          <article class="analysis-card" id="analysisCardGrowth" data-ui-state="loading">
+            <div class="analysis-card-head">
+              <div class="analysis-card-title" data-i18n="analysis_card_growth">7d growth</div>
+              <div class="source-badge" id="analysisGrowthSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+            </div>
+            <div class="analysis-card-value" id="analysisGrowthValue">—</div>
+            <div class="muted analysis-card-meta" id="analysisGrowthMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+          </article>
+
+          <article class="analysis-card" id="analysisCardOutflow" data-ui-state="loading">
+            <div class="analysis-card-head">
+              <div class="analysis-card-title" data-i18n="analysis_card_outflow">Top outflow</div>
+              <div class="source-badge" id="analysisOutflowSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+            </div>
+            <div class="analysis-card-value" id="analysisOutflowValue">—</div>
+            <div class="muted analysis-card-meta" id="analysisOutflowMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+          </article>
+
+          <article class="analysis-card" id="analysisCardRecurring" data-ui-state="loading">
+            <div class="analysis-card-head">
+              <div class="analysis-card-title" data-i18n="analysis_card_recurring">Recurring spend</div>
+              <div class="source-badge" id="analysisRecurringSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+            </div>
+            <div class="analysis-card-value" id="analysisRecurringValue">—</div>
+            <div class="muted analysis-card-meta" id="analysisRecurringMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+          </article>
+        </div>
+
+        <div class="analysis-empty-cta" id="analysisEmptyCta" hidden>
+          <button type="button" class="ghost" data-action="open-add-wallet" data-i18n="cta_add_wallet">Добавить кошелёк</button>
+        </div>
+      </section>
+
       <section class="grid main-grid" aria-label="Main panels">
         <div class="stack">
           <article class="card" data-motion="reveal">

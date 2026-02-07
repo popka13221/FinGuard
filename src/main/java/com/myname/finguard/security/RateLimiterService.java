@@ -142,6 +142,11 @@ public class RateLimiterService {
             log.warn("Rate limiter storage contention for key={}, allowing request. Cause={}",
                     bucketKey.substring(0, Math.min(bucketKey.length(), 18)), ex.getClass().getSimpleName());
             return new Result(true, 0);
+        } catch (RuntimeException ex) {
+            // Defensive fallback for lock-related runtime exceptions that might bypass Spring translation.
+            log.warn("Rate limiter runtime contention for key={}, allowing request. Cause={}",
+                    bucketKey.substring(0, Math.min(bucketKey.length(), 18)), ex.getClass().getSimpleName());
+            return new Result(true, 0);
         }
     }
 
@@ -234,6 +239,8 @@ public class RateLimiterService {
             lastDbCleanupMs.set(nowMs);
         } catch (DataAccessException ex) {
             log.debug("Rate limiter cleanup skipped due to DB contention: {}", ex.getClass().getSimpleName());
+        } catch (RuntimeException ex) {
+            log.debug("Rate limiter cleanup skipped due to runtime contention: {}", ex.getClass().getSimpleName());
         } finally {
             cleanupInProgress.set(false);
         }

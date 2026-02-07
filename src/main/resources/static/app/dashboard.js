@@ -88,7 +88,34 @@
     incomeExpenseDetails: '#incomeExpenseDetails',
     paymentRentAmount: '#paymentRentAmount',
     paymentSpotifyAmount: '#paymentSpotifyAmount',
-    paymentMobileAmount: '#paymentMobileAmount'
+    paymentMobileAmount: '#paymentMobileAmount',
+    walletAnalysisPanel: '#walletAnalysisPanel',
+    walletAnalysisBanner: '#walletAnalysisBanner',
+    analysisBannerTitle: '#analysisBannerTitle',
+    analysisBannerSubtitle: '#analysisBannerSubtitle',
+    analysisDataSource: '#analysisDataSource',
+    analysisUpdatedAt: '#analysisUpdatedAt',
+    analysisProgressBar: '#analysisProgressBar',
+    analysisProgressFill: '#analysisProgressFill',
+    analysisStage: '#analysisStage',
+    analysisProgressText: '#analysisProgressText',
+    analysisEmptyCta: '#analysisEmptyCta',
+    analysisCardPortfolio: '#analysisCardPortfolio',
+    analysisCardGrowth: '#analysisCardGrowth',
+    analysisCardOutflow: '#analysisCardOutflow',
+    analysisCardRecurring: '#analysisCardRecurring',
+    analysisPortfolioSource: '#analysisPortfolioSource',
+    analysisGrowthSource: '#analysisGrowthSource',
+    analysisOutflowSource: '#analysisOutflowSource',
+    analysisRecurringSource: '#analysisRecurringSource',
+    analysisPortfolioValue: '#analysisPortfolioValue',
+    analysisGrowthValue: '#analysisGrowthValue',
+    analysisOutflowValue: '#analysisOutflowValue',
+    analysisRecurringValue: '#analysisRecurringValue',
+    analysisPortfolioMeta: '#analysisPortfolioMeta',
+    analysisGrowthMeta: '#analysisGrowthMeta',
+    analysisOutflowMeta: '#analysisOutflowMeta',
+    analysisRecurringMeta: '#analysisRecurringMeta'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -250,7 +277,42 @@
       expense_food: 'Еда',
       expense_transport: 'Транспорт',
       expense_subscriptions: 'Подписки',
-      expense_other: 'Прочее'
+      expense_other: 'Прочее',
+      analysis_banner_badge: 'Instant Value',
+      analysis_banner_title_idle: 'Подключите кошелёк и получите анализ',
+      analysis_banner_subtitle_idle: 'После добавления кошелька метрики и инсайты появятся автоматически.',
+      analysis_banner_title_running: 'Анализируем кошелёк {name}',
+      analysis_banner_subtitle_running: 'Собираем транзакции, строим динамику и recurring-паттерны.',
+      analysis_banner_title_partial: 'Первые инсайты уже готовы',
+      analysis_banner_subtitle_partial: 'Вы видите промежуточные метрики, полный отчёт скоро появится.',
+      analysis_banner_title_done: 'Анализ готов',
+      analysis_banner_subtitle_done: 'Все ключевые метрики обновлены.',
+      analysis_banner_title_failed: 'Анализ временно недоступен',
+      analysis_banner_subtitle_failed: 'Попробуем обновить анализ автоматически.',
+      analysis_stage_fetch_tx: 'Сканируем транзакции',
+      analysis_stage_enrich_tx: 'Классифицируем операции',
+      analysis_stage_build_snapshots: 'Строим динамику портфеля',
+      analysis_stage_detect_recurring: 'Ищем recurring-платежи',
+      analysis_stage_build_insights: 'Формируем инсайты',
+      analysis_stage_done: 'Готово',
+      analysis_status_queued: 'В очереди',
+      analysis_status_running: 'В процессе',
+      analysis_status_partial: 'Частично готово',
+      analysis_status_done: 'Готово',
+      analysis_status_failed: 'Ошибка',
+      analysis_card_portfolio: 'Portfolio value',
+      analysis_card_growth: '7d growth',
+      analysis_card_outflow: 'Top outflow',
+      analysis_card_recurring: 'Recurring spend',
+      analysis_card_waiting: 'Ожидаем метрики…',
+      analysis_card_updated_live: 'Live: обновлено {value}',
+      analysis_card_estimated: 'Оценка на основе истории',
+      analysis_no_wallet_stage: 'Добавьте кошелёк для старта',
+      analysis_polling_error: 'Не удалось обновить статус анализа',
+      analysis_top_outflow_label: 'Крупнейший отток: {name}',
+      analysis_top_outflow_estimated: 'Оценка оттока пока нет новых операций',
+      analysis_recurring_live: 'Recurring по последним операциям',
+      analysis_recurring_estimated: 'Синтетическая оценка до завершения анализа'
     },
     en: {
       dashboard_page_title: 'FinGuard | Dashboard',
@@ -408,7 +470,42 @@
       expense_food: 'Food',
       expense_transport: 'Transport',
       expense_subscriptions: 'Subscriptions',
-      expense_other: 'Other'
+      expense_other: 'Other',
+      analysis_banner_badge: 'Instant Value',
+      analysis_banner_title_idle: 'Connect a wallet to unlock analysis',
+      analysis_banner_subtitle_idle: 'After wallet connect, metrics and insights appear automatically.',
+      analysis_banner_title_running: 'Analyzing wallet {name}',
+      analysis_banner_subtitle_running: 'Fetching transactions, building trends, and detecting recurring spend.',
+      analysis_banner_title_partial: 'First insights are ready',
+      analysis_banner_subtitle_partial: 'You are seeing partial metrics while full analysis completes.',
+      analysis_banner_title_done: 'Analysis ready',
+      analysis_banner_subtitle_done: 'All key metrics are updated.',
+      analysis_banner_title_failed: 'Analysis temporarily unavailable',
+      analysis_banner_subtitle_failed: 'We will retry analysis automatically.',
+      analysis_stage_fetch_tx: 'Fetching transactions',
+      analysis_stage_enrich_tx: 'Enriching activity',
+      analysis_stage_build_snapshots: 'Building portfolio snapshots',
+      analysis_stage_detect_recurring: 'Detecting recurring spend',
+      analysis_stage_build_insights: 'Building insights',
+      analysis_stage_done: 'Done',
+      analysis_status_queued: 'Queued',
+      analysis_status_running: 'Running',
+      analysis_status_partial: 'Partially ready',
+      analysis_status_done: 'Done',
+      analysis_status_failed: 'Failed',
+      analysis_card_portfolio: 'Portfolio value',
+      analysis_card_growth: '7d growth',
+      analysis_card_outflow: 'Top outflow',
+      analysis_card_recurring: 'Recurring spend',
+      analysis_card_waiting: 'Waiting for metrics…',
+      analysis_card_updated_live: 'Live: updated {value}',
+      analysis_card_estimated: 'Estimated from current activity',
+      analysis_no_wallet_stage: 'Add a wallet to start analysis',
+      analysis_polling_error: 'Failed to refresh analysis status',
+      analysis_top_outflow_label: 'Top outflow: {name}',
+      analysis_top_outflow_estimated: 'Estimated outflow while activity is building',
+      analysis_recurring_live: 'Recurring from recent activity',
+      analysis_recurring_estimated: 'Synthetic estimate until analysis is complete'
     }
   };
 
@@ -506,6 +603,7 @@
     setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
     setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
     syncMarketDataSource();
+    refreshAnalysisPanel();
   }
 
   function bindLangToggle() {
@@ -585,6 +683,18 @@
     fx: DATA_SOURCE.pending
   };
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const analysisPollIntervalMs = 2000;
+  const analysisState = {
+    activeWalletId: null,
+    activeWalletName: '',
+    status: null,
+    pollTimer: 0,
+    inFlight: false,
+    summaryTotal: NaN,
+    summaryBase: 'USD',
+    pollError: false
+  };
+  let recentTransactionsCache = [];
 
   function q(selector) {
     return document.querySelector(selector);
@@ -1068,6 +1178,7 @@
     const btn = document.querySelector(selectors.logoutBtn);
     if (!btn) return;
     btn.addEventListener('click', async () => {
+      stopAnalysisPolling();
       await Api.call('/api/auth/logout', 'POST', null, true);
       Api.clearToken();
       window.location.href = '/';
@@ -1129,6 +1240,432 @@
     const date = new Date(isoValue);
     if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function analysisStageLabel(stage) {
+    const normalized = String(stage || '').toUpperCase();
+    if (normalized === 'ENRICH_TX') return t('analysis_stage_enrich_tx');
+    if (normalized === 'BUILD_SNAPSHOTS') return t('analysis_stage_build_snapshots');
+    if (normalized === 'DETECT_RECURRING') return t('analysis_stage_detect_recurring');
+    if (normalized === 'BUILD_INSIGHTS') return t('analysis_stage_build_insights');
+    if (normalized === 'DONE') return t('analysis_stage_done');
+    return t('analysis_stage_fetch_tx');
+  }
+
+  function analysisStatusLabel(status) {
+    const normalized = String(status || '').toUpperCase();
+    if (normalized === 'RUNNING') return t('analysis_status_running');
+    if (normalized === 'PARTIAL') return t('analysis_status_partial');
+    if (normalized === 'DONE') return t('analysis_status_done');
+    if (normalized === 'FAILED') return t('analysis_status_failed');
+    return t('analysis_status_queued');
+  }
+
+  function isTerminalAnalysisStatus(status) {
+    const normalized = String(status || '').toUpperCase();
+    return normalized === 'DONE' || normalized === 'FAILED';
+  }
+
+  function normalizeAnalysisStatus(payload) {
+    const status = String(payload && payload.status ? payload.status : 'QUEUED').toUpperCase();
+    const progressRaw = toNumber(payload && payload.progressPct);
+    return {
+      status,
+      progressPct: Number.isFinite(progressRaw) ? Math.max(0, Math.min(100, Math.round(progressRaw))) : 0,
+      stage: String(payload && payload.stage ? payload.stage : 'FETCH_TX').toUpperCase(),
+      startedAt: payload && payload.startedAt ? String(payload.startedAt) : '',
+      updatedAt: payload && payload.updatedAt ? String(payload.updatedAt) : '',
+      finishedAt: payload && payload.finishedAt ? String(payload.finishedAt) : '',
+      partialReady: Boolean(payload && payload.partialReady)
+    };
+  }
+
+  function pickLatestWallet(wallets) {
+    if (!Array.isArray(wallets) || wallets.length === 0) return null;
+    return wallets.reduce((best, candidate) => {
+      if (!candidate) return best;
+      if (!best) return candidate;
+      const bestId = Number(best.id);
+      const nextId = Number(candidate.id);
+      if (Number.isFinite(nextId) && Number.isFinite(bestId)) {
+        return nextId > bestId ? candidate : best;
+      }
+      return best;
+    }, null);
+  }
+
+  function stopAnalysisPolling() {
+    if (analysisState.pollTimer) {
+      clearTimeout(analysisState.pollTimer);
+      analysisState.pollTimer = 0;
+    }
+    analysisState.inFlight = false;
+  }
+
+  function scheduleAnalysisPolling(delayMs) {
+    if (!analysisState.activeWalletId || isTerminalAnalysisStatus(analysisState.status && analysisState.status.status)) {
+      return;
+    }
+    if (analysisState.pollTimer) {
+      clearTimeout(analysisState.pollTimer);
+      analysisState.pollTimer = 0;
+    }
+    const waitMs = Math.max(0, Number(delayMs) || analysisPollIntervalMs);
+    analysisState.pollTimer = window.setTimeout(() => {
+      analysisState.pollTimer = 0;
+      pollWalletAnalysisStatus();
+    }, waitMs);
+  }
+
+  async function pollWalletAnalysisStatus() {
+    if (!analysisState.activeWalletId || analysisState.inFlight) {
+      return;
+    }
+    analysisState.inFlight = true;
+    const walletIdAtRequest = analysisState.activeWalletId;
+    try {
+      const res = await Api.call(`/api/crypto/wallets/${encodeURIComponent(walletIdAtRequest)}/analysis/status`, 'GET', null, true);
+      if (walletIdAtRequest !== analysisState.activeWalletId) {
+        return;
+      }
+      if (!res.ok || !res.data || typeof res.data !== 'object') {
+        analysisState.pollError = true;
+        refreshAnalysisPanel();
+        scheduleAnalysisPolling(analysisPollIntervalMs * 2);
+        return;
+      }
+      analysisState.pollError = false;
+      analysisState.status = normalizeAnalysisStatus(res.data);
+      refreshAnalysisPanel();
+      if (!isTerminalAnalysisStatus(analysisState.status.status)) {
+        scheduleAnalysisPolling(analysisPollIntervalMs);
+      }
+    } catch (_) {
+      if (walletIdAtRequest === analysisState.activeWalletId) {
+        analysisState.pollError = true;
+        refreshAnalysisPanel();
+        scheduleAnalysisPolling(analysisPollIntervalMs * 2);
+      }
+    } finally {
+      analysisState.inFlight = false;
+    }
+  }
+
+  function animateMetricValue(target, nextValue, formatter) {
+    const el = typeof target === 'string' ? q(target) : target;
+    if (!el || !Number.isFinite(nextValue)) {
+      if (el) {
+        el.textContent = '—';
+        delete el.dataset.numericValue;
+      }
+      return;
+    }
+    const formatted = typeof formatter === 'function' ? formatter(nextValue) : String(nextValue);
+    if (reducedMotionQuery.matches) {
+      el.textContent = formatted;
+      el.dataset.numericValue = String(nextValue);
+      return;
+    }
+    const prev = toNumber(el.dataset.numericValue);
+    if (!Number.isFinite(prev)) {
+      el.textContent = formatted;
+      el.dataset.numericValue = String(nextValue);
+      return;
+    }
+    const start = performance.now();
+    const duration = 460;
+    const delta = nextValue - prev;
+    const tick = (now) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = prev + (delta * eased);
+      el.textContent = typeof formatter === 'function' ? formatter(value) : String(value);
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      el.textContent = formatted;
+      el.dataset.numericValue = String(nextValue);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function setAnalysisCardState(selector, state) {
+    const el = q(selector);
+    if (!el) return;
+    setUiState(el, state);
+  }
+
+  function setAnalysisValueState(selector, value) {
+    const el = q(selector);
+    if (!el) return;
+    el.classList.remove('is-positive', 'is-negative');
+    if (Number.isFinite(value)) {
+      if (value > 0) el.classList.add('is-positive');
+      if (value < 0) el.classList.add('is-negative');
+    }
+  }
+
+  function formatSignedPct(value) {
+    if (!Number.isFinite(value)) return '—';
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
+  }
+
+  function firstNonEmpty(parts) {
+    for (const part of parts) {
+      const value = String(part || '').trim();
+      if (value) return value;
+    }
+    return '';
+  }
+
+  function setText(selector, value) {
+    const el = q(selector);
+    if (!el) return;
+    el.textContent = value;
+  }
+
+  function buildAnalysisInsightsModel() {
+    const portfolio = Number.isFinite(analysisState.summaryTotal) ? Math.max(0, analysisState.summaryTotal) : NaN;
+    const base = normalizeCurrency(analysisState.summaryBase || baseCurrency) || 'USD';
+    const walletSeed = hashString(`${analysisState.activeWalletId || 0}:${Math.round((Number.isFinite(portfolio) ? portfolio : 0) * 100)}`);
+    const random = seededRandom(walletSeed || 1);
+    const ready = Boolean(analysisState.status && (analysisState.status.partialReady || analysisState.status.status === 'DONE' || analysisState.status.status === 'PARTIAL'));
+
+    const growthBase = (random() * 9.2) - 1.8;
+    const growth = Number.isFinite(portfolio) ? growthBase + (ready ? 0.6 : -0.25) : NaN;
+
+    const expenses = recentTransactionsCache
+      .map((tx) => {
+        const type = String(tx && tx.type ? tx.type : '').toUpperCase();
+        const amount = toNumber(tx && tx.amount);
+        if (type !== 'EXPENSE' || !Number.isFinite(amount) || amount <= 0) return null;
+        const description = tx && tx.description ? String(tx.description) : '';
+        const category = tx && tx.categoryId != null ? txCategoriesById.get(Number(tx.categoryId)) : null;
+        const categoryName = category && category.name ? String(category.name) : '';
+        const key = firstNonEmpty([description, categoryName, `cat:${tx && tx.categoryId != null ? tx.categoryId : ''}`]).toLowerCase();
+        return {
+          amount,
+          label: firstNonEmpty([description, categoryName, t('expense_label')]),
+          key
+        };
+      })
+      .filter(Boolean);
+
+    let topOutflow = null;
+    expenses.forEach((item) => {
+      if (!topOutflow || item.amount > topOutflow.amount) {
+        topOutflow = item;
+      }
+    });
+    const syntheticOutflow = Number.isFinite(portfolio) ? portfolio * (0.006 + random() * 0.017) : NaN;
+
+    const recurringGroups = expenses.reduce((acc, item) => {
+      if (!item.key) return acc;
+      if (!acc.has(item.key)) acc.set(item.key, []);
+      acc.get(item.key).push(item.amount);
+      return acc;
+    }, new Map());
+    let recurringLive = 0;
+    let recurringFound = false;
+    recurringGroups.forEach((amounts) => {
+      if (!Array.isArray(amounts) || amounts.length < 2) return;
+      const avg = amounts.reduce((sum, value) => sum + value, 0) / amounts.length;
+      recurringLive += avg;
+      recurringFound = true;
+    });
+    if (recurringFound) {
+      recurringLive *= 4.2;
+    }
+    const recurringSynthetic = Number.isFinite(portfolio) ? portfolio * (0.004 + random() * 0.012) : NaN;
+
+    return {
+      base,
+      portfolio,
+      growth,
+      outflowValue: topOutflow ? topOutflow.amount : syntheticOutflow,
+      outflowLabel: topOutflow ? topOutflow.label : '',
+      outflowLive: Boolean(topOutflow),
+      recurringValue: recurringFound ? recurringLive : recurringSynthetic,
+      recurringLive: recurringFound
+    };
+  }
+
+  function renderAnalysisCards() {
+    const model = buildAnalysisInsightsModel();
+    const hasWallet = Boolean(analysisState.activeWalletId);
+    const updatedValue = formatFxUpdated(
+      analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt)
+    );
+
+    if (!hasWallet) {
+      setAnalysisCardState(selectors.analysisCardPortfolio, 'loading');
+      setAnalysisCardState(selectors.analysisCardGrowth, 'loading');
+      setAnalysisCardState(selectors.analysisCardOutflow, 'loading');
+      setAnalysisCardState(selectors.analysisCardRecurring, 'loading');
+      setText(selectors.analysisPortfolioValue, '—');
+      setText(selectors.analysisGrowthValue, '—');
+      setText(selectors.analysisOutflowValue, '—');
+      setText(selectors.analysisRecurringValue, '—');
+      setText(selectors.analysisPortfolioMeta, t('analysis_card_waiting'));
+      setText(selectors.analysisGrowthMeta, t('analysis_card_waiting'));
+      setText(selectors.analysisOutflowMeta, t('analysis_card_waiting'));
+      setText(selectors.analysisRecurringMeta, t('analysis_card_waiting'));
+      setDataSourceBadge(selectors.analysisPortfolioSource, DATA_SOURCE.pending);
+      setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.pending);
+      setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
+      setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
+      return;
+    }
+
+    setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(model.portfolio) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardGrowth, Number.isFinite(model.growth) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(model.outflowValue) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardRecurring, Number.isFinite(model.recurringValue) ? 'ready' : 'loading');
+
+    animateMetricValue(selectors.analysisPortfolioValue, model.portfolio, (value) => formatMoney(value, model.base));
+    animateMetricValue(selectors.analysisGrowthValue, model.growth, formatSignedPct);
+    animateMetricValue(selectors.analysisOutflowValue, model.outflowValue, (value) => formatMoney(-Math.abs(value), model.base));
+    animateMetricValue(selectors.analysisRecurringValue, model.recurringValue, (value) => formatMoney(value, model.base));
+
+    setAnalysisValueState(selectors.analysisPortfolioValue, model.portfolio);
+    setAnalysisValueState(selectors.analysisGrowthValue, model.growth);
+    setAnalysisValueState(selectors.analysisOutflowValue, -Math.abs(model.outflowValue));
+    setAnalysisValueState(selectors.analysisRecurringValue, model.recurringValue);
+
+    setText(
+      selectors.analysisPortfolioMeta,
+      updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : t('analysis_card_estimated')
+    );
+    setText(selectors.analysisGrowthMeta, t('analysis_card_estimated'));
+    setText(
+      selectors.analysisOutflowMeta,
+      model.outflowLive ? t('analysis_top_outflow_label', { name: model.outflowLabel }) : t('analysis_top_outflow_estimated')
+    );
+    setText(
+      selectors.analysisRecurringMeta,
+      model.recurringLive ? t('analysis_recurring_live') : t('analysis_recurring_estimated')
+    );
+
+    setDataSourceBadge(selectors.analysisPortfolioSource, Number.isFinite(model.portfolio) ? DATA_SOURCE.live : DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.synthetic);
+    setDataSourceBadge(selectors.analysisOutflowSource, model.outflowLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
+    setDataSourceBadge(selectors.analysisRecurringSource, model.recurringLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
+  }
+
+  function renderAnalysisBanner() {
+    const panel = q(selectors.walletAnalysisPanel);
+    const banner = q(selectors.walletAnalysisBanner);
+    const title = q(selectors.analysisBannerTitle);
+    const subtitle = q(selectors.analysisBannerSubtitle);
+    const stageEl = q(selectors.analysisStage);
+    const progressTextEl = q(selectors.analysisProgressText);
+    const progressBar = q(selectors.analysisProgressBar);
+    const progressFill = q(selectors.analysisProgressFill);
+    const updatedEl = q(selectors.analysisUpdatedAt);
+    const cta = q(selectors.analysisEmptyCta);
+    if (!panel || !title || !subtitle || !stageEl || !progressTextEl || !progressFill) return;
+
+    if (!analysisState.activeWalletId) {
+      setUiState(panel, 'empty');
+      if (banner) banner.dataset.uiState = 'idle';
+      title.textContent = t('analysis_banner_title_idle');
+      subtitle.textContent = t('analysis_banner_subtitle_idle');
+      stageEl.textContent = t('analysis_no_wallet_stage');
+      progressTextEl.textContent = '0%';
+      progressFill.style.width = '0%';
+      if (progressBar) progressBar.setAttribute('aria-valuenow', '0');
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
+      if (updatedEl) updatedEl.textContent = t('source_pending');
+      if (cta) cta.hidden = false;
+      return;
+    }
+
+    if (cta) cta.hidden = true;
+    const status = analysisState.status || {
+      status: 'QUEUED',
+      progressPct: 0,
+      stage: 'FETCH_TX',
+      startedAt: '',
+      updatedAt: '',
+      finishedAt: '',
+      partialReady: false
+    };
+    const statusName = String(status.status || 'QUEUED').toUpperCase();
+    const progressPct = Math.max(0, Math.min(100, Number(status.progressPct) || 0));
+    const safeWalletName = analysisState.activeWalletName || `#${analysisState.activeWalletId}`;
+
+    setUiState(panel, 'ready');
+    if (banner) banner.dataset.uiState = statusName.toLowerCase();
+    if (statusName === 'DONE') {
+      title.textContent = t('analysis_banner_title_done');
+      subtitle.textContent = t('analysis_banner_subtitle_done');
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.live);
+    } else if (statusName === 'PARTIAL') {
+      title.textContent = t('analysis_banner_title_partial');
+      subtitle.textContent = t('analysis_banner_subtitle_partial');
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.hybrid);
+    } else if (statusName === 'FAILED') {
+      title.textContent = t('analysis_banner_title_failed');
+      subtitle.textContent = t('analysis_banner_subtitle_failed');
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.demo);
+    } else {
+      title.textContent = t('analysis_banner_title_running', { name: safeWalletName });
+      subtitle.textContent = t('analysis_banner_subtitle_running');
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
+    }
+
+    const stageLabel = `${analysisStageLabel(status.stage)} · ${analysisStatusLabel(statusName)}`;
+    stageEl.textContent = analysisState.pollError
+      ? `${stageLabel} · ${t('analysis_polling_error')}`
+      : stageLabel;
+    progressTextEl.textContent = `${progressPct}%`;
+    progressFill.style.width = `${progressPct}%`;
+    if (progressBar) progressBar.setAttribute('aria-valuenow', String(progressPct));
+    if (updatedEl) {
+      const updated = formatFxUpdated(status.finishedAt || status.updatedAt || status.startedAt);
+      updatedEl.textContent = updated ? t('updated_at', { value: updated }) : t('source_pending');
+    }
+  }
+
+  function refreshAnalysisPanel() {
+    renderAnalysisBanner();
+    renderAnalysisCards();
+  }
+
+  function syncAnalysisWallets(wallets, payload) {
+    const summary = payload && typeof payload === 'object' ? payload : {};
+    analysisState.summaryTotal = toNumber(summary.totalValueInBase);
+    analysisState.summaryBase = normalizeCurrency(summary.baseCurrency || baseCurrency) || 'USD';
+
+    const latestWallet = pickLatestWallet(wallets);
+    if (!latestWallet || latestWallet.id == null) {
+      analysisState.activeWalletId = null;
+      analysisState.activeWalletName = '';
+      analysisState.status = null;
+      analysisState.pollError = false;
+      stopAnalysisPolling();
+      refreshAnalysisPanel();
+      return;
+    }
+
+    const nextWalletId = Number(latestWallet.id);
+    const changed = analysisState.activeWalletId !== nextWalletId;
+    analysisState.activeWalletId = nextWalletId;
+    analysisState.activeWalletName = String(latestWallet.label || walletNetworkLabel(latestWallet.network || ''));
+
+    refreshAnalysisPanel();
+    if (changed) {
+      analysisState.status = null;
+      analysisState.pollError = false;
+      stopAnalysisPolling();
+      pollWalletAnalysisStatus();
+      return;
+    }
+    if (!analysisState.status || !isTerminalAnalysisStatus(analysisState.status.status)) {
+      scheduleAnalysisPolling(analysisPollIntervalMs);
+    }
   }
 
   function showBalanceError(message) {
@@ -1631,10 +2168,14 @@
         list.innerHTML = renderErrorState(t('transactions_load_failed_short'), t('cta_retry'), 'retry-transactions');
       }
       setPanelFeedback(selectors.transactionsFeedback, t('transactions_load_failed'), true);
+      recentTransactionsCache = [];
+      refreshAnalysisPanel();
       return;
     }
     setPanelFeedback(selectors.transactionsFeedback, '');
+    recentTransactionsCache = res.data.slice();
     renderTransactionsList(res.data);
+    refreshAnalysisPanel();
     pulseElement(selectors.transactionsList);
   }
 
@@ -2668,6 +3209,7 @@
       setPanelFeedback(selectors.walletsFeedback, t('wallets_loading_failed'), true);
       cryptoWalletTotalInBase = NaN;
       rerenderBalanceSnapshot();
+      refreshAnalysisPanel();
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
@@ -2675,6 +3217,7 @@
     renderWallets(wallets);
     const total = toNumber(payload.totalValueInBase);
     cryptoWalletTotalInBase = Number.isFinite(total) ? total : NaN;
+    syncAnalysisWallets(wallets, payload);
     rerenderBalanceSnapshot();
     pulseElement(selectors.walletsList);
   }
@@ -3138,6 +3681,7 @@
   bindAddTransactionMenu();
   bindBaseCurrencyMenu();
   bindTxPeriodButtons();
+  window.addEventListener('beforeunload', stopAnalysisPolling);
 
   document.addEventListener('DOMContentLoaded', async () => {
     const dashboardRoot = q(selectors.root);

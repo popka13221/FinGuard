@@ -1979,3 +1979,201 @@ body.dashboard::after {
     justify-content: flex-start;
   }
 }
+
+/* FinGuard Dashboard v2.5: instant value strip + smoother background */
+html,
+body {
+  background-color: #040a14;
+}
+
+body.dashboard {
+  overflow-x: clip;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  background-attachment: fixed;
+}
+
+body.dashboard::before {
+  opacity: 0.48;
+}
+
+.dashboard .dash-atmosphere {
+  inset: -12%;
+  z-index: -1;
+  transform: translateZ(0);
+}
+
+.dashboard .secure-scan {
+  opacity: 0.26;
+}
+
+.dashboard .analysis-strip {
+  padding: 14px;
+  border-color: rgba(136, 177, 240, 0.26);
+  background:
+    linear-gradient(176deg, rgba(10, 17, 31, 0.92), rgba(8, 14, 26, 0.84));
+}
+
+.dashboard .analysis-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dashboard .analysis-banner-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dashboard .analysis-badge {
+  width: fit-content;
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.dashboard .analysis-title {
+  margin: 0;
+  font-size: clamp(1.02rem, 0.96rem + 0.38vw, 1.24rem);
+}
+
+.dashboard .analysis-subtitle {
+  font-size: 13px;
+}
+
+.dashboard .analysis-banner-meta {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.dashboard .analysis-progress-wrap {
+  margin-top: 10px;
+}
+
+.dashboard .analysis-progress {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 178, 238, 0.26);
+  background: rgba(9, 15, 28, 0.76);
+  overflow: hidden;
+}
+
+.dashboard .analysis-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(93, 139, 255, 0.92), rgba(98, 227, 193, 0.92));
+  transition: width var(--timing-mid) var(--ease-standard);
+}
+
+.dashboard .analysis-progress-meta {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dashboard .analysis-progress-value {
+  font-weight: 800;
+  color: #d9e8ff;
+  letter-spacing: 0.01em;
+}
+
+.dashboard .analysis-cards {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dashboard .analysis-card {
+  border-radius: 14px;
+  border: 1px solid rgba(138, 178, 238, 0.2);
+  background: linear-gradient(180deg, rgba(11, 18, 33, 0.84), rgba(9, 15, 27, 0.8));
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard .analysis-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard .analysis-card-title {
+  font-size: 12px;
+  color: var(--text-soft);
+  letter-spacing: 0.01em;
+}
+
+.dashboard .analysis-card-value {
+  font-family: "Avenir Next Demi Bold", "Avenir Next", "SF Pro Display", sans-serif;
+  font-size: clamp(1.06rem, 1.01rem + 0.42vw, 1.32rem);
+  line-height: 1.16;
+  letter-spacing: -0.012em;
+  color: #eaf3ff;
+  min-height: 1.5em;
+}
+
+.dashboard .analysis-card-value.is-positive {
+  color: #6de9c5;
+}
+
+.dashboard .analysis-card-value.is-negative {
+  color: #ffb276;
+}
+
+.dashboard .analysis-card-meta {
+  font-size: 12px;
+  min-height: 1.3em;
+}
+
+.dashboard .analysis-card[data-ui-state='loading'] .analysis-card-value,
+.dashboard .analysis-card[data-ui-state='loading'] .analysis-card-meta {
+  opacity: 0.72;
+}
+
+.dashboard .analysis-empty-cta {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.dashboard .analysis-empty-cta[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1279px) {
+  .dashboard .analysis-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .analysis-strip {
+    padding: 12px;
+  }
+
+  .dashboard .analysis-banner {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard .analysis-banner-meta {
+    width: 100%;
+    justify-items: start;
+    grid-auto-flow: column;
+    justify-content: space-between;
+  }
+
+  .dashboard .analysis-cards {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+}
