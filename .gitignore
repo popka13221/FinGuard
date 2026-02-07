@@ -6,6 +6,7 @@ target/
 .env
 .env.local
 # local docs/notes
+docs/
 docs/TODO_SPA.md
 docs/AUTH_FLOW.md
 docs/screenshots/

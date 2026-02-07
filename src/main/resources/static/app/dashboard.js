@@ -1,5 +1,6 @@
 (() => {
   const selectors = {
+    root: 'body.dashboard',
     userEmail: '#userEmail',
     logoutBtn: '#btn-logout',
     baseCurrencyBtn: '#btn-base-currency',
@@ -13,16 +14,21 @@
     ethPrice: '#ethPrice',
     solPrice: '#solPrice',
     cryptoStatus: '#cryptoStatus',
+    cryptoDataSource: '#cryptoDataSource',
     cryptoBase: '#cryptoBase',
+    marketsDataSource: '#marketsDataSource',
     totalBalance: '#totalBalance',
     creditValue: '#creditValue',
     totalsByCurrency: '#totalsByCurrency',
     accountsList: '#accountsList',
+    accountsFeedback: '#accountsFeedback',
     transactionsList: '#transactionsList',
+    transactionsFeedback: '#transactionsFeedback',
     txPeriodButtons: '.tx-period-btn',
     addTransactionBtn: '#btn-add-transaction',
     balanceError: '#balanceError',
     fxStatus: '#fxStatus',
+    fxDataSource: '#fxDataSource',
     fxBase: '#fxBase',
     fxTopVolatile: '#fxTopVolatile',
     fxList: '#fxList',
@@ -60,6 +66,7 @@
     addTransactionCloseBtn: '#btn-add-transaction-close',
     addTransactionError: '#addTransactionError',
     walletsList: '#walletsList',
+    walletsFeedback: '#walletsFeedback',
     addWalletBtn: '#btn-add-wallet',
     addWalletOverlay: '#add-wallet-overlay',
     addWalletMenu: '#add-wallet-menu',
@@ -88,6 +95,7 @@
   const TX_PERIOD_STORAGE_KEY = 'finguard:txPeriodDays';
   const I18N = {
     ru: {
+      dashboard_page_title: 'FinGuard | Дашборд',
       dashboard_title: 'Личный кабинет',
       logout: 'Выйти',
       base_currency_button: 'Валюта: {value}',
@@ -103,6 +111,7 @@
       loading_balance: 'Загружаем баланс…',
       upcoming_payments: 'Ближайшие платежи',
       payment_rent: 'Аренда',
+      payment_streaming: 'Стриминг',
       payment_due_jan15: 'Срок: 15 янв',
       payment_due_jan19: 'Срок: 19 янв',
       payment_mobile: 'Мобильная связь',
@@ -115,6 +124,10 @@
       expense_breakdown_title: 'Структура расходов',
       current_month: 'Текущий месяц,',
       expense_chart_aria: 'Диаграмма расходов',
+      markets_badge: 'Markets',
+      crypto_badge: 'Crypto',
+      fx_badge: 'FX',
+      fx_radar_title: 'FX Radar',
       markets_title: 'Курсы и рынки',
       markets_subtitle: 'Сводка по крипте и валютам',
       coin_rates: 'Курсы монет',
@@ -124,6 +137,11 @@
       no_data: 'Нет данных',
       updated: 'Обновлено',
       updated_at: 'Обновлено {value}',
+      source_pending: 'Ожидаем данные',
+      source_live: 'Live',
+      source_demo: 'Demo',
+      source_synthetic: 'Synthetic',
+      source_hybrid: 'Live + Synthetic',
       base_label: 'База:',
       all_currencies: 'Все валюты',
       hide: 'Скрыть',
@@ -154,12 +172,15 @@
       total: 'Всего',
       balance_by_currency: 'Баланс по валютам',
       no_accounts: 'Счета пока не добавлены.',
+      empty_accounts_hint: 'Добавьте первый счёт, чтобы видеть баланс и аналитику.',
+      cta_add_account: 'Добавить счёт',
       account: 'Счет',
       account_remove: 'Удалить',
       account_delete_confirm: 'Удалить счет “{name}”?',
       account_delete_failed: 'Не удалось удалить счет.',
       recent_transactions_title: 'Последние транзакции',
       transactions_empty: 'Транзакций пока нет.',
+      empty_transactions_hint: 'Добавьте транзакцию, чтобы заполнить ленту операций.',
       transactions_load_failed: 'Не удалось загрузить транзакции.',
       transactions_load_failed_short: 'Не удалось загрузить транзакции',
       add_transaction_menu_aria: 'Добавить транзакцию',
@@ -193,6 +214,7 @@
       fx_no_currencies: 'Нет доступных валют.',
       wallets_title: 'Крипто-кошельки',
       wallets_empty: 'Кошельки не добавлены.',
+      empty_wallets_hint: 'Добавьте watch-only кошелёк, чтобы видеть оценку крипто-портфеля.',
       wallets_loading_failed: 'Не удалось загрузить кошельки.',
       add_wallet_menu_aria: 'Добавить кошелёк',
       add_wallet_title: 'Добавить кошелёк',
@@ -204,6 +226,8 @@
       wallet_address: 'Адрес',
       wallet_address_placeholder: '0x… / bc1…',
       wallet_remove: 'Удалить',
+      wallet_delete_confirm: 'Удалить кошелёк “{name}”?',
+      wallet_delete_failed: 'Не удалось удалить кошелёк.',
       wallet_enter_address: 'Введите адрес.',
       wallet_invalid_address: 'Некорректный адрес.',
       wallet_create_failed: 'Не удалось добавить кошелёк.',
@@ -212,6 +236,9 @@
       base_currency_subtitle: 'Все суммы будут отображаться в выбранной валюте.',
       base_currency_update_failed: 'Не удалось обновить базовую валюту.',
       base_currency_conversion_failed: 'Не удалось конвертировать суммы в базовую валюту.',
+      cta_add_wallet: 'Добавить кошелёк',
+      cta_add_transaction: 'Добавить транзакцию',
+      cta_retry: 'Повторить',
       period_7d: 'за 7д',
       period_24h: 'за 24ч',
       min: 'Мин',
@@ -226,6 +253,7 @@
       expense_other: 'Прочее'
     },
     en: {
+      dashboard_page_title: 'FinGuard | Dashboard',
       dashboard_title: 'Dashboard',
       logout: 'Log out',
       base_currency_button: 'Currency: {value}',
@@ -241,6 +269,7 @@
       loading_balance: 'Loading balance…',
       upcoming_payments: 'Upcoming payments',
       payment_rent: 'Rent',
+      payment_streaming: 'Streaming',
       payment_due_jan15: 'Due: Jan 15',
       payment_due_jan19: 'Due: Jan 19',
       payment_mobile: 'Mobile service',
@@ -253,6 +282,10 @@
       expense_breakdown_title: 'Expense breakdown',
       current_month: 'Current month,',
       expense_chart_aria: 'Expense chart',
+      markets_badge: 'Markets',
+      crypto_badge: 'Crypto',
+      fx_badge: 'FX',
+      fx_radar_title: 'FX Radar',
       markets_title: 'Rates & markets',
       markets_subtitle: 'Crypto & FX summary',
       coin_rates: 'Coin rates',
@@ -262,6 +295,11 @@
       no_data: 'No data',
       updated: 'Updated',
       updated_at: 'Updated {value}',
+      source_pending: 'Waiting for data',
+      source_live: 'Live',
+      source_demo: 'Demo',
+      source_synthetic: 'Synthetic',
+      source_hybrid: 'Live + Synthetic',
       base_label: 'Base:',
       all_currencies: 'All currencies',
       hide: 'Hide',
@@ -292,12 +330,15 @@
       total: 'Total',
       balance_by_currency: 'Balance by currency',
       no_accounts: 'No accounts added yet.',
+      empty_accounts_hint: 'Add your first account to unlock balances and analytics.',
+      cta_add_account: 'Add account',
       account: 'Account',
       account_remove: 'Delete',
       account_delete_confirm: 'Delete account “{name}”?',
       account_delete_failed: 'Failed to delete account.',
       recent_transactions_title: 'Recent transactions',
       transactions_empty: 'No transactions yet.',
+      empty_transactions_hint: 'Add a transaction to populate your activity feed.',
       transactions_load_failed: 'Failed to load transactions.',
       transactions_load_failed_short: 'Failed to load transactions',
       add_transaction_menu_aria: 'Add transaction',
@@ -331,6 +372,7 @@
       fx_no_currencies: 'No currencies available.',
       wallets_title: 'Crypto wallets',
       wallets_empty: 'No wallets added yet.',
+      empty_wallets_hint: 'Add a watch-only wallet to estimate your crypto portfolio value.',
       wallets_loading_failed: 'Failed to load wallets.',
       add_wallet_menu_aria: 'Add wallet',
       add_wallet_title: 'Add wallet',
@@ -342,6 +384,8 @@
       wallet_address: 'Address',
       wallet_address_placeholder: '0x… / bc1…',
       wallet_remove: 'Remove',
+      wallet_delete_confirm: 'Delete wallet “{name}”?',
+      wallet_delete_failed: 'Failed to delete wallet.',
       wallet_enter_address: 'Enter an address.',
       wallet_invalid_address: 'Invalid address.',
       wallet_create_failed: 'Failed to add wallet.',
@@ -350,6 +394,9 @@
       base_currency_subtitle: 'All amounts are shown in the selected currency.',
       base_currency_update_failed: 'Failed to update base currency.',
       base_currency_conversion_failed: 'Failed to convert amounts to base currency.',
+      cta_add_wallet: 'Add wallet',
+      cta_add_transaction: 'Add transaction',
+      cta_retry: 'Retry',
       period_7d: 'in 7d',
       period_24h: 'in 24h',
       min: 'Min',
@@ -456,6 +503,9 @@
     document.documentElement.lang = currentLang;
     applyTranslations();
     updateLangToggle();
+    setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
+    setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
+    syncMarketDataSource();
   }
 
   function bindLangToggle() {
@@ -471,9 +521,6 @@
       window.location.reload();
     });
   }
-
-  applyLanguage(currentLang);
-  bindLangToggle();
 
   const demoData = {
     balance: [18200, 18750, 19340, 18900, 20200, 20950],
@@ -526,6 +573,215 @@
   const txListLimit = 20;
   let txCategories = [];
   let txCategoriesById = new Map();
+  const DATA_SOURCE = {
+    pending: 'pending',
+    live: 'live',
+    demo: 'demo',
+    synthetic: 'synthetic',
+    hybrid: 'hybrid'
+  };
+  const dataSourceState = {
+    crypto: DATA_SOURCE.pending,
+    fx: DATA_SOURCE.pending
+  };
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function q(selector) {
+    return document.querySelector(selector);
+  }
+
+  function setUiState(target, state) {
+    const el = typeof target === 'string' ? q(target) : target;
+    if (!el) return;
+    el.dataset.uiState = state;
+  }
+
+  function setPanelFeedback(selector, message, isError) {
+    const el = q(selector);
+    if (!el) return;
+    if (!message) {
+      el.classList.remove('show', 'amount-negative');
+      el.textContent = '';
+      return;
+    }
+    el.classList.add('show');
+    el.classList.toggle('amount-negative', Boolean(isError));
+    el.textContent = message;
+  }
+
+  function renderSkeletonList(count) {
+    return `<div class="skeleton-list" aria-hidden="true">${Array.from({ length: Math.max(count, 1) }, () => '<div class="skeleton-item"></div>').join('')}</div>`;
+  }
+
+  function renderEmptyState(message, actionLabel, action) {
+    const safeMsg = escapeHtml(message || '');
+    const safeAction = escapeHtml(action || '');
+    if (!actionLabel || !action) {
+      return `<div class="empty-block muted">${safeMsg}</div>`;
+    }
+    return `
+      <div class="empty-block">
+        <div class="muted">${safeMsg}</div>
+        <button type="button" class="ghost inline-cta" data-action="${safeAction}">${escapeHtml(actionLabel)}</button>
+      </div>
+    `;
+  }
+
+  function renderErrorState(message, actionLabel, action) {
+    const safeMsg = escapeHtml(message || '');
+    const safeAction = escapeHtml(action || '');
+    return `
+      <div class="error-block">
+        <div class="amount-negative">${safeMsg}</div>
+        ${actionLabel && action ? `<button type="button" class="ghost inline-cta" data-action="${safeAction}">${escapeHtml(actionLabel)}</button>` : ''}
+      </div>
+    `;
+  }
+
+  function pulseElement(selector) {
+    const el = typeof selector === 'string' ? q(selector) : selector;
+    if (!el || reducedMotionQuery.matches) return;
+    el.classList.remove('motion-pulse');
+    void el.offsetWidth;
+    el.classList.add('motion-pulse');
+  }
+
+  function sourceLabel(source) {
+    if (source === DATA_SOURCE.live) return t('source_live');
+    if (source === DATA_SOURCE.demo) return t('source_demo');
+    if (source === DATA_SOURCE.synthetic) return t('source_synthetic');
+    if (source === DATA_SOURCE.hybrid) return t('source_hybrid');
+    return t('source_pending');
+  }
+
+  function setDataSourceBadge(selector, source) {
+    const el = q(selector);
+    if (!el) return;
+    const normalized = Object.values(DATA_SOURCE).includes(source) ? source : DATA_SOURCE.pending;
+    el.dataset.dataSource = normalized;
+    el.textContent = sourceLabel(normalized);
+  }
+
+  function syncMarketDataSource() {
+    const crypto = dataSourceState.crypto;
+    const fx = dataSourceState.fx;
+    let combined = DATA_SOURCE.pending;
+    if (crypto === DATA_SOURCE.demo && fx === DATA_SOURCE.demo) {
+      combined = DATA_SOURCE.demo;
+    } else if (crypto === DATA_SOURCE.live && fx === DATA_SOURCE.hybrid) {
+      combined = DATA_SOURCE.hybrid;
+    } else if (crypto === DATA_SOURCE.live && fx === DATA_SOURCE.live) {
+      combined = DATA_SOURCE.live;
+    } else if (crypto === DATA_SOURCE.live || fx === DATA_SOURCE.live || fx === DATA_SOURCE.hybrid) {
+      combined = DATA_SOURCE.hybrid;
+    } else if (crypto === DATA_SOURCE.synthetic || fx === DATA_SOURCE.synthetic) {
+      combined = DATA_SOURCE.synthetic;
+    } else if (crypto === DATA_SOURCE.demo || fx === DATA_SOURCE.demo) {
+      combined = DATA_SOURCE.demo;
+    }
+    setDataSourceBadge(selectors.marketsDataSource, combined);
+  }
+
+  function getFocusableElements(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )).filter((el) => !el.disabled && !el.hidden && el.offsetParent !== null);
+  }
+
+  function trapFocusKeydown(event, container) {
+    if (event.key !== 'Tab') return;
+    const focusable = getFocusableElements(container);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function openOverlay(overlay, menu, opener) {
+    if (!overlay || !menu) return;
+    overlay.hidden = false;
+    overlay.classList.add('is-open');
+    overlay.dataset.uiState = 'open';
+    menu.setAttribute('aria-hidden', 'false');
+    menu.dataset.opener = opener && opener.id ? opener.id : '';
+    const focusable = getFocusableElements(menu);
+    const target = focusable[0] || menu;
+    if (target) target.focus();
+  }
+
+  function closeOverlay(overlay, menu, opener) {
+    if (!overlay || !menu) return;
+    overlay.classList.remove('is-open');
+    overlay.hidden = true;
+    overlay.dataset.uiState = 'closed';
+    menu.setAttribute('aria-hidden', 'true');
+    if (opener && typeof opener.focus === 'function') {
+      opener.focus();
+      return;
+    }
+    const openerId = menu.dataset.opener || '';
+    const openerEl = openerId ? document.getElementById(openerId) : null;
+    if (openerEl) openerEl.focus();
+  }
+
+  function bindActionCtas() {
+    document.addEventListener('click', (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest('[data-action]') : null;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.dataset.action;
+      if (!action) return;
+      if (action === 'open-add-account') {
+        q(selectors.addAccountBtn)?.click();
+      } else if (action === 'open-add-wallet') {
+        q(selectors.addWalletBtn)?.click();
+      } else if (action === 'open-add-transaction') {
+        q(selectors.addTransactionBtn)?.click();
+      } else if (action === 'retry-balance') {
+        loadBalance();
+      } else if (action === 'retry-wallets') {
+        loadWallets();
+      } else if (action === 'retry-transactions') {
+        loadRecentTransactions();
+      } else if (action === 'retry-fx') {
+        loadFxRates();
+      }
+    });
+  }
+
+  function initMotionController() {
+    const root = q(selectors.root);
+    if (!root) return;
+    const reduced = reducedMotionQuery.matches;
+    root.dataset.motionLevel = reduced ? 'reduced' : 'high';
+    const cards = Array.from(document.querySelectorAll('.dashboard .card'));
+    if (!reduced) {
+      cards.forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+          const rect = card.getBoundingClientRect();
+          const x = (event.clientX - rect.left) / rect.width - 0.5;
+          const y = (event.clientY - rect.top) / rect.height - 0.5;
+          card.style.transform = `translateY(-4px) rotateX(${(-y * 2).toFixed(2)}deg) rotateY(${(x * 2.2).toFixed(2)}deg)`;
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.transform = '';
+        });
+      });
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        root.classList.add('motion-paused');
+      } else {
+        root.classList.remove('motion-paused');
+      }
+    });
+  }
 
   function normalizeCurrency(code) {
     return (code || '').trim().toUpperCase();
@@ -948,14 +1204,20 @@
 
   async function loadReportByCategory() {
     const target = document.querySelector(selectors.expenseChart);
-    if (target) target.innerHTML = `<div class="muted">${t('loading')}</div>`;
+    if (target) {
+      setUiState(target, 'loading');
+      target.innerHTML = renderSkeletonList(2);
+    }
 
     const params = new URLSearchParams();
     params.set('period', 'MONTH');
     params.set('limit', '5');
     const res = await Api.call(`/api/reports/by-category?${params}`, 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      if (target) target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      if (target) {
+        setUiState(target, 'error');
+        target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      }
       return null;
     }
     const payload = res.data;
@@ -979,17 +1241,24 @@
       .filter((item) => item.label && Number.isFinite(item.value) && item.value > 0);
 
     if (!items.length) {
-      if (target) target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      if (target) {
+        setUiState(target, 'empty');
+        target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      }
       return payload;
     }
 
+    if (target) setUiState(target, 'ready');
     renderBarChart(selectors.expenseChart, items, baseCurrency);
     return payload;
   }
 
   async function loadBalanceTrend() {
     const target = document.querySelector(selectors.balanceChart);
-    if (target) target.innerHTML = `<div class="muted">${t('loading')}</div>`;
+    if (target) {
+      setUiState(target, 'loading');
+      target.innerHTML = renderSkeletonList(2);
+    }
 
     const now = new Date();
     const start = new Date(now);
@@ -1002,6 +1271,7 @@
     params.set('to', now.toISOString());
     const res = await Api.call(`/api/reports/cash-flow?${params}`, 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (target) setUiState(target, 'ready');
       renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
       return null;
     }
@@ -1038,6 +1308,7 @@
       return running;
     });
 
+    if (target) setUiState(target, 'ready');
     renderLineChart(selectors.balanceChart, series, baseCurrency);
     return payload;
   }
@@ -1051,10 +1322,17 @@
   function renderAccountsList(accounts, conversion) {
     const list = document.querySelector(selectors.accountsList);
     if (!list) return;
+    setPanelFeedback(selectors.accountsFeedback, '');
     if (!accounts || accounts.length === 0) {
-      list.innerHTML = `<div class="muted">${t('no_accounts')}</div>`;
+      setUiState(list, 'empty');
+      list.innerHTML = renderEmptyState(
+        `${t('no_accounts')} ${t('empty_accounts_hint')}`,
+        t('cta_add_account'),
+        'open-add-account'
+      );
       return;
     }
+    setUiState(list, 'ready');
     const base = normalizeCurrency(baseCurrency) || 'USD';
     list.innerHTML = accounts.map((acc) => {
       const value = convertToBaseAmount(acc.balance || 0, acc.currency, conversion);
@@ -1092,8 +1370,10 @@
         if (!res.ok) {
           const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
           showBalanceError(message || t('account_delete_failed'));
+          setPanelFeedback(selectors.accountsFeedback, message || t('account_delete_failed'), true);
           return;
         }
+        setPanelFeedback(selectors.accountsFeedback, '');
         await loadBalance();
         await loadReports();
       });
@@ -1175,9 +1455,15 @@
     const list = document.querySelector(selectors.transactionsList);
     if (!list) return;
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      list.innerHTML = `<div class="muted">${t('transactions_empty')}</div>`;
+      setUiState(list, 'empty');
+      list.innerHTML = renderEmptyState(
+        `${t('transactions_empty')} ${t('empty_transactions_hint')}`,
+        t('cta_add_transaction'),
+        'open-add-transaction'
+      );
       return;
     }
+    setUiState(list, 'ready');
 
     const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts) ? lastBalanceSnapshot.accounts : [];
     const accountById = new Map(
@@ -1230,8 +1516,10 @@
   async function loadRecentTransactions() {
     const list = document.querySelector(selectors.transactionsList);
     if (list) {
-      list.innerHTML = `<div class="muted">${t('loading')}</div>`;
+      setUiState(list, 'loading');
+      list.innerHTML = renderSkeletonList(3);
     }
+    setPanelFeedback(selectors.transactionsFeedback, '');
 
     const now = new Date();
     const from = new Date(now.getTime() - txPeriodDays * 24 * 60 * 60 * 1000);
@@ -1242,10 +1530,16 @@
 
     const res = await Api.call(`/api/transactions?${params}`, 'GET', null, true);
     if (!res.ok || !Array.isArray(res.data)) {
-      if (list) list.innerHTML = `<div class="amount-negative">${t('transactions_load_failed_short')}</div>`;
+      if (list) {
+        setUiState(list, 'error');
+        list.innerHTML = renderErrorState(t('transactions_load_failed_short'), t('cta_retry'), 'retry-transactions');
+      }
+      setPanelFeedback(selectors.transactionsFeedback, t('transactions_load_failed'), true);
       return;
     }
+    setPanelFeedback(selectors.transactionsFeedback, '');
     renderTransactionsList(res.data);
+    pulseElement(selectors.transactionsList);
   }
 
   function showAddTransactionError(message) {
@@ -1343,17 +1637,18 @@
 
     let open = false;
     let submitting = false;
+    let opener = null;
 
     const close = () => {
       open = false;
-      overlay.style.display = 'none';
-      menu.style.display = 'none';
+      closeOverlay(overlay, menu, opener || btn);
+      opener = null;
     };
 
     const openDialog = () => {
       open = true;
-      overlay.style.display = 'flex';
-      menu.style.display = 'grid';
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : btn;
+      openOverlay(overlay, menu, opener || btn);
       showAddTransactionError('');
 
       populateTransactionAccountSelect();
@@ -1479,6 +1774,7 @@
 
     createBtn.addEventListener('click', submit);
     menu.addEventListener('keydown', (e) => {
+      trapFocusKeydown(e, menu);
       if (e.key === 'Enter') {
         e.preventDefault();
         submit();
@@ -1578,9 +1874,11 @@
     const container = document.querySelector(selectors.fxTopVolatile);
     if (!container) return;
     if (!items.length) {
+      setUiState(container, 'empty');
       container.innerHTML = `<div class="muted">${t('fx_no_data')}</div>`;
       return;
     }
+    setUiState(container, 'ready');
     container.innerHTML = items.map((item, idx) => {
       const changeClass = pickChangeClass(item.metrics.change);
       const stroke = item.metrics.change >= 0 ? '#10b981' : '#f97316';
@@ -1608,9 +1906,11 @@
     const list = document.querySelector(selectors.fxList);
     if (!list) return;
     if (!items.length) {
+      setUiState(list, 'empty');
       list.innerHTML = `<div class="muted">${t('fx_no_currencies')}</div>`;
       return;
     }
+    setUiState(list, 'ready');
     list.innerHTML = items.map((item) => {
       const active = item.code === fxSelectedCode ? 'is-active' : '';
       const safeName = escapeHtml(item.name || '');
@@ -1757,16 +2057,22 @@
   async function loadBalance() {
     const list = document.querySelector(selectors.accountsList);
     if (list) {
-      list.innerHTML = `<div class="muted">${t('loading_balance')}</div>`;
+      setUiState(list, 'loading');
+      list.innerHTML = renderSkeletonList(3);
     }
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
     if (totalBalanceEl) totalBalanceEl.textContent = t('loading');
     showBalanceError('');
+    setPanelFeedback(selectors.accountsFeedback, '');
 
     const res = await Api.call('/api/accounts/balance', 'GET', null, true);
     if (!res.ok) {
       showBalanceError(t('balance_load_failed'));
-      if (list) list.innerHTML = `<div class="amount-negative">${t('balance_load_failed_short')}</div>`;
+      if (list) {
+        setUiState(list, 'error');
+        list.innerHTML = renderErrorState(t('balance_load_failed_short'), t('cta_retry'), 'retry-balance');
+      }
+      setPanelFeedback(selectors.accountsFeedback, t('balance_load_failed'), true);
       lastAccountsTotalInBase = NaN;
       return;
     }
@@ -1791,17 +2097,26 @@
     lastBalanceConversion = conversion;
     renderAccountsList(accounts, conversion);
     rerenderBalanceSnapshot();
+    pulseElement(selectors.totalBalance);
   }
 
   async function loadFxRates() {
     const statusEl = document.querySelector(selectors.fxStatus);
     const baseEl = document.querySelector(selectors.fxBase);
+    const topContainer = document.querySelector(selectors.fxTopVolatile);
     const base = resolveFxBase();
     const baseSelect = document.querySelector(selectors.fxBaseSelect);
     fxBase = base;
     if (statusEl) statusEl.textContent = t('updating');
     if (baseEl) baseEl.textContent = base;
     if (baseSelect) baseSelect.value = base;
+    if (topContainer) {
+      setUiState(topContainer, 'loading');
+      topContainer.innerHTML = renderSkeletonList(3);
+    }
+    dataSourceState.fx = DATA_SOURCE.pending;
+    setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
+    syncMarketDataSource();
 
     const quotes = fxCurrencies.map((item) => item.code).filter((code) => code !== base);
     const params = new URLSearchParams();
@@ -1810,10 +2125,18 @@
     const query = params.toString();
     const res = await Api.call(`/api/fx/rates?${query}`, 'GET', null, false);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      renderFxTop([]);
+      if (topContainer) {
+        setUiState(topContainer, 'error');
+        topContainer.innerHTML = renderErrorState(t('fx_no_data'), t('cta_retry'), 'retry-fx');
+      } else {
+        renderFxTop([]);
+      }
       renderFxDetail(null);
       renderFxList([]);
       if (statusEl) statusEl.textContent = t('no_data');
+      dataSourceState.fx = DATA_SOURCE.demo;
+      setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
+      syncMarketDataSource();
       return;
     }
     const payload = res.data;
@@ -1840,6 +2163,10 @@
       const updated = formatFxUpdated(payload.asOf);
       statusEl.textContent = updated ? t('updated_at', { value: updated }) : t('updated');
     }
+    dataSourceState.fx = DATA_SOURCE.hybrid;
+    setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
+    syncMarketDataSource();
+    pulseElement(selectors.fxStatus);
   }
 
   function sampleSeries(series, maxPoints) {
@@ -1876,6 +2203,9 @@
     const base = (baseCurrency || 'USD').toUpperCase();
     if (statusEl) statusEl.textContent = t('updating');
     if (baseEl) baseEl.textContent = base;
+    dataSourceState.crypto = DATA_SOURCE.pending;
+    setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
+    syncMarketDataSource();
 
     const params = new URLSearchParams();
     params.set('base', base);
@@ -1883,6 +2213,9 @@
     if (!res.ok || !res.data || typeof res.data !== 'object') {
       renderCryptoFallback(base);
       if (statusEl) statusEl.textContent = t('demo_data');
+      dataSourceState.crypto = DATA_SOURCE.demo;
+      setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
+      syncMarketDataSource();
       return;
     }
     const payload = res.data;
@@ -1890,6 +2223,9 @@
     if (!rates.length) {
       renderCryptoFallback(base);
       if (statusEl) statusEl.textContent = t('no_data');
+      dataSourceState.crypto = DATA_SOURCE.demo;
+      setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
+      syncMarketDataSource();
       return;
     }
     const baseCode = typeof payload.baseCurrency === 'string' && payload.baseCurrency ? payload.baseCurrency : base;
@@ -1922,6 +2258,10 @@
       const updated = formatFxUpdated(payload.asOf);
       statusEl.textContent = updated ? t('updated_at', { value: updated }) : (hasAny ? t('updated') : t('no_data'));
     }
+    dataSourceState.crypto = hasAny ? DATA_SOURCE.live : DATA_SOURCE.demo;
+    setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
+    syncMarketDataSource();
+    pulseElement(selectors.cryptoStatus);
   }
 
   function renderLineChart(target, data, currency) {
@@ -2155,10 +2495,17 @@
   function renderWallets(wallets) {
     const list = document.querySelector(selectors.walletsList);
     if (!list) return;
+    setPanelFeedback(selectors.walletsFeedback, '');
     if (!Array.isArray(wallets) || wallets.length === 0) {
-      list.innerHTML = `<div class="muted">${t('wallets_empty')}</div>`;
+      setUiState(list, 'empty');
+      list.innerHTML = renderEmptyState(
+        `${t('wallets_empty')} ${t('empty_wallets_hint')}`,
+        t('cta_add_wallet'),
+        'open-add-wallet'
+      );
       return;
     }
+    setUiState(list, 'ready');
     list.innerHTML = wallets.map((wallet) => {
       const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
       const networkLabel = walletNetworkLabel(network);
@@ -2190,7 +2537,13 @@
       btn.addEventListener('click', async () => {
         const id = btn.dataset.walletId;
         if (!id) return;
-        await Api.call(`/api/crypto/wallets/${encodeURIComponent(id)}`, 'DELETE', null, true);
+        const res = await Api.call(`/api/crypto/wallets/${encodeURIComponent(id)}`, 'DELETE', null, true);
+        if (!res.ok) {
+          const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
+          setPanelFeedback(selectors.walletsFeedback, message || t('wallet_delete_failed'), true);
+          return;
+        }
+        setPanelFeedback(selectors.walletsFeedback, '');
         await loadWallets();
       });
     });
@@ -2199,11 +2552,17 @@
   async function loadWallets() {
     const list = document.querySelector(selectors.walletsList);
     if (list) {
-      list.innerHTML = `<div class="muted">${t('loading')}</div>`;
+      setUiState(list, 'loading');
+      list.innerHTML = renderSkeletonList(2);
     }
+    setPanelFeedback(selectors.walletsFeedback, '');
     const res = await Api.call('/api/crypto/wallets/summary', 'GET', null, true);
     if (!res.ok) {
-      if (list) list.innerHTML = `<div class="amount-negative">${t('wallets_loading_failed')}</div>`;
+      if (list) {
+        setUiState(list, 'error');
+        list.innerHTML = renderErrorState(t('wallets_loading_failed'), t('cta_retry'), 'retry-wallets');
+      }
+      setPanelFeedback(selectors.walletsFeedback, t('wallets_loading_failed'), true);
       cryptoWalletTotalInBase = NaN;
       rerenderBalanceSnapshot();
       return;
@@ -2214,6 +2573,7 @@
     const total = toNumber(payload.totalValueInBase);
     cryptoWalletTotalInBase = Number.isFinite(total) ? total : NaN;
     rerenderBalanceSnapshot();
+    pulseElement(selectors.walletsList);
   }
 
   function showAddWalletError(message) {
@@ -2239,17 +2599,18 @@
 
     let open = false;
     let submitting = false;
+    let opener = null;
 
     const close = () => {
       open = false;
-      overlay.style.display = 'none';
-      menu.style.display = 'none';
+      closeOverlay(overlay, menu, opener || btn);
+      opener = null;
     };
 
     const openDialog = () => {
       open = true;
-      overlay.style.display = 'flex';
-      menu.style.display = 'grid';
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : btn;
+      openOverlay(overlay, menu, opener || btn);
       showAddWalletError('');
       const labelEl = document.querySelector(selectors.addWalletLabel);
       const networkEl = document.querySelector(selectors.addWalletNetwork);
@@ -2319,6 +2680,7 @@
 
     createBtn.addEventListener('click', submit);
     menu.addEventListener('keydown', (e) => {
+      trapFocusKeydown(e, menu);
       if (e.key === 'Enter') {
         e.preventDefault();
         submit();
@@ -2404,17 +2766,18 @@
 
     let open = false;
     let submitting = false;
+    let opener = null;
 
     const close = () => {
       open = false;
-      overlay.style.display = 'none';
-      menu.style.display = 'none';
+      closeOverlay(overlay, menu, opener || btn);
+      opener = null;
     };
 
     const openDialog = () => {
       open = true;
-      overlay.style.display = 'flex';
-      menu.style.display = 'grid';
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : btn;
+      openOverlay(overlay, menu, opener || btn);
       showBaseCurrencyError('');
       populateBaseCurrencySelect(baseCurrency);
       const select = document.querySelector(selectors.baseCurrencySelect);
@@ -2479,6 +2842,7 @@
 
     saveBtn.addEventListener('click', submit);
     menu.addEventListener('keydown', (e) => {
+      trapFocusKeydown(e, menu);
       if (e.key === 'Enter') {
         e.preventDefault();
         submit();
@@ -2497,17 +2861,18 @@
 
     let open = false;
     let submitting = false;
+    let opener = null;
 
     const close = () => {
       open = false;
-      overlay.style.display = 'none';
-      menu.style.display = 'none';
+      closeOverlay(overlay, menu, opener || btn);
+      opener = null;
     };
 
     const openDialog = () => {
       open = true;
-      overlay.style.display = 'flex';
-      menu.style.display = 'grid';
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : btn;
+      openOverlay(overlay, menu, opener || btn);
       showAddAccountError('');
       populateAccountCurrencySelect();
       const nameEl = document.querySelector(selectors.addAccountName);
@@ -2597,6 +2962,7 @@
 
     createBtn.addEventListener('click', submit);
     menu.addEventListener('keydown', (e) => {
+      trapFocusKeydown(e, menu);
       if (e.key === 'Enter') {
         e.preventDefault();
         submit();
@@ -2644,11 +3010,15 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     const root = document.documentElement;
+    const dashboardRoot = q(selectors.root);
+    if (dashboardRoot) dashboardRoot.dataset.uiState = 'loading';
     if (root) root.style.visibility = 'hidden';
     try {
       Theme.apply();
       applyLanguage(currentLang);
       bindLangToggle();
+      initMotionController();
+      bindActionCtas();
 
       const res = await Api.call('/api/auth/me', 'GET', null, true);
       if (!res.ok) {
@@ -2678,8 +3048,10 @@
         loadReports(),
         loadRecentTransactions()
       ]);
+      if (dashboardRoot) dashboardRoot.dataset.uiState = 'ready';
     } catch (e) {
       console.error('Dashboard init failed', e);
+      if (dashboardRoot) dashboardRoot.dataset.uiState = 'error';
     } finally {
       if (root) root.style.visibility = 'visible';
     }

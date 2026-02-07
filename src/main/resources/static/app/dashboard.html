@@ -3,259 +3,299 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Wallet | Dashboard</title>
+  <title data-i18n="dashboard_page_title">FinGuard | Dashboard</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/app/styles.css">
   <link rel="stylesheet" href="/app/dashboard.css">
 </head>
-<body class="dashboard">
+<body class="dashboard" data-ui-state="booting" data-motion-level="high">
+  <div class="dash-atmosphere" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+    <span class="grid-noise"></span>
+  </div>
+
   <div class="container">
-    <header class="nav">
+    <header class="nav" data-motion="reveal">
       <div class="brand">
-        <img src="/app/assets/white-big-logo.svg" alt="Smart Wallet" class="brand-logo">
-        <div><strong data-i18n="dashboard_title">Личный кабинет</strong></div>
+        <img src="/app/assets/white-big-logo.svg" alt="FinGuard" class="brand-logo">
+        <div class="brand-copy">
+          <strong class="brand-title">FinGuard</strong>
+          <div class="muted" data-i18n="dashboard_title">Личный кабинет</div>
+        </div>
       </div>
       <div class="actions">
-        <div class="chip" id="userEmail">—</div>
+        <div class="chip" id="userEmail" aria-live="polite">—</div>
         <button type="button" class="ghost" id="btn-base-currency" data-i18n-title="base_currency_title" data-i18n-aria="base_currency_aria">USD</button>
         <button type="button" class="ghost" id="btn-lang">EN</button>
         <button type="button" class="ghost" id="btn-logout" data-i18n="logout">Выйти</button>
       </div>
     </header>
 
-    <div class="grid-3" style="margin-top:16px;">
-      <div class="card stat-card">
-        <div class="muted" data-i18n="balance">Баланс</div>
-        <div class="stat-value" id="totalBalance">—</div>
-        <div class="muted" id="creditValue" data-i18n="credit_placeholder">Кредит: —</div>
-        <div class="muted" id="totalsByCurrency" style="margin-top:4px; display:none;"></div>
-        <div class="amount-negative" id="balanceError" style="margin-top:6px; display:none;"></div>
-      </div>
-      <div class="card stat-card">
-        <div class="muted" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
-        <div class="stat-value" id="incomeExpenseNet">—</div>
-        <div class="muted" id="incomeExpenseDetails" data-i18n="income_expense_details">Доход: 4 200 · Расход: 2 350</div>
-      </div>
-    </div>
+    <main class="dashboard-main" data-motion="reveal">
+      <section class="grid-3 top-metrics" aria-label="Top metrics">
+        <article class="card stat-card glow-card">
+          <div class="muted" data-i18n="balance">Баланс</div>
+          <div class="stat-value" id="totalBalance">—</div>
+          <div class="muted" id="creditValue" data-i18n="credit_placeholder">Кредит: —</div>
+          <div class="muted compact-line" id="totalsByCurrency"></div>
+          <div class="amount-negative" id="balanceError" aria-live="polite"></div>
+        </article>
+        <article class="card stat-card glow-card">
+          <div class="muted" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
+          <div class="stat-value" id="incomeExpenseNet">—</div>
+          <div class="muted" id="incomeExpenseDetails" data-i18n="income_expense_details">Доход: — · Расход: —</div>
+        </article>
+      </section>
 
-    <div class="grid main-grid">
-      <div class="stack">
-        <div class="card">
-          <div class="row" style="justify-content: space-between; align-items: center;">
-            <h3 style="margin:0;" data-i18n="your_cards">Ваши карты</h3>
-            <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
-          </div>
-          <div class="list" style="margin-top:10px;" id="accountsList">
-            <div class="muted" data-i18n="loading_balance">Загружаем баланс…</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="row" style="justify-content: space-between; align-items: center;">
-            <h3 style="margin:0;" data-i18n="wallets_title">Крипто-кошельки</h3>
-            <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
-          </div>
-          <div class="list" style="margin-top:10px;" id="walletsList">
-            <div class="muted" data-i18n="loading">Загрузка…</div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="stack">
-        <div class="card">
-          <div class="row" style="justify-content: space-between; align-items: center;">
-            <h3 style="margin-top:0;" data-i18n="recent_transactions_title">Последние транзакции</h3>
-            <div class="tx-toolbar">
-              <div class="tx-period">
-                <button type="button" class="chip tx-period-btn active" data-period="7">7d</button>
-                <button type="button" class="chip tx-period-btn" data-period="30">30d</button>
-              </div>
-              <button type="button" class="ghost" id="btn-add-transaction" data-i18n="add">Добавить</button>
+      <section class="grid main-grid" aria-label="Main panels">
+        <div class="stack">
+          <article class="card" data-motion="reveal">
+            <div class="section-head">
+              <h2 class="section-title" data-i18n="your_cards">Ваши карты</h2>
+              <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
             </div>
-          </div>
-          <div class="list" style="margin-top:10px;" id="transactionsList">
-            <div class="muted" data-i18n="loading">Загрузка…</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 style="margin-top:0;" data-i18n="upcoming_payments">Ближайшие платежи</h3>
-          <div class="list" style="margin-top:10px;">
-            <div class="list-item">
-              <div>
-                <div style="font-weight:700;" data-i18n="payment_rent">Аренда</div>
-                <small data-i18n="payment_due_jan15">Срок: 15 янв</small>
-              </div>
-              <div class="amount-negative" id="paymentRentAmount">—</div>
-            </div>
-            <div class="list-item">
-              <div>
-                <div style="font-weight:700;">Spotify</div>
-                <small data-i18n="payment_due_jan19">Срок: 19 янв</small>
-              </div>
-              <div class="amount-negative" id="paymentSpotifyAmount">—</div>
-            </div>
-            <div class="list-item">
-              <div>
-                <div style="font-weight:700;" data-i18n="payment_mobile">Мобильная связь</div>
-                <small data-i18n="payment_due_jan22">Срок: 22 янв</small>
-              </div>
-              <div class="amount-negative" id="paymentMobileAmount">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid chart-grid">
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="badge alt" data-i18n="demo">Демо</div>
-            <h3 style="margin:6px 0 4px;" data-i18n="balance_trend_title">Динамика баланса</h3>
-            <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
-          </div>
-          <div class="pill-soft"><span data-i18n="trend_label">Тренд:</span> +9.2%</div>
-        </div>
-        <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="badge alt" data-i18n="demo">Демо</div>
-            <h3 style="margin:6px 0 4px;" data-i18n="expense_breakdown_title">Структура расходов</h3>
-            <div class="muted"><span data-i18n="current_month">Текущий месяц,</span> <span id="expenseCurrency">USD</span></div>
-          </div>
-        </div>
-        <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов" data-i18n-aria="expense_chart_aria"></div>
-      </div>
-
-      <div class="card market-card span-2">
-        <div class="card-row">
-          <div>
-            <div class="badge alt">Markets</div>
-            <h3 style="margin:6px 0 4px;" data-i18n="markets_title">Курсы и рынки</h3>
-            <div class="muted" data-i18n="markets_subtitle">Сводка по крипте и валютам</div>
-          </div>
-          <div class="pill-soft">24h</div>
-        </div>
-        <div class="market-grid">
-          <div class="market-section">
-            <div class="market-header">
-              <div>
-                <div class="badge alt">Crypto</div>
-                <h4 style="margin:6px 0 4px;" data-i18n="coin_rates">Курсы монет</h4>
-                <div class="muted"><span id="cryptoStatus" data-i18n="loading">Загрузка…</span> · <span id="cryptoBase">USD</span></div>
+            <div class="panel-feedback" id="accountsFeedback" aria-live="polite"></div>
+            <div class="list" id="accountsList" data-ui-state="loading">
+              <div class="skeleton-list" aria-hidden="true">
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
               </div>
             </div>
-            <div class="crypto-grid">
-              <div class="mini-coin">
-                <div class="row coin-row">
-                  <img src="/crypto/btc.svg" alt="BTC" class="coin-logo">
-                  <div class="coin-title">
-                    <strong>BTC</strong>
-                    <div class="muted" style="font-size:12px;">Bitcoin</div>
+          </article>
+
+          <article class="card" data-motion="reveal">
+            <div class="section-head">
+              <h2 class="section-title" data-i18n="wallets_title">Крипто-кошельки</h2>
+              <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
+            </div>
+            <div class="panel-feedback" id="walletsFeedback" aria-live="polite"></div>
+            <div class="list" id="walletsList" data-ui-state="loading">
+              <div class="skeleton-list" aria-hidden="true">
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="stack">
+          <article class="card" data-motion="reveal">
+            <div class="section-head tx-head">
+              <h2 class="section-title" data-i18n="recent_transactions_title">Последние транзакции</h2>
+              <div class="tx-toolbar">
+                <div class="tx-period" role="tablist" aria-label="Transaction period">
+                  <button type="button" class="chip tx-period-btn active" data-period="7">7d</button>
+                  <button type="button" class="chip tx-period-btn" data-period="30">30d</button>
+                </div>
+                <button type="button" class="ghost" id="btn-add-transaction" data-i18n="add">Добавить</button>
+              </div>
+            </div>
+            <div class="panel-feedback" id="transactionsFeedback" aria-live="polite"></div>
+            <div class="list" id="transactionsList" data-ui-state="loading">
+              <div class="skeleton-list" aria-hidden="true">
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-motion="reveal">
+            <h2 class="section-title" data-i18n="upcoming_payments">Ближайшие платежи</h2>
+            <div class="list upcoming-list">
+              <div class="list-item">
+                <div>
+                  <div class="list-label" data-i18n="payment_rent">Аренда</div>
+                  <small data-i18n="payment_due_jan15">Срок: 15 янв</small>
+                </div>
+                <div class="amount-negative" id="paymentRentAmount">—</div>
+              </div>
+              <div class="list-item">
+                <div>
+                  <div class="list-label" data-i18n="payment_streaming">Стриминг</div>
+                  <small data-i18n="payment_due_jan19">Срок: 19 янв</small>
+                </div>
+                <div class="amount-negative" id="paymentSpotifyAmount">—</div>
+              </div>
+              <div class="list-item">
+                <div>
+                  <div class="list-label" data-i18n="payment_mobile">Мобильная связь</div>
+                  <small data-i18n="payment_due_jan22">Срок: 22 янв</small>
+                </div>
+                <div class="amount-negative" id="paymentMobileAmount">—</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="grid chart-grid" aria-label="Analytics and markets">
+        <article class="card" data-motion="reveal">
+          <div class="card-row">
+            <div>
+              <div class="badge alt" data-i18n="demo">Демо</div>
+              <h2 class="section-title" data-i18n="balance_trend_title">Динамика баланса</h2>
+              <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
+            </div>
+            <div class="pill-soft"><span data-i18n="trend_label">Тренд:</span> +9.2%</div>
+          </div>
+          <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria" data-ui-state="loading"></div>
+        </article>
+
+        <article class="card" data-motion="reveal">
+          <div class="card-row">
+            <div>
+              <div class="badge alt" data-i18n="demo">Демо</div>
+              <h2 class="section-title" data-i18n="expense_breakdown_title">Структура расходов</h2>
+              <div class="muted"><span data-i18n="current_month">Текущий месяц,</span> <span id="expenseCurrency">USD</span></div>
+            </div>
+          </div>
+          <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов" data-i18n-aria="expense_chart_aria" data-ui-state="loading"></div>
+        </article>
+
+        <article class="card market-card span-2" data-motion="reveal">
+          <div class="card-row">
+            <div>
+              <div class="badge alt" data-i18n="markets_badge">Markets</div>
+              <h2 class="section-title" data-i18n="markets_title">Курсы и рынки</h2>
+              <div class="muted" data-i18n="markets_subtitle">Сводка по крипте и валютам</div>
+            </div>
+            <div class="meta-badges">
+              <div class="pill-soft">24h</div>
+              <div class="source-badge" id="marketsDataSource" data-data-source="pending" aria-live="polite" data-i18n="source_pending">Ожидаем данные</div>
+            </div>
+          </div>
+
+          <div class="market-grid">
+            <section class="market-section">
+              <div class="market-header">
+                <div>
+                  <div class="badge alt" data-i18n="crypto_badge">Crypto</div>
+                  <h3 class="section-subtitle" data-i18n="coin_rates">Курсы монет</h3>
+                  <div class="muted status-line">
+                    <span id="cryptoStatus" data-i18n="loading" aria-live="polite">Загрузка…</span>
+                    <span aria-hidden="true">·</span>
+                    <span id="cryptoBase">USD</span>
                   </div>
-                  <div class="amount-positive" id="btcPrice">—</div>
-                  <div class="mini-spark" id="btcSpark"></div>
                 </div>
+                <div class="source-badge" id="cryptoDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
               </div>
-              <div class="mini-coin">
-                <div class="row coin-row">
-                  <img src="/crypto/eth.svg" alt="ETH" class="coin-logo">
-                  <div class="coin-title">
-                    <strong>ETH</strong>
-                    <div class="muted" style="font-size:12px;">Ethereum</div>
+              <div class="crypto-grid">
+                <div class="mini-coin">
+                  <div class="row coin-row">
+                    <img src="/crypto/btc.svg" alt="BTC" class="coin-logo">
+                    <div class="coin-title">
+                      <strong>BTC</strong>
+                      <div class="muted coin-name">Bitcoin</div>
+                    </div>
+                    <div class="amount-positive" id="btcPrice">—</div>
+                    <div class="mini-spark" id="btcSpark"></div>
                   </div>
-                  <div class="amount-positive" id="ethPrice">—</div>
-                  <div class="mini-spark" id="ethSpark"></div>
                 </div>
-              </div>
-              <div class="mini-coin">
-                <div class="row coin-row">
-                  <img src="/crypto/sol.svg" alt="SOL" class="coin-logo">
-                  <div class="coin-title">
-                    <strong>SOL</strong>
-                    <div class="muted" style="font-size:12px;">Solana</div>
+                <div class="mini-coin">
+                  <div class="row coin-row">
+                    <img src="/crypto/eth.svg" alt="ETH" class="coin-logo">
+                    <div class="coin-title">
+                      <strong>ETH</strong>
+                      <div class="muted coin-name">Ethereum</div>
+                    </div>
+                    <div class="amount-positive" id="ethPrice">—</div>
+                    <div class="mini-spark" id="ethSpark"></div>
                   </div>
-                  <div class="amount-positive" id="solPrice">—</div>
-                  <div class="mini-spark" id="solSpark"></div>
+                </div>
+                <div class="mini-coin">
+                  <div class="row coin-row">
+                    <img src="/crypto/sol.svg" alt="SOL" class="coin-logo">
+                    <div class="coin-title">
+                      <strong>SOL</strong>
+                      <div class="muted coin-name">Solana</div>
+                    </div>
+                    <div class="amount-positive" id="solPrice">—</div>
+                    <div class="mini-spark" id="solSpark"></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </section>
 
-          <div class="market-section fx-panel">
-            <div class="market-header fx-header">
-              <div>
-                <div class="badge alt">FX</div>
-                <h4 style="margin:6px 0 4px;">FX Radar</h4>
-                <div class="muted"><span data-i18n="base_label">База:</span> <span id="fxBase">USD</span></div>
-              </div>
-              <div class="fx-header-actions">
-                <div class="pill-soft" id="fxStatus" data-i18n="updating">Обновляем…</div>
-                <button type="button" class="ghost fx-toggle" id="fxToggleList" data-i18n="all_currencies">Все валюты</button>
-              </div>
-            </div>
-
-            <div class="fx-shell">
-              <div class="fx-top">
-                <div class="fx-vol-title" data-i18n="most_volatile">Самые волатильные</div>
-                <div class="fx-vol-grid" id="fxTopVolatile">
-                  <div class="muted" data-i18n="loading_rates">Загружаем курсы…</div>
+            <section class="market-section fx-panel">
+              <div class="market-header fx-header">
+                <div>
+                  <div class="badge alt" data-i18n="fx_badge">FX</div>
+                  <h3 class="section-subtitle" data-i18n="fx_radar_title">FX Radar</h3>
+                  <div class="muted"><span data-i18n="base_label">База:</span> <span id="fxBase">USD</span></div>
+                </div>
+                <div class="fx-header-actions">
+                  <div class="pill-soft" id="fxStatus" data-i18n="updating" aria-live="polite">Обновляем…</div>
+                  <div class="source-badge" id="fxDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
+                  <button type="button" class="ghost fx-toggle" id="fxToggleList" data-i18n="all_currencies">Все валюты</button>
                 </div>
               </div>
 
-              <div class="fx-detail" id="fxDetail">
-                <div class="fx-detail-info">
-                  <div class="fx-detail-header">
-                    <div>
-                      <div class="fx-detail-code" id="fxDetailCode">—</div>
-                      <div class="muted" id="fxDetailName" data-i18n="select_currency_details">Выберите валюту для деталей</div>
+              <div class="fx-shell">
+                <div class="fx-top">
+                  <div class="fx-vol-title" data-i18n="most_volatile">Самые волатильные</div>
+                  <div class="fx-vol-grid" id="fxTopVolatile" data-ui-state="loading">
+                    <div class="skeleton-list" aria-hidden="true">
+                      <div class="skeleton-item"></div>
+                      <div class="skeleton-item"></div>
+                      <div class="skeleton-item"></div>
                     </div>
                   </div>
-                  <div class="fx-detail-rate">
-                    <div class="fx-detail-price" id="fxDetailRate">—</div>
-                    <div class="fx-detail-change" id="fxDetailChange">—</div>
+                </div>
+
+                <div class="fx-detail" id="fxDetail">
+                  <div class="fx-detail-info">
+                    <div class="fx-detail-header">
+                      <div>
+                        <div class="fx-detail-code" id="fxDetailCode">—</div>
+                        <div class="muted" id="fxDetailName" data-i18n="select_currency_details">Выберите валюту для деталей</div>
+                      </div>
+                    </div>
+                    <div class="fx-detail-rate">
+                      <div class="fx-detail-price" id="fxDetailRate">—</div>
+                      <div class="fx-detail-change" id="fxDetailChange">—</div>
+                    </div>
+                  </div>
+                  <div class="fx-detail-chart" id="fxDetailChart"></div>
+                </div>
+              </div>
+
+              <div class="fx-browse" id="fxBrowse">
+                <div class="fx-browse-header">
+                  <div class="fx-inputs">
+                    <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты" data-i18n-placeholder="search_currency_placeholder" data-i18n-aria="search_currency_aria">
+                    <select id="fxBaseSelect" aria-label="Базовая валюта" data-i18n-aria="base_currency_aria"></select>
+                  </div>
+                  <div class="fx-sort">
+                    <button type="button" class="chip active" data-sort="volatility" data-i18n="volatility">Волатильность</button>
+                    <button type="button" class="chip" data-sort="alpha">A-Z</button>
                   </div>
                 </div>
-                <div class="fx-detail-chart" id="fxDetailChart"></div>
+                <div class="fx-list" id="fxList"></div>
               </div>
-            </div>
-
-            <div class="fx-browse" id="fxBrowse">
-              <div class="fx-browse-header">
-                <div class="fx-inputs">
-                  <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты" data-i18n-placeholder="search_currency_placeholder" data-i18n-aria="search_currency_aria">
-                  <select id="fxBaseSelect" aria-label="Базовая валюта" data-i18n-aria="base_currency_aria"></select>
-                </div>
-                <div class="fx-sort">
-                  <button type="button" class="chip active" data-sort="volatility" data-i18n="volatility">Волатильность</button>
-                  <button type="button" class="chip" data-sort="alpha">A-Z</button>
-                </div>
-              </div>
-              <div class="fx-list" id="fxList"></div>
-            </div>
+            </section>
           </div>
-        </div>
-      </div>
-    </div>
+        </article>
+      </section>
+    </main>
   </div>
-  <div id="add-account-overlay" class="overlay" style="display:none;">
-    <div class="dropdown-menu" id="add-account-menu" aria-label="Добавить счёт" data-i18n-aria="add_account_menu_aria">
-      <div class="card-row" style="justify-content: space-between; align-items: center;">
+
+  <div id="add-account-overlay" class="overlay" hidden data-ui-state="closed">
+    <div class="dropdown-menu" id="add-account-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Добавить счёт" data-i18n-aria="add_account_menu_aria">
+      <div class="card-row modal-head">
         <div>
-          <h3 style="margin:0;" data-i18n="add_account_title">Добавить счёт</h3>
+          <h3 data-i18n="add_account_title">Добавить счёт</h3>
           <div class="muted" data-i18n="add_account_subtitle">Создайте новый счёт для учёта баланса.</div>
         </div>
         <button type="button" class="ghost" id="btn-add-account-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
       </div>
 
-      <div class="alert" id="addAccountError" style="display:none;"></div>
+      <div class="alert" id="addAccountError"></div>
 
-      <div class="form" style="margin-top:6px;">
+      <div class="form compact-form">
         <div class="field">
           <label for="newAccountName" data-i18n="account_name_label">Название</label>
           <input id="newAccountName" type="text" maxlength="255" placeholder="Например: Visa" data-i18n-placeholder="account_name_placeholder">
@@ -268,7 +308,7 @@
           <label for="newAccountBalance" data-i18n="initial_balance_label">Начальный баланс</label>
           <input id="newAccountBalance" type="number" step="0.01" inputmode="decimal" placeholder="0.00" data-i18n-placeholder="initial_balance_placeholder">
         </div>
-        <div class="buttons" style="justify-content:flex-end;">
+        <div class="buttons modal-actions">
           <button type="button" class="ghost" id="btn-add-account-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-account-create" data-i18n="create">Создать</button>
         </div>
@@ -276,19 +316,19 @@
     </div>
   </div>
 
-  <div id="add-wallet-overlay" class="overlay" style="display:none;">
-    <div class="dropdown-menu" id="add-wallet-menu" aria-label="Добавить кошелёк" data-i18n-aria="add_wallet_menu_aria">
-      <div class="card-row" style="justify-content: space-between; align-items: center;">
+  <div id="add-wallet-overlay" class="overlay" hidden data-ui-state="closed">
+    <div class="dropdown-menu" id="add-wallet-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Добавить кошелёк" data-i18n-aria="add_wallet_menu_aria">
+      <div class="card-row modal-head">
         <div>
-          <h3 style="margin:0;" data-i18n="add_wallet_title">Добавить кошелёк</h3>
+          <h3 data-i18n="add_wallet_title">Добавить кошелёк</h3>
           <div class="muted" data-i18n="add_wallet_subtitle">Только чтение: добавьте адрес, мы подтянем баланс.</div>
         </div>
         <button type="button" class="ghost" id="btn-add-wallet-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
       </div>
 
-      <div class="alert" id="addWalletError" style="display:none;"></div>
+      <div class="alert" id="addWalletError"></div>
 
-      <div class="form" style="margin-top:6px;">
+      <div class="form compact-form">
         <div class="field">
           <label for="newWalletLabel" data-i18n="wallet_label">Название</label>
           <input id="newWalletLabel" type="text" maxlength="255" placeholder="Например: Ledger" data-i18n-placeholder="wallet_label_placeholder">
@@ -306,7 +346,7 @@
           <label for="newWalletAddress" data-i18n="wallet_address">Адрес</label>
           <input id="newWalletAddress" type="text" maxlength="160" placeholder="0x… / bc1…" data-i18n-placeholder="wallet_address_placeholder">
         </div>
-        <div class="buttons" style="justify-content:flex-end;">
+        <div class="buttons modal-actions">
           <button type="button" class="ghost" id="btn-add-wallet-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-wallet-create" data-i18n="create">Создать</button>
         </div>
@@ -314,24 +354,24 @@
     </div>
   </div>
 
-  <div id="base-currency-overlay" class="overlay" style="display:none;">
-    <div class="dropdown-menu" id="base-currency-menu" aria-label="Базовая валюта" data-i18n-aria="base_currency_menu_aria">
-      <div class="card-row" style="justify-content: space-between; align-items: center;">
+  <div id="base-currency-overlay" class="overlay" hidden data-ui-state="closed">
+    <div class="dropdown-menu" id="base-currency-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Базовая валюта" data-i18n-aria="base_currency_menu_aria">
+      <div class="card-row modal-head">
         <div>
-          <h3 style="margin:0;" data-i18n="base_currency_title">Базовая валюта</h3>
+          <h3 data-i18n="base_currency_title">Базовая валюта</h3>
           <div class="muted" data-i18n="base_currency_subtitle">Все суммы будут отображаться в выбранной валюте.</div>
         </div>
         <button type="button" class="ghost" id="btn-base-currency-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
       </div>
 
-      <div class="alert" id="baseCurrencyError" style="display:none;"></div>
+      <div class="alert" id="baseCurrencyError"></div>
 
-      <div class="form" style="margin-top:6px;">
+      <div class="form compact-form">
         <div class="field">
           <label for="baseCurrencySelect" data-i18n="currency_label">Валюта</label>
           <select id="baseCurrencySelect" aria-label="Валюта" data-i18n-aria="currency_aria"></select>
         </div>
-        <div class="buttons" style="justify-content:flex-end;">
+        <div class="buttons modal-actions">
           <button type="button" class="ghost" id="btn-base-currency-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-base-currency-save" data-i18n="save">Сохранить</button>
         </div>
@@ -339,19 +379,19 @@
     </div>
   </div>
 
-  <div id="add-transaction-overlay" class="overlay" style="display:none;">
-    <div class="dropdown-menu" id="add-transaction-menu" aria-label="Добавить транзакцию" data-i18n-aria="add_transaction_menu_aria">
-      <div class="card-row" style="justify-content: space-between; align-items: center;">
+  <div id="add-transaction-overlay" class="overlay" hidden data-ui-state="closed">
+    <div class="dropdown-menu" id="add-transaction-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Добавить транзакцию" data-i18n-aria="add_transaction_menu_aria">
+      <div class="card-row modal-head">
         <div>
-          <h3 style="margin:0;" data-i18n="add_transaction_title">Добавить транзакцию</h3>
+          <h3 data-i18n="add_transaction_title">Добавить транзакцию</h3>
           <div class="muted" data-i18n="add_transaction_subtitle">Доход или расход — баланс пересчитается автоматически.</div>
         </div>
         <button type="button" class="ghost" id="btn-add-transaction-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
       </div>
 
-      <div class="alert" id="addTransactionError" style="display:none;"></div>
+      <div class="alert" id="addTransactionError"></div>
 
-      <div class="form" style="margin-top:6px;">
+      <div class="form compact-form">
         <div class="field">
           <label for="newTxAccount" data-i18n="transaction_account_label">Счёт</label>
           <select id="newTxAccount" aria-label="Счёт" data-i18n-aria="transaction_account_aria"></select>
@@ -379,7 +419,7 @@
           <label for="newTxDescription" data-i18n="transaction_description_label">Комментарий</label>
           <input id="newTxDescription" type="text" maxlength="255" placeholder="Например: Кофе" data-i18n-placeholder="transaction_description_placeholder">
         </div>
-        <div class="buttons" style="justify-content:flex-end;">
+        <div class="buttons modal-actions">
           <button type="button" class="ghost" id="btn-add-transaction-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-transaction-create" data-i18n="create">Создать</button>
         </div>
