@@ -225,6 +225,142 @@ class CryptoWalletControllerIntegrationTest {
     }
 
     @Test
+    void walletAnalysisStatusEventuallyCompletes() throws Exception {
+        String email = "wallet-analysis-done-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        JsonNode finalPayload = null;
+        for (int i = 0; i < 80; i += 1) {
+            String statusResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/status", walletId)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            JsonNode payload = objectMapper.readTree(statusResponse);
+            finalPayload = payload;
+            if ("DONE".equals(payload.get("status").asText())) {
+                break;
+            }
+            Thread.sleep(25);
+        }
+
+        assertThat(finalPayload).isNotNull();
+        assertThat(finalPayload.get("status").asText()).isEqualTo("DONE");
+        assertThat(finalPayload.get("progressPct").asInt()).isEqualTo(100);
+        assertThat(finalPayload.get("partialReady").asBoolean()).isTrue();
+    }
+
+    @Test
+    @Transactional
+    void walletAnalysisStatusIsScopedToOwner() throws Exception {
+        String ownerToken = registerVerifyAndLogin("owner-analysis-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String otherToken = registerVerifyAndLogin("other-analysis-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + ownerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Owner"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String response = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/status", walletId)
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.BAD_REQUEST);
+    }
+
+    @Test
+    @Transactional
+    void returnsWalletAnalysisSummaryForCurrentUser() throws Exception {
+        String email = "wallet-analysis-summary-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String summaryResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/summary", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode payload = objectMapper.readTree(summaryResponse);
+        assertThat(payload.get("baseCurrency").asText()).isEqualTo("USD");
+        assertThat(payload.has("totalValueInBase")).isTrue();
+        assertThat(payload.has("delta24hPct")).isTrue();
+        assertThat(payload.has("delta7dPct")).isTrue();
+        assertThat(payload.get("allocation").isArray()).isTrue();
+    }
+
+    @Test
+    @Transactional
+    void returnsWalletAnalysisInsightsForCurrentUser() throws Exception {
+        String email = "wallet-analysis-insights-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String insightsResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/insights", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode payload = objectMapper.readTree(insightsResponse);
+        assertThat(payload.get("baseCurrency").asText()).isEqualTo("USD");
+        assertThat(payload.get("insights").isArray()).isTrue();
+        assertThat(payload.get("insights").size()).isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
     void anonymousIsForbidden() throws Exception {
         mockMvc.perform(get("/api/crypto/wallets"))
                 .andExpect(status().isForbidden());

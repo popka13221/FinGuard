@@ -89,4 +89,18 @@ class RateLimiterServiceTest {
         assertThat(result.allowed()).isTrue();
         assertThat(result.retryAfterMs()).isZero();
     }
+
+    @Test
+    void allowsRequestWhenRepositoryThrowsRuntimeException() {
+        RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
+        when(repo.findByBucketKey(anyString())).thenThrow(new IllegalStateException("runtime contention"));
+
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
+
+        RateLimiterService.Result result = limiter.check("public-rates:198.51.100.8", 5, 60_000);
+
+        assertThat(result.allowed()).isTrue();
+        assertThat(result.retryAfterMs()).isZero();
+    }
 }
