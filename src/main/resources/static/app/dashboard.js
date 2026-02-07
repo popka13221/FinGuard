@@ -761,9 +761,9 @@
     const cards = Array.from(document.querySelectorAll('.dashboard .card'));
     let rafId = 0;
     let targetX = 50;
-    let targetY = 20;
+    let targetY = 24;
     let currentX = 50;
-    let currentY = 20;
+    let currentY = 24;
 
     const applyMotionPreference = () => {
       const reduced = reducedMotionQuery.matches;
@@ -812,8 +812,8 @@
     const animateAtmosphere = () => {
       rafId = 0;
       if (root.dataset.motionLevel === 'reduced' || document.hidden) return;
-      currentX += (targetX - currentX) * 0.08;
-      currentY += (targetY - currentY) * 0.08;
+      currentX += (targetX - currentX) * 0.045;
+      currentY += (targetY - currentY) * 0.045;
       root.style.setProperty('--mouse-x', `${currentX.toFixed(2)}%`);
       root.style.setProperty('--mouse-y', `${currentY.toFixed(2)}%`);
       if (Math.abs(targetX - currentX) > 0.08 || Math.abs(targetY - currentY) > 0.08) {
@@ -825,8 +825,8 @@
       if (root.dataset.motionLevel === 'reduced') return;
       const width = Math.max(window.innerWidth, 1);
       const height = Math.max(window.innerHeight, 1);
-      targetX = 18 + (event.clientX / width) * 64;
-      targetY = 12 + (event.clientY / height) * 52;
+      targetX = 30 + (event.clientX / width) * 40;
+      targetY = 18 + (event.clientY / height) * 36;
       if (!rafId && !document.hidden) {
         rafId = requestAnimationFrame(animateAtmosphere);
       }
@@ -1730,6 +1730,8 @@
     const createBtn = document.querySelector(selectors.addTransactionCreateBtn);
     const typeSelect = document.querySelector(selectors.addTransactionType);
     if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn || !typeSelect) return;
+    if (btn.dataset.modalBound === '1') return;
+    btn.dataset.modalBound = '1';
 
     let open = false;
     let submitting = false;
@@ -2697,6 +2699,8 @@
     const closeBtn = document.querySelector(selectors.addWalletCloseBtn);
     const createBtn = document.querySelector(selectors.addWalletCreateBtn);
     if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn) return;
+    if (btn.dataset.modalBound === '1') return;
+    btn.dataset.modalBound = '1';
 
     let open = false;
     let submitting = false;
@@ -2869,6 +2873,8 @@
     const closeBtn = document.querySelector(selectors.baseCurrencyCloseBtn);
     const saveBtn = document.querySelector(selectors.baseCurrencySaveBtn);
     if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !saveBtn) return;
+    if (btn.dataset.modalBound === '1') return;
+    btn.dataset.modalBound = '1';
 
     let open = false;
     let submitting = false;
@@ -2969,6 +2975,8 @@
     const closeBtn = document.querySelector(selectors.addAccountCloseBtn);
     const createBtn = document.querySelector(selectors.addAccountCreateBtn);
     if (!btn || !menu || !overlay || !cancelBtn || !closeBtn || !createBtn) return;
+    if (btn.dataset.modalBound === '1') return;
+    btn.dataset.modalBound = '1';
 
     let open = false;
     let submitting = false;
@@ -3124,11 +3132,16 @@
     `;
   }
 
+  // Bind primary controls early so keyboard interactions are available immediately.
+  bindAddAccountMenu();
+  bindAddWalletMenu();
+  bindAddTransactionMenu();
+  bindBaseCurrencyMenu();
+  bindTxPeriodButtons();
+
   document.addEventListener('DOMContentLoaded', async () => {
-    const root = document.documentElement;
     const dashboardRoot = q(selectors.root);
     if (dashboardRoot) dashboardRoot.dataset.uiState = 'loading';
-    if (root) root.style.visibility = 'hidden';
     try {
       Theme.apply();
       applyLanguage(currentLang);
@@ -3169,8 +3182,6 @@
     } catch (e) {
       console.error('Dashboard init failed', e);
       if (dashboardRoot) dashboardRoot.dataset.uiState = 'error';
-    } finally {
-      if (root) root.style.visibility = 'visible';
     }
   });
 })();

@@ -161,14 +161,9 @@
         </article>
 
         <article class="card market-card span-2" data-motion="reveal">
-          <div class="card-row">
-            <div>
-              <div class="badge alt" data-i18n="markets_badge">Markets</div>
-              <h2 class="section-title" data-i18n="markets_title">Курсы и рынки</h2>
-              <div class="muted" data-i18n="markets_subtitle">Сводка по крипте и валютам</div>
-            </div>
+          <div class="card-row market-head">
+            <h2 class="section-title" data-i18n="markets_title">Курсы и рынки</h2>
             <div class="meta-badges">
-              <div class="pill-soft">24h</div>
               <div class="source-badge" id="marketsDataSource" data-data-source="pending" aria-live="polite" data-i18n="source_pending">Ожидаем данные</div>
             </div>
           </div>
@@ -177,8 +172,7 @@
             <section class="market-section">
               <div class="market-header">
                 <div>
-                  <div class="badge alt" data-i18n="crypto_badge">Crypto</div>
-                  <h3 class="section-subtitle" data-i18n="coin_rates">Курсы монет</h3>
+                  <h3 class="section-subtitle" data-i18n="crypto_badge">Crypto</h3>
                   <div class="muted status-line">
                     <span id="cryptoStatus" data-i18n="loading" aria-live="polite">Загрузка…</span>
                     <span aria-hidden="true">·</span>
@@ -227,9 +221,8 @@
             <section class="market-section fx-panel">
               <div class="market-header fx-header">
                 <div>
-                  <div class="badge alt" data-i18n="fx_badge">FX</div>
-                  <h3 class="section-subtitle" data-i18n="fx_radar_title">FX Radar</h3>
-                  <div class="muted"><span data-i18n="base_label">База:</span> <span id="fxBase">USD</span></div>
+                  <h3 class="section-subtitle" data-i18n="fx_badge">FX</h3>
+                  <div class="muted"><span id="fxBase">USD</span></div>
                 </div>
                 <div class="fx-header-actions">
                   <div class="pill-soft" id="fxStatus" data-i18n="updating" aria-live="polite">Обновляем…</div>

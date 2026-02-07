@@ -1720,3 +1720,262 @@ body.dashboard {
     transform: translateY(0);
   }
 }
+
+/* FinGuard Dashboard v2.4: clean minimal stabilization */
+html {
+  background: #040a14;
+}
+
+body.dashboard {
+  min-height: 100dvh;
+  background-color: #040a14;
+  overscroll-behavior-y: none;
+}
+
+body.dashboard::before {
+  inset: -26%;
+  opacity: 0.7;
+  filter: blur(10px);
+  background:
+    radial-gradient(760px 540px at var(--mouse-x) var(--mouse-y), rgba(102, 187, 255, 0.1), transparent 74%);
+}
+
+body.dashboard::after {
+  opacity: 0.1;
+}
+
+.dashboard .secure-grid {
+  opacity: 0.12;
+}
+
+.dashboard .vault-halo {
+  opacity: 0.24;
+}
+
+.dashboard .secure-scan {
+  opacity: 0.34;
+}
+
+.dashboard .signal-nodes {
+  opacity: 0.26;
+}
+
+.dashboard .market-card {
+  padding: 14px;
+}
+
+.dashboard .market-head {
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.dashboard .market-head .section-title {
+  margin: 0;
+  font-size: clamp(1rem, 0.93rem + 0.42vw, 1.18rem);
+}
+
+.dashboard .meta-badges {
+  margin-left: auto;
+}
+
+.dashboard .market-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.dashboard .market-section {
+  padding: 10px;
+  border-radius: 16px;
+  border-color: rgba(140, 178, 238, 0.2);
+  background: linear-gradient(176deg, rgba(10, 17, 31, 0.88), rgba(8, 14, 26, 0.84));
+}
+
+.dashboard .market-header,
+.dashboard .fx-header {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dashboard .market-header .section-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.dashboard .market-header .muted {
+  font-size: 12px;
+}
+
+.dashboard .source-badge,
+.dashboard .pill-soft {
+  padding: 4px 8px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.dashboard .crypto-grid {
+  gap: 8px;
+}
+
+.dashboard .mini-coin {
+  border-radius: 14px;
+  border-color: rgba(140, 178, 238, 0.2);
+}
+
+.dashboard .coin-row {
+  grid-template-columns: auto 1fr auto 84px;
+  gap: 6px;
+}
+
+.dashboard .coin-name {
+  display: none;
+}
+
+.dashboard .mini-spark {
+  max-width: 84px;
+  height: 34px;
+}
+
+.dashboard .spark-svg {
+  height: 34px;
+}
+
+.dashboard .fx-shell {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dashboard .fx-vol-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.dashboard .fx-vol-grid {
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard .fx-card {
+  border-radius: 12px;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.dashboard .fx-card-name {
+  display: none;
+}
+
+.dashboard .fx-card-rate {
+  font-size: 0.92rem;
+}
+
+.dashboard .fx-change {
+  font-size: 10px;
+}
+
+.dashboard .fx-card-spark {
+  height: 18px;
+}
+
+.dashboard .fx-detail {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 10px;
+}
+
+.dashboard .fx-detail-code {
+  font-size: 15px;
+}
+
+.dashboard .fx-detail-price {
+  font-size: 18px;
+}
+
+.dashboard .fx-detail-chart {
+  min-height: 54px;
+}
+
+.dashboard .fx-header-actions {
+  gap: 6px;
+}
+
+.dashboard .fx-toggle {
+  min-height: 30px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.dashboard .fx-browse {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.dashboard .fx-inputs input,
+.dashboard .fx-inputs select {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.dashboard .fx-sort .chip {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.dashboard .fx-list {
+  margin-top: 8px;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 176px;
+}
+
+.dashboard .fx-list-item {
+  border-radius: 10px;
+  padding: 7px 8px;
+}
+
+.dashboard .fx-list-name {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .dashboard .market-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard .fx-vol-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .market-card {
+    padding: 12px;
+  }
+
+  .dashboard .market-section {
+    padding: 9px;
+  }
+
+  .dashboard .coin-row {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .dashboard .coin-row .mini-spark {
+    display: none;
+  }
+
+  .dashboard .fx-vol-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard .fx-list {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard .fx-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
