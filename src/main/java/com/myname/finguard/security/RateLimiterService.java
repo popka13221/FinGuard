@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
@@ -167,7 +168,25 @@ public class RateLimiterService {
                 return nowMs - bucket.windowStartMs >= window;
             });
         } else {
-            rateLimitBucketRepository.deleteExpired(nowMs);
+            List<String> expiredKeys = rateLimitBucketRepository.findExpiredBucketKeys(
+                    nowMs,
+                    PageRequest.of(0, Math.max(1, Math.min(200, maxEntries)))
+            );
+            if (expiredKeys == null || expiredKeys.isEmpty()) {
+                return;
+            }
+            for (String key : expiredKeys) {
+                if (key == null || key.isBlank()) {
+                    continue;
+                }
+                try {
+                    rateLimitBucketRepository.deleteById(key);
+                } catch (DataAccessException ex) {
+                    log.debug("Rate limiter expired cleanup skipped key={} due to DB contention: {}", shortKey(key), ex.getClass().getSimpleName());
+                } catch (RuntimeException ex) {
+                    log.debug("Rate limiter expired cleanup skipped key={} due to runtime contention: {}", shortKey(key), ex.getClass().getSimpleName());
+                }
+            }
             pruneLocks();
         }
     }
@@ -190,7 +209,18 @@ public class RateLimiterService {
             List<RateLimitBucket> oldest = rateLimitBucketRepository.findTop100ByOrderByUpdatedAtAsc();
             for (RateLimitBucket b : oldest) {
                 if (toRemove-- <= 0) break;
-                rateLimitBucketRepository.deleteById(b.getBucketKey());
+                if (b == null || b.getBucketKey() == null || b.getBucketKey().isBlank()) {
+                    continue;
+                }
+                try {
+                    rateLimitBucketRepository.deleteById(b.getBucketKey());
+                } catch (DataAccessException ex) {
+                    log.debug("Rate limiter capacity cleanup skipped key={} due to DB contention: {}",
+                            shortKey(b.getBucketKey()), ex.getClass().getSimpleName());
+                } catch (RuntimeException ex) {
+                    log.debug("Rate limiter capacity cleanup skipped key={} due to runtime contention: {}",
+                            shortKey(b.getBucketKey()), ex.getClass().getSimpleName());
+                }
             }
         }
     }
@@ -234,8 +264,7 @@ public class RateLimiterService {
             if (cleanupIntervalMs > 0 && nowMs - latest < cleanupIntervalMs) {
                 return;
             }
-            evictExpired(nowMs);
-            evictIfNeeded();
+            runDbCleanupWithRetry(nowMs, 2);
             lastDbCleanupMs.set(nowMs);
         } catch (DataAccessException ex) {
             log.debug("Rate limiter cleanup skipped due to DB contention: {}", ex.getClass().getSimpleName());
@@ -244,6 +273,45 @@ public class RateLimiterService {
         } finally {
             cleanupInProgress.set(false);
         }
+    }
+
+    private void runDbCleanupWithRetry(long nowMs, int attempts) {
+        int tries = Math.max(1, attempts);
+        for (int attempt = 1; attempt <= tries; attempt += 1) {
+            try {
+                evictExpired(nowMs);
+                evictIfNeeded();
+                return;
+            } catch (DataAccessException ex) {
+                if (attempt >= tries) {
+                    log.debug("Rate limiter cleanup exhausted retries due to DB contention: {}", ex.getClass().getSimpleName());
+                    return;
+                }
+                backoffCleanupAttempt(attempt);
+            } catch (RuntimeException ex) {
+                if (attempt >= tries) {
+                    log.debug("Rate limiter cleanup exhausted retries due to runtime contention: {}", ex.getClass().getSimpleName());
+                    return;
+                }
+                backoffCleanupAttempt(attempt);
+            }
+        }
+    }
+
+    private void backoffCleanupAttempt(int attempt) {
+        long delayMs = Math.max(2, Math.min(12, attempt * 4L));
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private String shortKey(String key) {
+        if (key == null || key.isBlank()) {
+            return "n/a";
+        }
+        return key.substring(0, Math.min(key.length(), 18));
     }
 
     public record Result(boolean allowed, long retryAfterMs) {

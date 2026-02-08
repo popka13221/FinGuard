@@ -2191,3 +2191,210 @@ body.dashboard::before {
     gap: 7px;
   }
 }
+
+/* FinGuard Dashboard v2.6: calm motion + minimal markets polish */
+:root,
+html,
+body,
+body.dashboard {
+  background-color: #040a14;
+}
+
+html,
+body {
+  min-height: 100%;
+  overscroll-behavior-y: none;
+}
+
+body.dashboard {
+  overscroll-behavior-y: none;
+  background-attachment: scroll;
+}
+
+body.dashboard::before {
+  opacity: 0.3;
+  filter: blur(14px);
+}
+
+body.dashboard::after {
+  opacity: 0.06;
+}
+
+.dashboard .dash-atmosphere {
+  inset: 0;
+  transform: none;
+}
+
+.dashboard .secure-grid {
+  opacity: 0.06;
+  animation-duration: 72s;
+}
+
+.dashboard .vault-halo {
+  opacity: 0.12;
+  animation-duration: 58s;
+}
+
+.dashboard .secure-scan {
+  opacity: 0.12;
+  animation-duration: 28s;
+}
+
+.dashboard .signal-nodes {
+  opacity: 0.16;
+  animation-duration: 12s;
+}
+
+.dashboard .card,
+.dashboard .list-item,
+.dashboard .market-section,
+.dashboard .fx-card,
+.dashboard .fx-list-item,
+.dashboard .fx-detail,
+.dashboard .mini-coin,
+.dashboard .chart-shell {
+  border-color: rgba(133, 173, 238, 0.16);
+  box-shadow: 0 8px 18px rgba(2, 8, 20, 0.34);
+}
+
+.dashboard .card::after {
+  background: radial-gradient(
+    220px 120px at var(--pointer-x, 50%) var(--pointer-y, -25%),
+    rgba(124, 204, 255, 0.09),
+    transparent 72%
+  );
+}
+
+.dashboard .card:hover,
+.dashboard .card.is-hovered {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(3, 10, 24, 0.42);
+}
+
+.dashboard .card:hover::after,
+.dashboard .card.is-hovered::after {
+  opacity: 0.34;
+}
+
+.dashboard .mini-coin:hover,
+.dashboard .fx-card:hover,
+.dashboard .fx-list-item:hover,
+.dashboard .fx-list-item.is-active,
+.dashboard button.ghost:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(73, 159, 255, 0.18);
+}
+
+.dashboard [data-motion="reveal"] {
+  opacity: 0.985;
+  filter: none;
+  transform: translateY(4px);
+}
+
+.dashboard [data-motion="reveal"].in-view {
+  animation: revealInCalm 320ms var(--ease-standard) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+.dashboard .motion-pulse {
+  animation: pulseGlowCalm 420ms var(--ease-standard);
+}
+
+.dashboard .market-card {
+  padding: 12px;
+}
+
+.dashboard .market-head {
+  margin-bottom: 6px;
+}
+
+.dashboard .market-grid {
+  gap: 8px;
+}
+
+.dashboard .market-section {
+  padding: 9px;
+  border-radius: 14px;
+  background: linear-gradient(176deg, rgba(10, 17, 30, 0.86), rgba(8, 13, 24, 0.8));
+}
+
+.dashboard .market-header .section-subtitle {
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+.dashboard .source-badge,
+.dashboard .pill-soft,
+.dashboard .chip,
+.dashboard .badge {
+  background: rgba(10, 16, 28, 0.64);
+  border-color: rgba(133, 168, 231, 0.22);
+}
+
+.dashboard .fx-shell {
+  gap: 8px;
+}
+
+.dashboard .fx-vol-grid {
+  gap: 6px;
+}
+
+.dashboard .fx-card {
+  border-radius: 10px;
+  padding: 7px 8px;
+}
+
+.dashboard .fx-card-spark {
+  height: 16px;
+}
+
+.dashboard .fx-detail {
+  padding: 9px;
+  gap: 6px;
+}
+
+.dashboard .fx-detail-chart {
+  min-height: 48px;
+  background: rgba(9, 14, 24, 0.52);
+}
+
+@media (max-width: 767px) {
+  .dashboard .secure-grid {
+    opacity: 0.04;
+  }
+
+  .dashboard .vault-halo {
+    opacity: 0.08;
+  }
+
+  .dashboard .secure-scan {
+    opacity: 0.08;
+  }
+
+  .dashboard .signal-nodes {
+    opacity: 0.1;
+  }
+}
+
+@keyframes revealInCalm {
+  from {
+    opacity: 0.86;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlowCalm {
+  0% {
+    box-shadow: 0 8px 18px rgba(2, 8, 20, 0.34);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(124, 204, 255, 0.2), 0 12px 24px rgba(3, 10, 24, 0.42);
+  }
+  100% {
+    box-shadow: 0 8px 18px rgba(2, 8, 20, 0.34);
+  }
+}

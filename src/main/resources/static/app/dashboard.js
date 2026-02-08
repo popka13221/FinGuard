@@ -913,7 +913,7 @@
       });
 
       card.addEventListener('pointermove', (event) => {
-        if (root.dataset.motionLevel === 'reduced') return;
+        if (root.dataset.motionLevel === 'reduced' || event.pointerType === 'touch') return;
         const rect = card.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
         const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -932,8 +932,8 @@
     const animateAtmosphere = () => {
       rafId = 0;
       if (root.dataset.motionLevel === 'reduced' || document.hidden) return;
-      currentX += (targetX - currentX) * 0.045;
-      currentY += (targetY - currentY) * 0.045;
+      currentX += (targetX - currentX) * 0.022;
+      currentY += (targetY - currentY) * 0.022;
       root.style.setProperty('--mouse-x', `${currentX.toFixed(2)}%`);
       root.style.setProperty('--mouse-y', `${currentY.toFixed(2)}%`);
       if (Math.abs(targetX - currentX) > 0.08 || Math.abs(targetY - currentY) > 0.08) {
@@ -942,11 +942,11 @@
     };
 
     document.addEventListener('pointermove', (event) => {
-      if (root.dataset.motionLevel === 'reduced') return;
+      if (root.dataset.motionLevel === 'reduced' || event.pointerType === 'touch') return;
       const width = Math.max(window.innerWidth, 1);
       const height = Math.max(window.innerHeight, 1);
-      targetX = 30 + (event.clientX / width) * 40;
-      targetY = 18 + (event.clientY / height) * 36;
+      targetX = 46 + (event.clientX / width) * 8;
+      targetY = 18 + (event.clientY / height) * 12;
       if (!rafId && !document.hidden) {
         rafId = requestAnimationFrame(animateAtmosphere);
       }
@@ -989,12 +989,12 @@
       });
     }, {
       root: null,
-      threshold: 0.12,
-      rootMargin: '0px 0px -10% 0px'
+      threshold: 0.02,
+      rootMargin: '0px 0px -4% 0px'
     });
 
     targets.forEach((el, index) => {
-      el.style.setProperty('--reveal-delay', `${Math.min(index * 55, 240)}ms`);
+      el.style.setProperty('--reveal-delay', `${Math.min(index * 24, 96)}ms`);
       observer.observe(el);
     });
   }
