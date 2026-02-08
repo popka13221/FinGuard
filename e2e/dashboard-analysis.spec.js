@@ -36,6 +36,12 @@ test('wallet analysis strip shows progress and instant value cards', async ({ pa
   await expect(page.locator('#analysisRecurringMeta')).toContainText('%');
   await expect(page.locator('#analysisOutflowSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
   await expect(page.locator('#analysisRecurringSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
+
+  await page.click('#analysisQuickCard');
+  await expect(page.locator('#analysisQuickPanel')).toBeVisible();
+  await expect(page.locator('#analysisQuickPortfolio')).toContainText('USD');
+  await expect(page.locator('#analysisQuickWallets')).toHaveText('1');
+  await expect(page.locator('#analysisQuickTransactions')).toHaveText('0');
 });
 
 test('wallet analysis strip resets after wallet deletion', async ({ page }) => {

@@ -116,7 +116,18 @@
     analysisPortfolioMeta: '#analysisPortfolioMeta',
     analysisGrowthMeta: '#analysisGrowthMeta',
     analysisOutflowMeta: '#analysisOutflowMeta',
-    analysisRecurringMeta: '#analysisRecurringMeta'
+    analysisRecurringMeta: '#analysisRecurringMeta',
+    analysisQuickCard: '#analysisQuickCard',
+    analysisQuickPanel: '#analysisQuickPanel',
+    analysisQuickUpdated: '#analysisQuickUpdated',
+    analysisQuickPortfolio: '#analysisQuickPortfolio',
+    analysisQuickGrowth: '#analysisQuickGrowth',
+    analysisQuickOutflow: '#analysisQuickOutflow',
+    analysisQuickRecurring: '#analysisQuickRecurring',
+    analysisQuickBalance: '#analysisQuickBalance',
+    analysisQuickNet: '#analysisQuickNet',
+    analysisQuickWallets: '#analysisQuickWallets',
+    analysisQuickTransactions: '#analysisQuickTransactions'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -315,7 +326,14 @@
       analysis_recurring_live: 'Recurring по последним операциям',
       analysis_recurring_estimated: 'Синтетическая оценка до завершения анализа',
       analysis_recurring_meta_live: 'След.: {value} · {confidence}%',
-      analysis_recurring_meta_estimated: 'Оценка · {confidence}%'
+      analysis_recurring_meta_estimated: 'Оценка · {confidence}%',
+      analysis_quick_open_hint: 'Нажмите, чтобы открыть',
+      analysis_quick_title: 'Все данные сейчас',
+      analysis_quick_not_ready: 'Данные появятся после подключения кошелька.',
+      analysis_quick_refreshing: 'Обновляем данные…',
+      analysis_quick_updated: 'Обновлено {value}',
+      analysis_quick_wallets: 'Кошельки',
+      analysis_quick_transactions: 'Транзакции'
     },
     en: {
       dashboard_page_title: 'FinGuard | Dashboard',
@@ -510,7 +528,14 @@
       analysis_recurring_live: 'Recurring from recent activity',
       analysis_recurring_estimated: 'Synthetic estimate until analysis is complete',
       analysis_recurring_meta_live: 'Next: {value} · {confidence}%',
-      analysis_recurring_meta_estimated: 'Estimate · {confidence}%'
+      analysis_recurring_meta_estimated: 'Estimate · {confidence}%',
+      analysis_quick_open_hint: 'Tap to open',
+      analysis_quick_title: 'All data now',
+      analysis_quick_not_ready: 'Connect a wallet to see all data.',
+      analysis_quick_refreshing: 'Refreshing data…',
+      analysis_quick_updated: 'Updated {value}',
+      analysis_quick_wallets: 'Wallets',
+      analysis_quick_transactions: 'Transactions'
     }
   };
 
@@ -702,6 +727,9 @@
     apiInsights: null,
     apiSeries: null,
     seriesWindow: '30d',
+    walletsCount: 0,
+    quickOpen: false,
+    quickBusy: false,
     lastDataFetchAt: 0
   };
   let recentTransactionsCache = [];
@@ -1557,6 +1585,115 @@
     renderSparkline(sparkEl, series, '#7cc4ff');
   }
 
+  function setAnalysisQuickOpen(open) {
+    const card = q(selectors.analysisQuickCard);
+    const panel = q(selectors.analysisQuickPanel);
+    if (!card || !panel) return;
+    const next = Boolean(open);
+    analysisState.quickOpen = next;
+    panel.hidden = !next;
+    panel.dataset.uiState = next ? 'ready' : 'idle';
+    card.setAttribute('aria-expanded', next ? 'true' : 'false');
+    card.classList.toggle('is-open', next);
+  }
+
+  function updateAnalysisQuickPanel(model) {
+    const panel = q(selectors.analysisQuickPanel);
+    if (!panel) return;
+
+    const hasWallet = Boolean(analysisState.activeWalletId);
+    const data = model || buildAnalysisInsightsModel();
+    const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
+    const portfolioText = Number.isFinite(data && data.portfolio) ? formatMoney(data.portfolio, base) : '—';
+    const growthText = Number.isFinite(data && data.growth) ? formatSignedPct(data.growth) : '—';
+    const outflowText = Number.isFinite(data && data.outflowValue) ? formatMoney(-Math.abs(data.outflowValue), base) : '—';
+    const recurringText = Number.isFinite(data && data.recurringValue) ? formatMoney(data.recurringValue, base) : '—';
+
+    const balanceText = String((q(selectors.totalBalance) && q(selectors.totalBalance).textContent) || '—').trim() || '—';
+    const netText = String((q(selectors.incomeExpenseNet) && q(selectors.incomeExpenseNet).textContent) || '—').trim() || '—';
+    const walletsCount = Math.max(0, Number(analysisState.walletsCount) || 0);
+    const txCount = Math.max(0, Array.isArray(recentTransactionsCache) ? recentTransactionsCache.length : 0);
+
+    setText(selectors.analysisQuickPortfolio, portfolioText);
+    setText(selectors.analysisQuickGrowth, growthText);
+    setText(selectors.analysisQuickOutflow, outflowText);
+    setText(selectors.analysisQuickRecurring, recurringText);
+    setText(selectors.analysisQuickBalance, balanceText);
+    setText(selectors.analysisQuickNet, netText);
+    setText(selectors.analysisQuickWallets, String(walletsCount));
+    setText(selectors.analysisQuickTransactions, String(txCount));
+
+    const updatedAt = analysisState.status && (
+      analysisState.status.finishedAt
+      || analysisState.status.updatedAt
+      || analysisState.status.startedAt
+    );
+    const fallbackUpdated = (analysisState.apiSummary && analysisState.apiSummary.asOf)
+      || (analysisState.apiInsights && analysisState.apiInsights.asOf)
+      || (analysisState.apiSeries && analysisState.apiSeries.asOf)
+      || '';
+    const updated = formatFxUpdated(updatedAt || fallbackUpdated);
+    if (analysisState.quickBusy) {
+      setText(selectors.analysisQuickUpdated, t('analysis_quick_refreshing'));
+    } else if (updated) {
+      setText(selectors.analysisQuickUpdated, t('analysis_quick_updated', { value: updated }));
+    } else if (!hasWallet) {
+      setText(selectors.analysisQuickUpdated, t('analysis_quick_not_ready'));
+    } else {
+      setText(selectors.analysisQuickUpdated, t('source_pending'));
+    }
+  }
+
+  async function refreshAllDataForQuickCard() {
+    if (analysisState.quickBusy) return;
+    analysisState.quickBusy = true;
+    const card = q(selectors.analysisQuickCard);
+    if (card) {
+      card.disabled = true;
+      card.dataset.uiState = 'loading';
+    }
+    setText(selectors.analysisQuickUpdated, t('analysis_quick_refreshing'));
+
+    try {
+      await Promise.allSettled([
+        loadBalance(),
+        loadReports(),
+        loadRecentTransactions(),
+        loadWallets(),
+        loadFxRates(),
+        loadCryptoRates(),
+        maybeRefreshAnalysisData(true)
+      ]);
+    } finally {
+      analysisState.quickBusy = false;
+      if (card) {
+        card.disabled = false;
+        card.dataset.uiState = 'ready';
+      }
+      refreshAnalysisPanel();
+    }
+  }
+
+  function bindAnalysisQuickCard() {
+    const card = q(selectors.analysisQuickCard);
+    if (!card) return;
+    if (card.dataset.bound === '1') return;
+    card.dataset.bound = '1';
+    setAnalysisQuickOpen(false);
+    updateAnalysisQuickPanel(null);
+
+    card.addEventListener('click', async () => {
+      if (analysisState.quickOpen) {
+        setAnalysisQuickOpen(false);
+        return;
+      }
+      setAnalysisQuickOpen(true);
+      updateAnalysisQuickPanel(null);
+      await refreshAllDataForQuickCard();
+      updateAnalysisQuickPanel(null);
+    });
+  }
+
   function buildAnalysisInsightsModel() {
     const summaryApi = analysisState.apiSummary;
     const insightsApi = analysisState.apiInsights;
@@ -1701,7 +1838,7 @@
       setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
       renderAnalysisGrowthSpark([]);
-      return;
+      return model;
     }
 
     setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(model.portfolio) ? 'ready' : 'loading');
@@ -1752,6 +1889,7 @@
     );
     setDataSourceBadge(selectors.analysisOutflowSource, model.outflowLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
     setDataSourceBadge(selectors.analysisRecurringSource, model.recurringLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
+    return model;
   }
 
   function renderAnalysisBanner() {
@@ -1831,13 +1969,15 @@
 
   function refreshAnalysisPanel() {
     renderAnalysisBanner();
-    renderAnalysisCards();
+    const model = renderAnalysisCards();
+    updateAnalysisQuickPanel(model);
   }
 
   function syncAnalysisWallets(wallets, payload) {
     const summary = payload && typeof payload === 'object' ? payload : {};
     analysisState.summaryTotal = toNumber(summary.totalValueInBase);
     analysisState.summaryBase = normalizeCurrency(summary.baseCurrency || baseCurrency) || 'USD';
+    analysisState.walletsCount = Array.isArray(wallets) ? wallets.length : 0;
 
     const latestWallet = pickLatestWallet(wallets);
     if (!latestWallet || latestWallet.id == null) {
@@ -1962,6 +2102,7 @@
     }
 
     showBalanceError(totalOk && creditOk && conversion && conversion.ok ? '' : t('base_currency_conversion_failed'));
+    updateAnalysisQuickPanel(null);
   }
 
   function rerenderBalanceSnapshot() {
@@ -1987,6 +2128,7 @@
         ? `${t('income_label')}: ${formatMoney(income, base)} · ${t('expense_label')}: ${formatMoney(expense, base)}`
         : t('income_expense_details');
     }
+    updateAnalysisQuickPanel(null);
   }
 
   function computeAccountsTotalInBase() {
@@ -3417,6 +3559,7 @@
       }
       setPanelFeedback(selectors.walletsFeedback, t('wallets_loading_failed'), true);
       cryptoWalletTotalInBase = NaN;
+      analysisState.walletsCount = 0;
       rerenderBalanceSnapshot();
       refreshAnalysisPanel();
       return;
@@ -3902,6 +4045,7 @@
       initMotionController();
       initScrollReveal();
       bindActionCtas();
+      bindAnalysisQuickCard();
       bindTxPeriodButtons();
       bindAddAccountMenu();
       bindAddWalletMenu();

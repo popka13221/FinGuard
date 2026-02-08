@@ -2591,3 +2591,124 @@ body.dashboard {
     grid-template-columns: 1fr;
   }
 }
+
+/* FinGuard Dashboard v2.8: instant value mini-card + all-data panel */
+.dashboard .analysis-mini-card {
+  display: inline-grid;
+  justify-items: start;
+  gap: 2px;
+  width: min(196px, 100%);
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(128, 174, 237, 0.28);
+  background: linear-gradient(176deg, rgba(12, 21, 38, 0.86), rgba(8, 15, 28, 0.82));
+  color: var(--text-main);
+  text-align: left;
+}
+
+.dashboard .analysis-mini-card:hover {
+  border-color: rgba(144, 193, 255, 0.38);
+  box-shadow: 0 8px 18px rgba(55, 126, 221, 0.22);
+}
+
+.dashboard .analysis-mini-card[aria-expanded="true"] {
+  border-color: rgba(122, 198, 255, 0.52);
+  box-shadow: 0 10px 20px rgba(55, 126, 221, 0.28);
+}
+
+.dashboard .analysis-mini-card:disabled {
+  opacity: 0.72;
+}
+
+.dashboard .analysis-mini-card-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ed7ff;
+}
+
+.dashboard .analysis-mini-card-sub {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.dashboard .analysis-quick-panel {
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(128, 174, 237, 0.2);
+  background: linear-gradient(176deg, rgba(10, 17, 31, 0.88), rgba(8, 13, 24, 0.84));
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard .analysis-quick-panel[hidden] {
+  display: none !important;
+}
+
+.dashboard .analysis-quick-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard .analysis-quick-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9ed7ff;
+}
+
+.dashboard .analysis-quick-updated {
+  font-size: 12px;
+}
+
+.dashboard .analysis-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dashboard .analysis-quick-item {
+  border-radius: 10px;
+  border: 1px solid rgba(128, 174, 237, 0.16);
+  background: rgba(9, 15, 27, 0.66);
+  padding: 7px 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard .analysis-quick-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard .analysis-quick-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #eaf3ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1279px) {
+  .dashboard .analysis-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .analysis-mini-card {
+    width: 100%;
+  }
+
+  .dashboard .analysis-quick-grid {
+    grid-template-columns: 1fr;
+  }
+}

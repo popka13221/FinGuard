@@ -56,7 +56,16 @@
       <section class="card analysis-strip" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal">
         <div class="analysis-banner" id="walletAnalysisBanner" data-ui-state="idle">
           <div class="analysis-banner-copy">
-            <div class="badge alt analysis-badge" data-i18n="analysis_banner_badge">Instant Value</div>
+            <button
+              type="button"
+              class="analysis-mini-card"
+              id="analysisQuickCard"
+              aria-controls="analysisQuickPanel"
+              aria-expanded="false"
+            >
+              <span class="analysis-mini-card-title" data-i18n="analysis_banner_badge">Instant Value</span>
+              <span class="analysis-mini-card-sub" data-i18n="analysis_quick_open_hint">Нажмите, чтобы открыть</span>
+            </button>
             <h2 class="section-title analysis-title" id="analysisBannerTitle" data-i18n="analysis_banner_title_idle">Подключите кошелёк и получите анализ</h2>
             <div class="muted analysis-subtitle" id="analysisBannerSubtitle" data-i18n="analysis_banner_subtitle_idle">После добавления кошелька метрики и инсайты появятся автоматически.</div>
           </div>
@@ -65,6 +74,47 @@
             <div class="pill-soft" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</div>
           </div>
         </div>
+
+        <section class="analysis-quick-panel" id="analysisQuickPanel" data-ui-state="idle" hidden>
+          <div class="analysis-quick-head">
+            <div class="analysis-quick-title" data-i18n="analysis_quick_title">Все данные сейчас</div>
+            <div class="muted analysis-quick-updated" id="analysisQuickUpdated" data-i18n="analysis_quick_not_ready">Данные появятся после подключения кошелька.</div>
+          </div>
+          <div class="analysis-quick-grid">
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_card_portfolio">Portfolio value</div>
+              <div class="analysis-quick-value" id="analysisQuickPortfolio">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_card_growth">7d growth</div>
+              <div class="analysis-quick-value" id="analysisQuickGrowth">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_card_outflow">Top outflow</div>
+              <div class="analysis-quick-value" id="analysisQuickOutflow">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_card_recurring">Recurring spend</div>
+              <div class="analysis-quick-value" id="analysisQuickRecurring">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="balance">Баланс</div>
+              <div class="analysis-quick-value" id="analysisQuickBalance">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
+              <div class="analysis-quick-value" id="analysisQuickNet">—</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_quick_wallets">Кошельки</div>
+              <div class="analysis-quick-value" id="analysisQuickWallets">0</div>
+            </article>
+            <article class="analysis-quick-item">
+              <div class="analysis-quick-label" data-i18n="analysis_quick_transactions">Транзакции</div>
+              <div class="analysis-quick-value" id="analysisQuickTransactions">0</div>
+            </article>
+          </div>
+        </section>
 
         <div class="analysis-progress-wrap">
           <div class="analysis-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="analysisProgressBar">
