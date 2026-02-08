@@ -17,13 +17,13 @@ public interface RateLimitBucketRepository extends JpaRepository<RateLimitBucket
     @Query("""
             select b.bucketKey
             from RateLimitBucket b
-            where (b.windowStartMs + b.windowMs) < :nowMs
-            order by b.updatedAt asc
+            where b.expiresAtMs < :nowMs
+            order by b.expiresAtMs asc, b.updatedAt asc
             """)
     List<String> findExpiredBucketKeys(@Param("nowMs") long nowMs, Pageable pageable);
 
     @Modifying
-    @Query("delete from RateLimitBucket b where (b.windowStartMs + b.windowMs) < :nowMs")
+    @Query("delete from RateLimitBucket b where b.expiresAtMs < :nowMs")
     @Transactional
     void deleteExpired(@Param("nowMs") long nowMs);
 

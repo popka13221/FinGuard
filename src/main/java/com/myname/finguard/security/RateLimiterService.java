@@ -115,6 +115,7 @@ public class RateLimiterService {
                     fresh.setBucketKey(bucketKey);
                     fresh.setWindowStartMs(now);
                     fresh.setWindowMs(customWindowMs);
+                    fresh.setExpiresAtMs(now + customWindowMs);
                     fresh.setCount(1);
                     fresh.setUpdatedAt(Instant.now());
                     rateLimitBucketRepository.save(fresh);
@@ -126,6 +127,7 @@ public class RateLimiterService {
                 } else {
                     bucket.setCount(bucket.getCount() + 1);
                     bucket.setWindowMs(customWindowMs);
+                    bucket.setExpiresAtMs(bucket.getWindowStartMs() + customWindowMs);
                     bucket.setUpdatedAt(Instant.now());
                     rateLimitBucketRepository.save(bucket);
                 }

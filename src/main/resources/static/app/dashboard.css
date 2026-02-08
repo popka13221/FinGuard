@@ -2398,3 +2398,196 @@ body.dashboard::after {
     box-shadow: 0 8px 18px rgba(2, 8, 20, 0.34);
   }
 }
+
+/* FinGuard Dashboard v2.7: ultra-clean scroll + minimal rates */
+html,
+body,
+body.dashboard {
+  background-color: #040a14 !important;
+}
+
+body.dashboard {
+  background-image:
+    radial-gradient(740px 520px at 8% -10%, rgba(82, 132, 226, 0.14), transparent 66%),
+    radial-gradient(700px 500px at 100% 0%, rgba(70, 178, 246, 0.1), transparent 68%),
+    linear-gradient(180deg, #040913 0%, #040a14 52%, #040912 100%);
+  background-attachment: scroll;
+  overscroll-behavior-y: none;
+}
+
+.dashboard .dash-atmosphere {
+  opacity: 0.78;
+}
+
+.dashboard .orb {
+  opacity: 0.16;
+  filter: blur(56px);
+}
+
+.dashboard .secure-grid,
+.dashboard .vault-halo,
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  opacity: 0.08;
+}
+
+.dashboard .card,
+.dashboard .market-section,
+.dashboard .mini-coin,
+.dashboard .fx-card,
+.dashboard .fx-detail,
+.dashboard .fx-list-item {
+  border-color: rgba(132, 170, 230, 0.14);
+  box-shadow: 0 6px 14px rgba(2, 8, 20, 0.28);
+}
+
+.dashboard .card:hover,
+.dashboard .card.is-hovered {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 18px rgba(3, 11, 24, 0.34);
+}
+
+.dashboard .card::after,
+.dashboard .card:hover::after,
+.dashboard .card.is-hovered::after {
+  opacity: 0.2;
+}
+
+.dashboard .market-card {
+  padding: 10px;
+}
+
+.dashboard .market-grid {
+  gap: 7px;
+}
+
+.dashboard .market-section {
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.dashboard .market-header,
+.dashboard .fx-header {
+  margin-bottom: 6px;
+}
+
+.dashboard .market-header .section-subtitle {
+  font-size: 0.88rem;
+}
+
+.dashboard .market-header .muted,
+.dashboard .fx-vol-title {
+  font-size: 11px;
+}
+
+.dashboard .crypto-grid {
+  gap: 6px;
+}
+
+.dashboard .mini-coin {
+  border-radius: 12px;
+}
+
+.dashboard .coin-row {
+  grid-template-columns: auto 1fr auto 70px;
+  gap: 5px;
+}
+
+.dashboard .coin-name {
+  display: none;
+}
+
+.dashboard .mini-spark,
+.dashboard .spark-svg {
+  height: 26px;
+}
+
+.dashboard .fx-shell {
+  gap: 7px;
+}
+
+.dashboard .fx-vol-grid {
+  gap: 5px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard .fx-card {
+  padding: 6px 7px;
+  border-radius: 10px;
+}
+
+.dashboard .fx-card-name,
+.dashboard .fx-list-name {
+  display: none;
+}
+
+.dashboard .fx-card-rate {
+  font-size: 0.88rem;
+}
+
+.dashboard .fx-card-spark {
+  height: 14px;
+}
+
+.dashboard .fx-change {
+  font-size: 10px;
+}
+
+.dashboard .fx-detail {
+  padding: 8px;
+  gap: 5px;
+}
+
+.dashboard .fx-detail-code {
+  font-size: 14px;
+}
+
+.dashboard .fx-detail-price {
+  font-size: 16px;
+}
+
+.dashboard .fx-detail-chart {
+  min-height: 44px;
+}
+
+.dashboard .source-badge,
+.dashboard .pill-soft {
+  padding: 4px 7px;
+  font-size: 10px;
+}
+
+.dashboard [data-motion="reveal"] {
+  transform: translateY(2px);
+}
+
+.dashboard [data-motion="reveal"].in-view {
+  animation-duration: 240ms;
+}
+
+@media (max-width: 1100px) {
+  .dashboard .fx-vol-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .dash-atmosphere {
+    opacity: 0.62;
+  }
+
+  .dashboard .market-card {
+    padding: 9px;
+  }
+
+  .dashboard .coin-row {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .dashboard .coin-row .mini-spark {
+    display: none;
+  }
+
+  .dashboard .fx-vol-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,6 +20,9 @@ public class RateLimitBucket {
     @Column(name = "window_ms", nullable = false)
     private long windowMs;
 
+    @Column(name = "expires_at_ms", nullable = false)
+    private long expiresAtMs;
+
     @Column(nullable = false)
     private int count;
 
@@ -48,6 +51,14 @@ public class RateLimitBucket {
 
     public void setWindowMs(long windowMs) {
         this.windowMs = windowMs;
+    }
+
+    public long getExpiresAtMs() {
+        return expiresAtMs;
+    }
+
+    public void setExpiresAtMs(long expiresAtMs) {
+        this.expiresAtMs = expiresAtMs;
     }
 
     public int getCount() {

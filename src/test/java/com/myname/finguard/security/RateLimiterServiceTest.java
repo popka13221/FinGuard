@@ -76,6 +76,7 @@ class RateLimiterServiceTest {
         verify(repo).save(bucketCaptor.capture());
         assertThat(bucketCaptor.getValue().getBucketKey()).startsWith("rl:");
         assertThat(bucketCaptor.getValue().getBucketKey()).doesNotContain("user@example.com");
+        assertThat(bucketCaptor.getValue().getExpiresAtMs()).isGreaterThan(bucketCaptor.getValue().getWindowStartMs());
     }
 
     @Test

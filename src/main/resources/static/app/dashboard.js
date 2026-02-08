@@ -976,26 +976,17 @@
     const targets = Array.from(document.querySelectorAll('.dashboard [data-motion="reveal"]'));
     if (!targets.length) return;
 
-    if (reducedMotionQuery.matches || typeof window.IntersectionObserver !== 'function') {
+    if (reducedMotionQuery.matches) {
       targets.forEach((el) => el.classList.add('in-view'));
       return;
     }
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('in-view');
-        observer.unobserve(entry.target);
-      });
-    }, {
-      root: null,
-      threshold: 0.02,
-      rootMargin: '0px 0px -4% 0px'
-    });
-
     targets.forEach((el, index) => {
-      el.style.setProperty('--reveal-delay', `${Math.min(index * 24, 96)}ms`);
-      observer.observe(el);
+      const delay = Math.min(index * 18, 90);
+      el.style.setProperty('--reveal-delay', `${delay}ms`);
+      window.setTimeout(() => {
+        el.classList.add('in-view');
+      }, delay);
     });
   }
 
