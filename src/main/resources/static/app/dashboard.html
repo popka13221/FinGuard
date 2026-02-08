@@ -30,369 +30,221 @@
         </div>
       </div>
       <div class="actions">
-        <div class="chip" id="userEmail" aria-live="polite">—</div>
-        <button type="button" class="ghost" id="btn-base-currency" data-i18n-title="base_currency_title" data-i18n-aria="base_currency_aria">USD</button>
-        <button type="button" class="ghost" id="btn-lang">EN</button>
-        <button type="button" class="ghost" id="btn-logout" data-i18n="logout">Выйти</button>
+        <div class="nav-email" id="userEmail" aria-live="polite">—</div>
+        <span class="nav-divider" aria-hidden="true"></span>
+        <button type="button" class="ghost nav-link" id="btn-base-currency" data-i18n-title="base_currency_title" data-i18n-aria="base_currency_aria">USD</button>
+        <button type="button" class="ghost nav-link" id="btn-lang">EN</button>
+        <a class="ghost nav-link markets-link" href="#" aria-disabled="true" data-i18n="markets_badge">Markets</a>
+        <button
+          type="button"
+          class="ghost nav-icon"
+          id="btn-logout"
+          data-i18n-title="logout"
+          data-i18n-aria="logout"
+          aria-label="Log out"
+          title="Log out"
+        >⎋</button>
       </div>
     </header>
 
-    <main class="dashboard-main" data-motion="reveal">
-      <section class="grid-3 top-metrics" aria-label="Top metrics">
-        <article class="card stat-card glow-card">
-          <div class="muted" data-i18n="balance">Баланс</div>
-          <div class="stat-value" id="totalBalance">—</div>
-          <div class="muted" id="creditValue" data-i18n="credit_placeholder">Кредит: —</div>
-          <div class="muted compact-line" id="totalsByCurrency"></div>
-          <div class="amount-negative" id="balanceError" aria-live="polite"></div>
-        </article>
-        <article class="card stat-card glow-card">
-          <div class="muted" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
-          <div class="stat-value" id="incomeExpenseNet">—</div>
-          <div class="muted" id="incomeExpenseDetails" data-i18n="income_expense_details">Доход: — · Расход: —</div>
-        </article>
-      </section>
+    <main class="dashboard-main page" data-motion="reveal">
+      <section class="card section hero-section analysis-strip" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal">
+        <div class="hero-head" id="walletAnalysisBanner" data-ui-state="idle">
+          <div>
+            <h1 class="hero-main-title" data-i18n="net_worth_title">Net worth</h1>
+            <div class="hero-value stat-value" id="totalBalance">—</div>
+            <div class="hero-change-row">
+              <span class="hero-change-value" id="analysisHeroChange">—</span>
+              <span class="hero-change-period" data-i18n="period_7d_compact">• 7d</span>
+            </div>
+            <div class="hero-inline-meta">
+              <span class="hero-status" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</span>
+            </div>
+          </div>
 
-      <section class="card analysis-strip" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal">
-        <div class="analysis-banner" id="walletAnalysisBanner" data-ui-state="idle">
-          <div class="analysis-banner-copy">
+          <div class="hero-utility hero-utility-link">
             <button
               type="button"
-              class="analysis-mini-card"
+              class="analysis-text-link"
               id="analysisQuickCard"
-              aria-controls="analysisQuickPanel"
+              aria-controls="analysis-detail-overlay"
+              aria-haspopup="dialog"
               aria-expanded="false"
-            >
-              <span class="analysis-mini-card-title" data-i18n="analysis_banner_badge">Instant Value</span>
-              <span class="analysis-mini-card-sub" data-i18n="analysis_quick_open_hint">Нажмите, чтобы открыть</span>
-            </button>
-            <h2 class="section-title analysis-title" id="analysisBannerTitle" data-i18n="analysis_banner_title_idle">Подключите кошелёк и получите анализ</h2>
-            <div class="muted analysis-subtitle" id="analysisBannerSubtitle" data-i18n="analysis_banner_subtitle_idle">После добавления кошелька метрики и инсайты появятся автоматически.</div>
-          </div>
-          <div class="analysis-banner-meta">
-            <div class="source-badge" id="analysisDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-            <div class="pill-soft" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</div>
+              data-i18n="analysis_open_link"
+            >Wallet intelligence →</button>
           </div>
         </div>
 
-        <section class="analysis-quick-panel" id="analysisQuickPanel" data-ui-state="idle" hidden>
-          <div class="analysis-quick-head">
-            <div class="analysis-quick-title" data-i18n="analysis_quick_title">Все данные сейчас</div>
-            <div class="muted analysis-quick-updated" id="analysisQuickUpdated" data-i18n="analysis_quick_not_ready">Данные появятся после подключения кошелька.</div>
-          </div>
-          <div class="analysis-quick-grid">
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_card_portfolio">Portfolio value</div>
-              <div class="analysis-quick-value" id="analysisQuickPortfolio">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_card_growth">7d growth</div>
-              <div class="analysis-quick-value" id="analysisQuickGrowth">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_card_outflow">Top outflow</div>
-              <div class="analysis-quick-value" id="analysisQuickOutflow">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_card_recurring">Recurring spend</div>
-              <div class="analysis-quick-value" id="analysisQuickRecurring">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="balance">Баланс</div>
-              <div class="analysis-quick-value" id="analysisQuickBalance">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="income_expense_month">Доход / Расход (мес.)</div>
-              <div class="analysis-quick-value" id="analysisQuickNet">—</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_quick_wallets">Кошельки</div>
-              <div class="analysis-quick-value" id="analysisQuickWallets">0</div>
-            </article>
-            <article class="analysis-quick-item">
-              <div class="analysis-quick-label" data-i18n="analysis_quick_transactions">Транзакции</div>
-              <div class="analysis-quick-value" id="analysisQuickTransactions">0</div>
-            </article>
-          </div>
-        </section>
-
-        <div class="analysis-progress-wrap">
-          <div class="analysis-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="analysisProgressBar">
-            <div class="analysis-progress-fill" id="analysisProgressFill"></div>
-          </div>
-          <div class="analysis-progress-meta">
-            <div class="muted" id="analysisStage" aria-live="polite" data-i18n="analysis_stage_fetch_tx">Сканируем транзакции</div>
-            <div class="analysis-progress-value" id="analysisProgressText">0%</div>
-          </div>
-        </div>
-
-        <div class="analysis-cards" id="analysisCards">
-          <article class="analysis-card" id="analysisCardPortfolio" data-ui-state="loading">
-            <div class="analysis-card-head">
-              <div class="analysis-card-title" data-i18n="analysis_card_portfolio">Portfolio value</div>
-              <div class="source-badge" id="analysisPortfolioSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-            </div>
-            <div class="analysis-card-value" id="analysisPortfolioValue">—</div>
-            <div class="muted analysis-card-meta" id="analysisPortfolioMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+        <div class="analysis-cards stat-items-grid" id="analysisCards">
+          <article class="analysis-card stat-item" id="analysisCardIncome" data-ui-state="loading">
+            <div class="analysis-card-label" data-i18n="income_30d">Доход (30д)</div>
+            <div class="analysis-card-value" id="analysisIncomeValue">—</div>
           </article>
 
-          <article class="analysis-card" id="analysisCardGrowth" data-ui-state="loading">
-            <div class="analysis-card-head">
-              <div class="analysis-card-title" data-i18n="analysis_card_growth">7d growth</div>
-              <div class="source-badge" id="analysisGrowthSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-            </div>
-            <div class="analysis-card-value" id="analysisGrowthValue">—</div>
-            <div class="analysis-growth-spark" id="analysisGrowthSpark" aria-hidden="true"></div>
-            <div class="muted analysis-card-meta" id="analysisGrowthMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
+          <article class="analysis-card stat-item" id="analysisCardSpend" data-ui-state="loading">
+            <div class="analysis-card-label" data-i18n="spend_30d">Расход (30д)</div>
+            <div class="analysis-card-value amount-negative" id="analysisExpenseValue">—</div>
           </article>
 
-          <article class="analysis-card" id="analysisCardOutflow" data-ui-state="loading">
-            <div class="analysis-card-head">
-              <div class="analysis-card-title" data-i18n="analysis_card_outflow">Top outflow</div>
-              <div class="source-badge" id="analysisOutflowSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-            </div>
+          <article class="analysis-card stat-item" id="analysisCardOutflow" data-ui-state="loading">
+            <div class="analysis-card-label" data-i18n="cashflow_30d">Cashflow (30d)</div>
             <div class="analysis-card-value" id="analysisOutflowValue">—</div>
-            <div class="muted analysis-card-meta" id="analysisOutflowMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
           </article>
 
-          <article class="analysis-card" id="analysisCardRecurring" data-ui-state="loading">
-            <div class="analysis-card-head">
-              <div class="analysis-card-title" data-i18n="analysis_card_recurring">Recurring spend</div>
-              <div class="source-badge" id="analysisRecurringSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-            </div>
+          <article class="analysis-card stat-item" id="analysisCardRecurring" data-ui-state="loading">
+            <div class="analysis-card-label" data-i18n="debt_label">Debt</div>
             <div class="analysis-card-value" id="analysisRecurringValue">—</div>
-            <div class="muted analysis-card-meta" id="analysisRecurringMeta" data-i18n="analysis_card_waiting">Ожидаем метрики…</div>
           </article>
         </div>
-
-        <div class="analysis-empty-cta" id="analysisEmptyCta" hidden>
-          <button type="button" class="ghost" data-action="open-add-wallet" data-i18n="cta_add_wallet">Добавить кошелёк</button>
-        </div>
-      </section>
-
-      <section class="grid main-grid" aria-label="Main panels">
-        <div class="stack">
-          <article class="card" data-motion="reveal">
-            <div class="section-head">
-              <h2 class="section-title" data-i18n="your_cards">Ваши карты</h2>
-              <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
-            </div>
-            <div class="panel-feedback" id="accountsFeedback" aria-live="polite"></div>
-            <div class="list" id="accountsList" data-ui-state="loading">
-              <div class="skeleton-list" aria-hidden="true">
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-              </div>
-            </div>
-          </article>
-
-          <article class="card" data-motion="reveal">
-            <div class="section-head">
-              <h2 class="section-title" data-i18n="wallets_title">Крипто-кошельки</h2>
-              <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
-            </div>
-            <div class="panel-feedback" id="walletsFeedback" aria-live="polite"></div>
-            <div class="list" id="walletsList" data-ui-state="loading">
-              <div class="skeleton-list" aria-hidden="true">
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-              </div>
-            </div>
-          </article>
-        </div>
-
-        <div class="stack">
-          <article class="card" data-motion="reveal">
-            <div class="section-head tx-head">
-              <h2 class="section-title" data-i18n="recent_transactions_title">Последние транзакции</h2>
-              <div class="tx-toolbar">
-                <div class="tx-period" role="tablist" aria-label="Transaction period">
-                  <button type="button" class="chip tx-period-btn active" data-period="7">7d</button>
-                  <button type="button" class="chip tx-period-btn" data-period="30">30d</button>
-                </div>
-                <button type="button" class="ghost" id="btn-add-transaction" data-i18n="add">Добавить</button>
-              </div>
-            </div>
-            <div class="panel-feedback" id="transactionsFeedback" aria-live="polite"></div>
-            <div class="list" id="transactionsList" data-ui-state="loading">
-              <div class="skeleton-list" aria-hidden="true">
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-                <div class="skeleton-item"></div>
-              </div>
-            </div>
-          </article>
-
-          <article class="card" data-motion="reveal">
-            <h2 class="section-title" data-i18n="upcoming_payments">Ближайшие платежи</h2>
-            <div class="list upcoming-list">
-              <div class="list-item">
-                <div>
-                  <div class="list-label" data-i18n="payment_rent">Аренда</div>
-                  <small data-i18n="payment_due_jan15">Срок: 15 янв</small>
-                </div>
-                <div class="amount-negative" id="paymentRentAmount">—</div>
-              </div>
-              <div class="list-item">
-                <div>
-                  <div class="list-label" data-i18n="payment_streaming">Стриминг</div>
-                  <small data-i18n="payment_due_jan19">Срок: 19 янв</small>
-                </div>
-                <div class="amount-negative" id="paymentSpotifyAmount">—</div>
-              </div>
-              <div class="list-item">
-                <div>
-                  <div class="list-label" data-i18n="payment_mobile">Мобильная связь</div>
-                  <small data-i18n="payment_due_jan22">Срок: 22 янв</small>
-                </div>
-                <div class="amount-negative" id="paymentMobileAmount">—</div>
-              </div>
-            </div>
-          </article>
+        <div class="analysis-compat-hidden" aria-hidden="true">
+          <div id="incomeExpenseDetails">—</div>
+          <div id="analysisOutflowSource" data-data-source="pending"></div>
+          <div id="analysisRecurringSource" data-data-source="pending"></div>
+          <div id="analysisCardGrowth" data-ui-state="loading"></div>
+          <div id="analysisCardPortfolio" data-ui-state="loading"></div>
+          <span id="analysisPortfolioValue">—</span>
+          <span id="analysisGrowthValue">—</span>
+          <span id="analysisPortfolioMeta">—</span>
+          <span id="analysisGrowthMeta">—</span>
+          <span id="analysisGrowthSpark"></span>
+          <span id="analysisPortfolioSource" data-data-source="pending"></span>
+          <span id="analysisGrowthSource" data-data-source="pending"></span>
+          <span id="incomeExpenseNet">—</span>
+          <span id="analysisDataSource" data-data-source="pending">pending</span>
+          <span id="analysisBannerTitle">—</span>
+          <span id="analysisBannerSubtitle">—</span>
+          <span id="analysisMiniValue">—</span>
+          <span id="analysisMiniGrowth">—</span>
+          <span id="creditValue">—</span>
+          <span id="totalsByCurrency">—</span>
+          <span id="balanceError">—</span>
+          <span id="analysisStage">—</span>
+          <span id="analysisProgressText">0%</span>
+          <span id="analysisProgressBar" aria-valuenow="0">0</span>
+          <span id="analysisProgressFill">—</span>
+          <span id="analysisProgressWrap">—</span>
+          <span id="analysisEmptyCta">—</span>
+          <span id="cryptoStatus">—</span>
+          <span id="fxStatus">—</span>
+          <span id="marketsDataSource" data-data-source="pending"></span>
+          <span id="cryptoDataSource" data-data-source="pending"></span>
+          <span id="fxDataSource" data-data-source="pending"></span>
         </div>
       </section>
 
-      <section class="grid chart-grid" aria-label="Analytics and markets">
-        <article class="card" data-motion="reveal">
-          <div class="card-row">
-            <div>
-              <div class="badge alt" data-i18n="demo">Демо</div>
-              <h2 class="section-title" data-i18n="balance_trend_title">Динамика баланса</h2>
-              <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
-            </div>
-            <div class="pill-soft"><span data-i18n="trend_label">Тренд:</span> +9.2%</div>
+      <section class="card section get-started-section" id="getStartedSection" hidden data-motion="reveal">
+        <div class="section-head">
+          <h2 class="section-title" data-i18n="get_started_title">Get started</h2>
+        </div>
+        <div class="muted get-started-subtitle" data-i18n="get_started_subtitle">Complete one step to unlock analytics.</div>
+        <div class="get-started-actions">
+          <button type="button" class="ghost" data-action="open-add-account" data-i18n="get_started_connect">Connect account</button>
+          <button type="button" class="ghost" data-action="open-add-transaction" data-i18n="get_started_add_tx">Add transaction</button>
+          <button type="button" class="ghost" data-action="open-import-history" data-i18n="get_started_import">Import history</button>
+        </div>
+      </section>
+
+      <section class="card section transactions-section" data-motion="reveal">
+        <div class="section-head tx-head">
+          <h2 class="section-title" data-i18n="recent_transactions_title">Транзакции</h2>
+          <div class="tx-toolbar">
+            <button type="button" class="ghost" id="btn-add-transaction" data-i18n="add">Добавить</button>
           </div>
-          <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria" data-ui-state="loading"></div>
+        </div>
+        <div class="panel-feedback" id="transactionsFeedback" aria-live="polite"></div>
+        <div class="table-head">
+          <span data-i18n="tx_col_date">Дата</span>
+          <span data-i18n="tx_col_merchant">Описание</span>
+          <span data-i18n="tx_col_category">Категория</span>
+          <span data-i18n="tx_col_amount">Сумма</span>
+        </div>
+        <div class="list table-list" id="transactionsList" data-ui-state="loading">
+          <div class="skeleton-list" aria-hidden="true">
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card section portfolio-section" data-motion="reveal">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title" data-i18n="balance_trend_title">Динамика капитала</h2>
+            <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
+          </div>
+          <div class="chart-toolbar">
+            <div class="text-tabs" role="tablist" aria-label="Portfolio period">
+              <button type="button" class="text-tab active">7d</button>
+              <button type="button" class="text-tab">30d</button>
+              <button type="button" class="text-tab">90d</button>
+              <button type="button" class="text-tab">1y</button>
+            </div>
+            <select class="metric-select" aria-label="Metric">
+              <option selected data-i18n="net_worth_title">Net worth</option>
+              <option data-i18n="income_label">Доход</option>
+              <option data-i18n="expense_label">Расход</option>
+            </select>
+          </div>
+        </div>
+        <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria" data-ui-state="loading"></div>
+        <div id="expenseChart" class="analysis-compat-hidden" aria-hidden="true" data-ui-state="hidden"></div>
+        <span id="expenseCurrency" class="analysis-compat-hidden" aria-hidden="true">USD</span>
+      </section>
+
+      <section class="dashboard-columns" data-motion="reveal">
+        <article class="card section">
+          <div class="section-head">
+            <h2 class="section-title" data-i18n="your_cards">Ваши карты</h2>
+            <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
+          </div>
+          <div class="panel-feedback" id="accountsFeedback" aria-live="polite"></div>
+          <div class="list table-list" id="accountsList" data-ui-state="loading">
+            <div class="skeleton-list" aria-hidden="true">
+              <div class="skeleton-item"></div>
+              <div class="skeleton-item"></div>
+              <div class="skeleton-item"></div>
+            </div>
+          </div>
         </article>
 
-        <article class="card" data-motion="reveal">
-          <div class="card-row">
-            <div>
-              <div class="badge alt" data-i18n="demo">Демо</div>
-              <h2 class="section-title" data-i18n="expense_breakdown_title">Структура расходов</h2>
-              <div class="muted"><span data-i18n="current_month">Текущий месяц,</span> <span id="expenseCurrency">USD</span></div>
+        <article class="card section">
+          <div class="section-head">
+            <h2 class="section-title" data-i18n="wallets_title">Крипто-кошельки</h2>
+            <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
+          </div>
+          <div class="panel-feedback" id="walletsFeedback" aria-live="polite"></div>
+          <div class="list table-list" id="walletsList" data-ui-state="loading">
+            <div class="skeleton-list" aria-hidden="true">
+              <div class="skeleton-item"></div>
+              <div class="skeleton-item"></div>
             </div>
           </div>
-          <div id="expenseChart" class="chart-shell" aria-label="Диаграмма расходов" data-i18n-aria="expense_chart_aria" data-ui-state="loading"></div>
         </article>
+      </section>
 
-        <article class="card market-card span-2" data-motion="reveal">
-          <div class="card-row market-head">
-            <h2 class="section-title" data-i18n="markets_title">Курсы и рынки</h2>
-            <div class="meta-badges">
-              <div class="source-badge" id="marketsDataSource" data-data-source="pending" aria-live="polite" data-i18n="source_pending">Ожидаем данные</div>
-            </div>
+      <section class="card section upcoming-section" data-motion="reveal">
+        <div class="section-head">
+          <h2 class="section-title" data-i18n="upcoming_payments">Ближайшие платежи</h2>
+          <button type="button" class="ghost" id="btn-upcoming-add" data-i18n="add">Добавить</button>
+        </div>
+        <div class="list upcoming-list">
+          <div class="list-item payment-row">
+            <div class="payment-name" data-i18n="payment_rent">Аренда</div>
+            <small class="payment-due" data-i18n="payment_due_jan15">Срок: 15 янв</small>
+            <div class="amount-negative payment-amount" id="paymentRentAmount">—</div>
           </div>
-
-          <div class="market-grid">
-            <section class="market-section">
-              <div class="market-header">
-                <div>
-                  <h3 class="section-subtitle" data-i18n="crypto_badge">Crypto</h3>
-                  <div class="muted status-line">
-                    <span id="cryptoStatus" data-i18n="loading" aria-live="polite">Загрузка…</span>
-                    <span aria-hidden="true">·</span>
-                    <span id="cryptoBase">USD</span>
-                  </div>
-                </div>
-                <div class="source-badge" id="cryptoDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-              </div>
-              <div class="crypto-grid">
-                <div class="mini-coin">
-                  <div class="row coin-row">
-                    <img src="/crypto/btc.svg" alt="BTC" class="coin-logo">
-                    <div class="coin-title">
-                      <strong>BTC</strong>
-                      <div class="muted coin-name">Bitcoin</div>
-                    </div>
-                    <div class="amount-positive" id="btcPrice">—</div>
-                    <div class="mini-spark" id="btcSpark"></div>
-                  </div>
-                </div>
-                <div class="mini-coin">
-                  <div class="row coin-row">
-                    <img src="/crypto/eth.svg" alt="ETH" class="coin-logo">
-                    <div class="coin-title">
-                      <strong>ETH</strong>
-                      <div class="muted coin-name">Ethereum</div>
-                    </div>
-                    <div class="amount-positive" id="ethPrice">—</div>
-                    <div class="mini-spark" id="ethSpark"></div>
-                  </div>
-                </div>
-                <div class="mini-coin">
-                  <div class="row coin-row">
-                    <img src="/crypto/sol.svg" alt="SOL" class="coin-logo">
-                    <div class="coin-title">
-                      <strong>SOL</strong>
-                      <div class="muted coin-name">Solana</div>
-                    </div>
-                    <div class="amount-positive" id="solPrice">—</div>
-                    <div class="mini-spark" id="solSpark"></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="market-section fx-panel">
-              <div class="market-header fx-header">
-                <div>
-                  <h3 class="section-subtitle" data-i18n="fx_badge">FX</h3>
-                  <div class="muted"><span id="fxBase">USD</span></div>
-                </div>
-                <div class="fx-header-actions">
-                  <div class="pill-soft" id="fxStatus" data-i18n="updating" aria-live="polite">Обновляем…</div>
-                  <div class="source-badge" id="fxDataSource" data-data-source="pending" data-i18n="source_pending">Ожидаем данные</div>
-                  <button type="button" class="ghost fx-toggle" id="fxToggleList" data-i18n="all_currencies">Все валюты</button>
-                </div>
-              </div>
-
-              <div class="fx-shell">
-                <div class="fx-top">
-                  <div class="fx-vol-title" data-i18n="most_volatile">Самые волатильные</div>
-                  <div class="fx-vol-grid" id="fxTopVolatile" data-ui-state="loading">
-                    <div class="skeleton-list" aria-hidden="true">
-                      <div class="skeleton-item"></div>
-                      <div class="skeleton-item"></div>
-                      <div class="skeleton-item"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="fx-detail" id="fxDetail">
-                  <div class="fx-detail-info">
-                    <div class="fx-detail-header">
-                      <div>
-                        <div class="fx-detail-code" id="fxDetailCode">—</div>
-                        <div class="muted" id="fxDetailName" data-i18n="select_currency_details">Выберите валюту для деталей</div>
-                      </div>
-                    </div>
-                    <div class="fx-detail-rate">
-                      <div class="fx-detail-price" id="fxDetailRate">—</div>
-                      <div class="fx-detail-change" id="fxDetailChange">—</div>
-                    </div>
-                  </div>
-                  <div class="fx-detail-chart" id="fxDetailChart"></div>
-                </div>
-              </div>
-
-              <div class="fx-browse" id="fxBrowse">
-                <div class="fx-browse-header">
-                  <div class="fx-inputs">
-                    <input type="search" id="fxSearch" placeholder="Поиск валюты" aria-label="Поиск валюты" data-i18n-placeholder="search_currency_placeholder" data-i18n-aria="search_currency_aria">
-                    <select id="fxBaseSelect" aria-label="Базовая валюта" data-i18n-aria="base_currency_aria"></select>
-                  </div>
-                  <div class="fx-sort">
-                    <button type="button" class="chip active" data-sort="volatility" data-i18n="volatility">Волатильность</button>
-                    <button type="button" class="chip" data-sort="alpha">A-Z</button>
-                  </div>
-                </div>
-                <div class="fx-list" id="fxList"></div>
-              </div>
-            </section>
+          <div class="list-item payment-row">
+            <div class="payment-name" data-i18n="payment_streaming">Стриминг</div>
+            <small class="payment-due" data-i18n="payment_due_jan19">Срок: 19 янв</small>
+            <div class="amount-negative payment-amount" id="paymentSpotifyAmount">—</div>
           </div>
-        </article>
+          <div class="list-item payment-row">
+            <div class="payment-name" data-i18n="payment_mobile">Мобильная связь</div>
+            <small class="payment-due" data-i18n="payment_due_jan22">Срок: 22 янв</small>
+            <div class="amount-negative payment-amount" id="paymentMobileAmount">—</div>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -426,6 +278,86 @@
           <button type="button" class="ghost" id="btn-add-account-cancel" data-i18n="cancel">Отмена</button>
           <button type="button" id="btn-add-account-create" data-i18n="create">Создать</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="analysis-detail-overlay" class="overlay analysis-detail-overlay" hidden data-ui-state="closed">
+    <div class="analysis-detail-menu" id="analysis-detail-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Аналитика кошелька" data-i18n-aria="analysis_detail_menu_aria">
+      <div class="analysis-detail-head">
+        <div class="analysis-detail-identity">
+          <h3 class="analysis-detail-title" id="analysisDetailWalletName">—</h3>
+          <div class="muted analysis-detail-subtitle" id="analysisDetailWalletNetwork">—</div>
+          <div class="analysis-detail-address-row">
+            <code class="analysis-detail-address" id="analysisDetailWalletAddress">—</code>
+            <button type="button" class="ghost" id="analysisDetailCopyBtn" data-i18n="copy">Copy</button>
+            <a class="ghost link-btn" id="analysisDetailExplorerLink" href="#" target="_blank" rel="noopener noreferrer" data-i18n="open_explorer">Explorer</a>
+          </div>
+        </div>
+        <div class="analysis-detail-head-actions">
+          <div class="analysis-detail-updated" id="analysisDetailUpdated" data-i18n="analysis_detail_wallet_missing">Данные появятся после подключения кошелька.</div>
+          <button type="button" class="ghost" id="btn-analysis-detail-close" data-i18n="back_to_dashboard" data-i18n-aria="close_dialog">Назад</button>
+          <span id="analysisDetailSource" class="analysis-compat-hidden" data-data-source="pending">pending</span>
+        </div>
+      </div>
+
+      <div class="analysis-detail-body">
+        <section class="analysis-detail-section analysis-detail-stats-row">
+          <article class="analysis-detail-metric">
+            <div class="analysis-detail-metric-label" data-i18n="analysis_card_portfolio">Portfolio value</div>
+            <div class="analysis-detail-metric-value" id="analysisDetailPortfolio">—</div>
+          </article>
+          <article class="analysis-detail-metric">
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_wallet_balance">Balance</div>
+            <div class="analysis-detail-metric-value" id="analysisDetailWalletBalance">—</div>
+          </article>
+          <article class="analysis-detail-metric">
+            <div class="analysis-detail-metric-label" data-i18n="analysis_card_growth">7d growth</div>
+            <div class="analysis-detail-metric-value" id="analysisDetailGrowth">—</div>
+          </article>
+          <article class="analysis-detail-metric">
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_inflow_30d">Inflow (30d)</div>
+            <div class="analysis-detail-metric-value" id="analysisDetailRecurring">—</div>
+          </article>
+          <article class="analysis-detail-metric">
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_outflow_30d">Outflow (30d)</div>
+            <div class="analysis-detail-metric-value" id="analysisDetailOutflow">—</div>
+          </article>
+          <div hidden id="analysisDetailWalletValue">—</div>
+          <div hidden id="analysisDetailBalance">—</div>
+          <div hidden id="analysisDetailNet">—</div>
+        </section>
+
+        <section class="analysis-detail-section">
+          <div class="section-head analysis-detail-chart-head">
+            <h4 class="analysis-detail-section-title" data-i18n="analysis_detail_series_title">Динамика портфеля</h4>
+            <div class="analysis-detail-chart-controls">
+              <div class="text-tabs" id="analysisDetailMetricTabs" role="tablist" aria-label="Series metric">
+                <button type="button" class="text-tab active" data-metric="net" data-i18n="net_worth_title">Net worth</button>
+                <button type="button" class="text-tab" data-metric="inflow" data-i18n="income_label">Доход</button>
+                <button type="button" class="text-tab" data-metric="outflow" data-i18n="expense_label">Расход</button>
+              </div>
+              <div class="text-tabs" id="analysisDetailWindowTabs" role="tablist" aria-label="Series window">
+                <button type="button" class="text-tab" data-window="7d">7d</button>
+                <button type="button" class="text-tab active" data-window="30d">30d</button>
+                <button type="button" class="text-tab" data-window="90d">90d</button>
+                <button type="button" class="text-tab" data-window="1y">1y</button>
+              </div>
+            </div>
+          </div>
+          <div class="analysis-detail-series-meta muted" id="analysisDetailSeriesMeta">—</div>
+          <div class="analysis-detail-series-chart" id="analysisDetailSeriesChart"></div>
+        </section>
+
+        <section class="analysis-detail-section">
+          <div class="analysis-detail-section-title" data-i18n="analysis_detail_allocation_title">Структура портфеля</div>
+          <div class="analysis-detail-list" id="analysisDetailAllocationList"></div>
+        </section>
+
+        <section class="analysis-detail-section">
+          <div class="analysis-detail-section-title" data-i18n="analysis_detail_insights_title">Инсайты</div>
+          <div class="analysis-detail-list" id="analysisDetailInsightsList"></div>
+        </section>
       </div>
     </div>
   </div>

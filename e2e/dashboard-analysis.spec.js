@@ -7,12 +7,13 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('wallet analysis strip shows progress and instant value cards', async ({ page }) => {
+test('wallet analysis strip shows progress and compact wallet intelligence card', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
   await expect(page.locator('#walletAnalysisPanel')).toBeVisible();
-  await expect(page.locator('#analysisEmptyCta')).toBeVisible();
+  await expect(page.locator('#analysisQuickCard')).toContainText('Wallet intelligence');
+  await expect(page.locator('#analysisQuickCard')).not.toContainText('USD');
 
   await page.click('#btn-add-wallet');
   await expect(page.locator('#add-wallet-overlay')).toBeVisible();
@@ -23,25 +24,23 @@ test('wallet analysis strip shows progress and instant value cards', async ({ pa
   await expect(page.locator('#add-wallet-overlay')).toBeHidden();
 
   await expect(page.locator('#walletsList .wallet-item', { hasText: 'MetaMask' })).toBeVisible();
-  await expect(page.locator('#analysisEmptyCta')).toBeHidden();
-
-  await expect.poll(async () => {
-    return (await page.locator('#analysisProgressText').textContent())?.trim();
-  }, { timeout: 20_000 }).toBe('100%');
-
-  await expect(page.locator('#analysisDataSource')).toHaveText(/(Live|Live \+ Synthetic)/);
-  await expect(page.locator('#analysisPortfolioValue')).toContainText('USD');
-  await expect(page.locator('#analysisGrowthValue')).toContainText('%');
-  await expect(page.locator('#analysisGrowthSpark .spark-svg')).toBeVisible();
-  await expect(page.locator('#analysisRecurringMeta')).toContainText('%');
-  await expect(page.locator('#analysisOutflowSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
-  await expect(page.locator('#analysisRecurringSource')).toHaveText(/(Live|Synthetic|Live \+ Synthetic)/);
+  await expect(page.locator('#analysisUpdatedAt')).toContainText(/(Updated|Waiting)/);
+  await expect(page.locator('#analysisOutflowValue')).toContainText('USD');
+  const debtText = ((await page.locator('#analysisRecurringValue').textContent()) || '').trim();
+  expect(debtText === '—' || debtText.includes('USD')).toBeTruthy();
 
   await page.click('#analysisQuickCard');
-  await expect(page.locator('#analysisQuickPanel')).toBeVisible();
-  await expect(page.locator('#analysisQuickPortfolio')).toContainText('USD');
-  await expect(page.locator('#analysisQuickWallets')).toHaveText('1');
-  await expect(page.locator('#analysisQuickTransactions')).toHaveText('0');
+  await expect(page.locator('#analysis-detail-overlay')).toBeVisible();
+  await expect(page.locator('#analysis-detail-menu')).toBeVisible();
+  await expect(page.locator('#analysisDetailWalletName')).toContainText('MetaMask');
+  await expect(page.locator('#analysisDetailPortfolio')).toContainText('USD');
+  const hasLargeSeries = await page.locator('#analysisDetailSeriesChart svg').count();
+  const hasCompactSeries = await page.locator('#analysisDetailSeriesChart .compact-sparkline').count();
+  expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
+  await expect(page.locator('#analysisDetailInsightsList')).toBeVisible();
+  await expect.poll(async () => ((await page.locator('#analysisDetailInsightsList').textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);
+  await page.click('#btn-analysis-detail-close');
+  await expect(page.locator('#analysis-detail-overlay')).toBeHidden();
 });
 
 test('wallet analysis strip resets after wallet deletion', async ({ page }) => {
@@ -61,7 +60,5 @@ test('wallet analysis strip resets after wallet deletion', async ({ page }) => {
 
   await wallet.locator('button.wallet-remove').click();
   await expect(page.locator('#walletsList')).toContainText('No wallets added yet.');
-  await expect(page.locator('#analysisEmptyCta')).toBeVisible();
-  await expect(page.locator('#analysisProgressText')).toHaveText('0%');
-  await expect(page.locator('#analysisBannerTitle')).toHaveText('Connect a wallet to unlock analysis');
+  await expect(page.locator('#getStartedSection')).toBeVisible();
 });

@@ -11,9 +11,12 @@ test('dashboard empty states expose action CTAs', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-empty');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
-  await expect(page.locator('#accountsList [data-action="open-add-account"]')).toBeVisible();
-  await expect(page.locator('#walletsList [data-action="open-add-wallet"]')).toBeVisible();
-  await expect(page.locator('#transactionsList [data-action="open-add-transaction"]')).toBeVisible();
+  await expect(page.locator('#getStartedSection')).toBeVisible();
+  await expect(page.locator('#getStartedSection [data-action="open-add-account"]')).toBeVisible();
+  await expect(page.locator('#getStartedSection [data-action="open-add-transaction"]')).toBeVisible();
+  await expect(page.locator('#getStartedSection [data-action="open-import-history"]')).toBeVisible();
+  await expect(page.locator('#transactionsList')).toContainText('No transactions yet.');
+  await expect(page.locator('#btn-add-transaction')).toBeVisible();
 });
 
 test('modal supports keyboard escape and focus restore', async ({ page }, testInfo) => {
@@ -49,14 +52,10 @@ test('reduced motion mode is applied', async ({ page }) => {
   await expect(page.locator('body.dashboard[data-motion-level="reduced"]')).toBeVisible();
 });
 
-test('data source badges are rendered for markets', async ({ page }) => {
+test('markets are collapsed to a compact nav link', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-source');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
-  await expect(page.locator('#marketsDataSource')).toBeVisible();
-  await expect(page.locator('#cryptoDataSource')).toBeVisible();
-  await expect(page.locator('#fxDataSource')).toBeVisible();
-
-  await expect(page.locator('#cryptoDataSource')).toHaveText(/(Live|Demo|Waiting for data)/);
-  await expect(page.locator('#fxDataSource')).toHaveText(/(Live|Demo|Synthetic|Live \+ Synthetic|Waiting for data)/);
+  await expect(page.locator('.markets-link')).toHaveCount(1);
+  await expect(page.locator('.markets-section')).toHaveCount(0);
 });

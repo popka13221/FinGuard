@@ -86,6 +86,8 @@
     baseCurrencyError: '#baseCurrencyError',
     incomeExpenseNet: '#incomeExpenseNet',
     incomeExpenseDetails: '#incomeExpenseDetails',
+    analysisIncomeValue: '#analysisIncomeValue',
+    analysisExpenseValue: '#analysisExpenseValue',
     paymentRentAmount: '#paymentRentAmount',
     paymentSpotifyAmount: '#paymentSpotifyAmount',
     paymentMobileAmount: '#paymentMobileAmount',
@@ -95,6 +97,7 @@
     analysisBannerSubtitle: '#analysisBannerSubtitle',
     analysisDataSource: '#analysisDataSource',
     analysisUpdatedAt: '#analysisUpdatedAt',
+    analysisProgressWrap: '#analysisProgressWrap',
     analysisProgressBar: '#analysisProgressBar',
     analysisProgressFill: '#analysisProgressFill',
     analysisStage: '#analysisStage',
@@ -118,16 +121,34 @@
     analysisOutflowMeta: '#analysisOutflowMeta',
     analysisRecurringMeta: '#analysisRecurringMeta',
     analysisQuickCard: '#analysisQuickCard',
-    analysisQuickPanel: '#analysisQuickPanel',
-    analysisQuickUpdated: '#analysisQuickUpdated',
-    analysisQuickPortfolio: '#analysisQuickPortfolio',
-    analysisQuickGrowth: '#analysisQuickGrowth',
-    analysisQuickOutflow: '#analysisQuickOutflow',
-    analysisQuickRecurring: '#analysisQuickRecurring',
-    analysisQuickBalance: '#analysisQuickBalance',
-    analysisQuickNet: '#analysisQuickNet',
-    analysisQuickWallets: '#analysisQuickWallets',
-    analysisQuickTransactions: '#analysisQuickTransactions'
+    analysisMiniValue: '#analysisMiniValue',
+    analysisMiniGrowth: '#analysisMiniGrowth',
+    analysisHeroChange: '#analysisHeroChange',
+    analysisDetailOverlay: '#analysis-detail-overlay',
+    analysisDetailMenu: '#analysis-detail-menu',
+    analysisDetailCloseBtn: '#btn-analysis-detail-close',
+    analysisDetailSource: '#analysisDetailSource',
+    analysisDetailUpdated: '#analysisDetailUpdated',
+    analysisDetailCopyBtn: '#analysisDetailCopyBtn',
+    analysisDetailExplorerLink: '#analysisDetailExplorerLink',
+    analysisDetailMetricTabs: '#analysisDetailMetricTabs',
+    analysisDetailWindowTabs: '#analysisDetailWindowTabs',
+    analysisDetailWalletName: '#analysisDetailWalletName',
+    analysisDetailWalletNetwork: '#analysisDetailWalletNetwork',
+    analysisDetailWalletAddress: '#analysisDetailWalletAddress',
+    analysisDetailWalletValue: '#analysisDetailWalletValue',
+    analysisDetailWalletBalance: '#analysisDetailWalletBalance',
+    analysisDetailPortfolio: '#analysisDetailPortfolio',
+    analysisDetailGrowth: '#analysisDetailGrowth',
+    analysisDetailOutflow: '#analysisDetailOutflow',
+    analysisDetailRecurring: '#analysisDetailRecurring',
+    analysisDetailBalance: '#analysisDetailBalance',
+    analysisDetailNet: '#analysisDetailNet',
+    analysisDetailSeriesMeta: '#analysisDetailSeriesMeta',
+    analysisDetailSeriesChart: '#analysisDetailSeriesChart',
+    analysisDetailAllocationList: '#analysisDetailAllocationList',
+    analysisDetailInsightsList: '#analysisDetailInsightsList',
+    getStartedSection: '#getStartedSection'
   };
 
   const LANG_STORAGE_KEY = 'finguard:lang';
@@ -142,6 +163,12 @@
       credit: 'Кредит',
       credit_placeholder: 'Кредит: —',
       income_expense_month: 'Доход / Расход (мес.)',
+      income_month: 'Доход (мес.)',
+      spend_month: 'Расход (мес.)',
+      income_30d: 'Доход (30д)',
+      spend_30d: 'Расход (30д)',
+      cashflow_30d: 'Кэшфлоу (30д)',
+      debt_label: 'Долг',
       income_expense_details: 'Доход: — · Расход: —',
       income_label: 'Доход',
       expense_label: 'Расход',
@@ -155,6 +182,7 @@
       payment_due_jan19: 'Срок: 19 янв',
       payment_mobile: 'Мобильная связь',
       payment_due_jan22: 'Срок: 22 янв',
+      net_worth_title: 'Net worth',
       demo: 'Демо',
       balance_trend_title: 'Динамика баланса',
       last_6_months: 'Последние 6 месяцев,',
@@ -163,24 +191,25 @@
       expense_breakdown_title: 'Структура расходов',
       current_month: 'Текущий месяц,',
       expense_chart_aria: 'Диаграмма расходов',
+      expense_empty_title: 'Нет данных за текущий месяц',
       markets_badge: 'Markets',
       crypto_badge: 'Crypto',
       fx_badge: 'FX',
       fx_radar_title: 'FX Radar',
-      markets_title: 'Курсы и рынки',
+      markets_title: 'Рынки',
       markets_subtitle: 'Сводка по крипте и валютам',
       coin_rates: 'Курсы монет',
       loading: 'Загрузка…',
       updating: 'Обновляем…',
-      demo_data: 'Демо-данные',
+      demo_data: 'Оценочные данные',
       no_data: 'Нет данных',
       updated: 'Обновлено',
       updated_at: 'Обновлено {value}',
       source_pending: 'Ожидаем данные',
       source_live: 'Live',
-      source_demo: 'Demo',
-      source_synthetic: 'Synthetic',
-      source_hybrid: 'Live + Synthetic',
+      source_demo: 'Оценка',
+      source_synthetic: 'Оценка',
+      source_hybrid: 'Live',
       base_label: 'База:',
       all_currencies: 'Все валюты',
       hide: 'Скрыть',
@@ -217,7 +246,7 @@
       account_remove: 'Удалить',
       account_delete_confirm: 'Удалить счет “{name}”?',
       account_delete_failed: 'Не удалось удалить счет.',
-      recent_transactions_title: 'Последние транзакции',
+      recent_transactions_title: 'Транзакции',
       transactions_empty: 'Транзакций пока нет.',
       empty_transactions_hint: 'Добавьте транзакцию, чтобы заполнить ленту операций.',
       transactions_load_failed: 'Не удалось загрузить транзакции.',
@@ -239,6 +268,10 @@
       transaction_date_aria: 'Дата и время',
       transaction_description_label: 'Комментарий',
       transaction_description_placeholder: 'Например: Кофе',
+      tx_col_date: 'Дата',
+      tx_col_merchant: 'Описание',
+      tx_col_category: 'Категория',
+      tx_col_amount: 'Сумма',
       transaction_no_accounts: 'Сначала создайте счёт.',
       transaction_no_categories: 'Нет подходящих категорий.',
       transaction_select_account: 'Выберите счёт.',
@@ -264,6 +297,9 @@
       wallet_network_aria: 'Сеть',
       wallet_address: 'Адрес',
       wallet_address_placeholder: '0x… / bc1…',
+      copy: 'Копировать',
+      open_explorer: 'Explorer',
+      back_to_dashboard: 'Назад',
       wallet_remove: 'Удалить',
       wallet_delete_confirm: 'Удалить кошелёк “{name}”?',
       wallet_delete_failed: 'Не удалось удалить кошелёк.',
@@ -277,8 +313,10 @@
       base_currency_conversion_failed: 'Не удалось конвертировать суммы в базовую валюту.',
       cta_add_wallet: 'Добавить кошелёк',
       cta_add_transaction: 'Добавить транзакцию',
+      cta_connect_account: 'Подключить счёт',
       cta_retry: 'Повторить',
       period_7d: 'за 7д',
+      period_7d_compact: '• 7d',
       period_24h: 'за 24ч',
       min: 'Мин',
       max: 'Макс',
@@ -290,15 +328,16 @@
       expense_transport: 'Транспорт',
       expense_subscriptions: 'Подписки',
       expense_other: 'Прочее',
-      analysis_banner_badge: 'Instant Value',
-      analysis_banner_title_idle: 'Подключите кошелёк и получите анализ',
-      analysis_banner_subtitle_idle: 'После добавления кошелька метрики и инсайты появятся автоматически.',
-      analysis_banner_title_running: 'Анализируем кошелёк {name}',
-      analysis_banner_subtitle_running: 'Собираем транзакции, строим динамику и recurring-паттерны.',
-      analysis_banner_title_partial: 'Первые инсайты уже готовы',
-      analysis_banner_subtitle_partial: 'Вы видите промежуточные метрики, полный отчёт скоро появится.',
-      analysis_banner_title_done: 'Анализ готов',
-      analysis_banner_subtitle_done: 'Все ключевые метрики обновлены.',
+      analysis_banner_badge: 'Wallet intelligence',
+      analysis_open_link: 'Wallet intelligence →',
+      analysis_banner_title_idle: 'Подключите кошелёк',
+      analysis_banner_subtitle_idle: 'После подключения аналитика появится автоматически.',
+      analysis_banner_title_running: 'Синхронизация {name}',
+      analysis_banner_subtitle_running: 'Собираем данные кошелька.',
+      analysis_banner_title_partial: 'Часть данных готова',
+      analysis_banner_subtitle_partial: 'Откройте Wallet intelligence для деталей.',
+      analysis_banner_title_done: 'Wallet intelligence обновлён',
+      analysis_banner_subtitle_done: 'Все метрики синхронизированы.',
       analysis_banner_title_failed: 'Анализ временно недоступен',
       analysis_banner_subtitle_failed: 'Попробуем обновить анализ автоматически.',
       analysis_stage_fetch_tx: 'Сканируем транзакции',
@@ -324,16 +363,54 @@
       analysis_top_outflow_label: 'Крупнейший отток: {name}',
       analysis_top_outflow_estimated: 'Оценка оттока пока нет новых операций',
       analysis_recurring_live: 'Recurring по последним операциям',
-      analysis_recurring_estimated: 'Синтетическая оценка до завершения анализа',
+      analysis_recurring_estimated: 'Оценка до завершения анализа',
       analysis_recurring_meta_live: 'След.: {value} · {confidence}%',
       analysis_recurring_meta_estimated: 'Оценка · {confidence}%',
-      analysis_quick_open_hint: 'Нажмите, чтобы открыть',
+      analysis_quick_open_hint: 'Открыть полный отчёт',
       analysis_quick_title: 'Все данные сейчас',
       analysis_quick_not_ready: 'Данные появятся после подключения кошелька.',
       analysis_quick_refreshing: 'Обновляем данные…',
       analysis_quick_updated: 'Обновлено {value}',
       analysis_quick_wallets: 'Кошельки',
-      analysis_quick_transactions: 'Транзакции'
+      analysis_quick_transactions: 'Транзакции',
+      analysis_mini_portfolio_label: 'Портфель',
+      analysis_mini_growth_label: '7д',
+      analysis_detail_menu_aria: 'Детальная аналитика кошелька',
+      analysis_detail_title: 'Wallet intelligence',
+      analysis_detail_subtitle: 'Полная детализация активного кошелька, структуры и инсайтов.',
+      analysis_detail_wallet_title: 'Активный кошелёк',
+      analysis_detail_wallet_balance: 'Баланс',
+      analysis_detail_inflow_30d: 'Inflow (30d)',
+      analysis_detail_outflow_30d: 'Outflow (30d)',
+      analysis_detail_wallet_missing: 'Подключите кошелёк, чтобы открыть полный анализ.',
+      analysis_detail_metrics_title: 'Ключевые метрики',
+      analysis_detail_series_title: 'Динамика портфеля',
+      analysis_detail_series_live: 'Live-series ({value})',
+      analysis_detail_series_estimated: 'Estimated series ({value})',
+      analysis_detail_allocation_title: 'Структура портфеля',
+      analysis_detail_allocation_empty: 'Пока нет структуры по активам.',
+      analysis_detail_insights_title: 'Инсайты',
+      analysis_detail_insights_empty: 'Инсайты появятся после сбора операций.',
+      analysis_insights_need_data: 'Нужно минимум 10 транзакций для построения инсайтов.',
+      analysis_insights_step_connect: 'Подключите кошелёк',
+      analysis_insights_step_import: 'Импортируйте историю',
+      analysis_insights_step_wait: 'Дождитесь синхронизации',
+      analysis_col_asset: 'Актив',
+      analysis_col_amount: 'Кол-во',
+      analysis_col_value: 'Стоимость',
+      analysis_col_share: 'Доля',
+      analysis_detail_updated: 'Обновлено {value}',
+      analysis_detail_series_meta: '{metric} · {value}',
+      analysis_confidence_label: 'Точность',
+      analysis_next_label: 'След.',
+      analysis_insight_fallback: 'Инсайт',
+      no_meaningful_change: 'Нет значимых изменений',
+      no_meaningful_change_window: 'Нет значимых изменений ({value})',
+      get_started_title: 'Начало',
+      get_started_subtitle: 'Сделайте один шаг, чтобы открыть аналитику.',
+      get_started_connect: 'Подключить счёт',
+      get_started_add_tx: 'Добавить транзакцию',
+      get_started_import: 'Импортировать историю'
     },
     en: {
       dashboard_page_title: 'FinGuard | Dashboard',
@@ -344,6 +421,12 @@
       credit: 'Credit',
       credit_placeholder: 'Credit: —',
       income_expense_month: 'Income / Expense (mo.)',
+      income_month: 'Income (month)',
+      spend_month: 'Spend (month)',
+      income_30d: 'Income (30d)',
+      spend_30d: 'Spend (30d)',
+      cashflow_30d: 'Cashflow (30d)',
+      debt_label: 'Debt',
       income_expense_details: 'Income: — · Expense: —',
       income_label: 'Income',
       expense_label: 'Expense',
@@ -357,6 +440,7 @@
       payment_due_jan19: 'Due: Jan 19',
       payment_mobile: 'Mobile service',
       payment_due_jan22: 'Due: Jan 22',
+      net_worth_title: 'Net worth',
       demo: 'Demo',
       balance_trend_title: 'Balance trend',
       last_6_months: 'Last 6 months,',
@@ -365,24 +449,25 @@
       expense_breakdown_title: 'Expense breakdown',
       current_month: 'Current month,',
       expense_chart_aria: 'Expense chart',
+      expense_empty_title: 'No data for the current month',
       markets_badge: 'Markets',
       crypto_badge: 'Crypto',
       fx_badge: 'FX',
       fx_radar_title: 'FX Radar',
-      markets_title: 'Rates & markets',
+      markets_title: 'Markets',
       markets_subtitle: 'Crypto & FX summary',
       coin_rates: 'Coin rates',
       loading: 'Loading…',
       updating: 'Updating…',
-      demo_data: 'Demo data',
+      demo_data: 'Estimated data',
       no_data: 'No data',
       updated: 'Updated',
       updated_at: 'Updated {value}',
       source_pending: 'Waiting for data',
       source_live: 'Live',
-      source_demo: 'Demo',
-      source_synthetic: 'Synthetic',
-      source_hybrid: 'Live + Synthetic',
+      source_demo: 'Estimated',
+      source_synthetic: 'Estimated',
+      source_hybrid: 'Live',
       base_label: 'Base:',
       all_currencies: 'All currencies',
       hide: 'Hide',
@@ -419,7 +504,7 @@
       account_remove: 'Delete',
       account_delete_confirm: 'Delete account “{name}”?',
       account_delete_failed: 'Failed to delete account.',
-      recent_transactions_title: 'Recent transactions',
+      recent_transactions_title: 'Transactions',
       transactions_empty: 'No transactions yet.',
       empty_transactions_hint: 'Add a transaction to populate your activity feed.',
       transactions_load_failed: 'Failed to load transactions.',
@@ -441,6 +526,10 @@
       transaction_date_aria: 'Date and time',
       transaction_description_label: 'Description',
       transaction_description_placeholder: 'e.g. Coffee',
+      tx_col_date: 'Date',
+      tx_col_merchant: 'Merchant',
+      tx_col_category: 'Category',
+      tx_col_amount: 'Amount',
       transaction_no_accounts: 'Create an account first.',
       transaction_no_categories: 'No matching categories.',
       transaction_select_account: 'Select an account.',
@@ -466,6 +555,9 @@
       wallet_network_aria: 'Network',
       wallet_address: 'Address',
       wallet_address_placeholder: '0x… / bc1…',
+      copy: 'Copy',
+      open_explorer: 'Explorer',
+      back_to_dashboard: 'Back',
       wallet_remove: 'Remove',
       wallet_delete_confirm: 'Delete wallet “{name}”?',
       wallet_delete_failed: 'Failed to delete wallet.',
@@ -479,8 +571,10 @@
       base_currency_conversion_failed: 'Failed to convert amounts to base currency.',
       cta_add_wallet: 'Add wallet',
       cta_add_transaction: 'Add transaction',
+      cta_connect_account: 'Connect account',
       cta_retry: 'Retry',
       period_7d: 'in 7d',
+      period_7d_compact: '• 7d',
       period_24h: 'in 24h',
       min: 'Min',
       max: 'Max',
@@ -492,15 +586,16 @@
       expense_transport: 'Transport',
       expense_subscriptions: 'Subscriptions',
       expense_other: 'Other',
-      analysis_banner_badge: 'Instant Value',
-      analysis_banner_title_idle: 'Connect a wallet to unlock analysis',
-      analysis_banner_subtitle_idle: 'After wallet connect, metrics and insights appear automatically.',
-      analysis_banner_title_running: 'Analyzing wallet {name}',
-      analysis_banner_subtitle_running: 'Fetching transactions, building trends, and detecting recurring spend.',
-      analysis_banner_title_partial: 'First insights are ready',
-      analysis_banner_subtitle_partial: 'You are seeing partial metrics while full analysis completes.',
-      analysis_banner_title_done: 'Analysis ready',
-      analysis_banner_subtitle_done: 'All key metrics are updated.',
+      analysis_banner_badge: 'Wallet intelligence',
+      analysis_open_link: 'Wallet intelligence →',
+      analysis_banner_title_idle: 'Connect wallet',
+      analysis_banner_subtitle_idle: 'Analysis appears automatically after connection.',
+      analysis_banner_title_running: 'Syncing {name}',
+      analysis_banner_subtitle_running: 'Collecting wallet activity.',
+      analysis_banner_title_partial: 'Partial data ready',
+      analysis_banner_subtitle_partial: 'Open Wallet intelligence for full details.',
+      analysis_banner_title_done: 'Wallet intelligence updated',
+      analysis_banner_subtitle_done: 'All metrics are synced.',
       analysis_banner_title_failed: 'Analysis temporarily unavailable',
       analysis_banner_subtitle_failed: 'We will retry analysis automatically.',
       analysis_stage_fetch_tx: 'Fetching transactions',
@@ -526,16 +621,54 @@
       analysis_top_outflow_label: 'Top outflow: {name}',
       analysis_top_outflow_estimated: 'Estimated outflow while activity is building',
       analysis_recurring_live: 'Recurring from recent activity',
-      analysis_recurring_estimated: 'Synthetic estimate until analysis is complete',
+      analysis_recurring_estimated: 'Estimated until analysis is complete',
       analysis_recurring_meta_live: 'Next: {value} · {confidence}%',
       analysis_recurring_meta_estimated: 'Estimate · {confidence}%',
-      analysis_quick_open_hint: 'Tap to open',
+      analysis_quick_open_hint: 'Open full report',
       analysis_quick_title: 'All data now',
       analysis_quick_not_ready: 'Connect a wallet to see all data.',
       analysis_quick_refreshing: 'Refreshing data…',
       analysis_quick_updated: 'Updated {value}',
       analysis_quick_wallets: 'Wallets',
-      analysis_quick_transactions: 'Transactions'
+      analysis_quick_transactions: 'Transactions',
+      analysis_mini_portfolio_label: 'Portfolio',
+      analysis_mini_growth_label: '7d',
+      analysis_detail_menu_aria: 'Wallet analysis details',
+      analysis_detail_title: 'Wallet intelligence',
+      analysis_detail_subtitle: 'Deep breakdown of active wallet metrics, allocation, and insights.',
+      analysis_detail_wallet_title: 'Active wallet',
+      analysis_detail_wallet_balance: 'Balance',
+      analysis_detail_inflow_30d: 'Inflow (30d)',
+      analysis_detail_outflow_30d: 'Outflow (30d)',
+      analysis_detail_wallet_missing: 'Connect a wallet to open full analysis.',
+      analysis_detail_metrics_title: 'Key metrics',
+      analysis_detail_series_title: 'Portfolio series',
+      analysis_detail_series_live: 'Live series ({value})',
+      analysis_detail_series_estimated: 'Estimated series ({value})',
+      analysis_detail_allocation_title: 'Portfolio allocation',
+      analysis_detail_allocation_empty: 'No allocation data yet.',
+      analysis_detail_insights_title: 'Insights',
+      analysis_detail_insights_empty: 'Insights appear after activity is processed.',
+      analysis_insights_need_data: 'We need at least 10 transactions to generate insights.',
+      analysis_insights_step_connect: 'Connect account',
+      analysis_insights_step_import: 'Import history',
+      analysis_insights_step_wait: 'Wait for sync',
+      analysis_col_asset: 'Asset',
+      analysis_col_amount: 'Amount',
+      analysis_col_value: 'Value',
+      analysis_col_share: 'Share',
+      analysis_detail_updated: 'Updated {value}',
+      analysis_detail_series_meta: '{metric} · {value}',
+      analysis_confidence_label: 'Confidence',
+      analysis_next_label: 'Next',
+      analysis_insight_fallback: 'Insight',
+      no_meaningful_change: 'No meaningful change',
+      no_meaningful_change_window: 'No meaningful change ({value})',
+      get_started_title: 'Get started',
+      get_started_subtitle: 'Complete one step to unlock analytics.',
+      get_started_connect: 'Connect account',
+      get_started_add_tx: 'Add transaction',
+      get_started_import: 'Import history'
     }
   };
 
@@ -698,6 +831,7 @@
   let cryptoWalletTotalInBase = NaN;
   let lastBalanceSnapshot = null;
   let lastBalanceConversion = null;
+  let lastReportSummary = null;
   const txListLimit = 20;
   let txCategories = [];
   let txCategoriesById = new Map();
@@ -714,9 +848,14 @@
   };
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const analysisPollIntervalMs = 2000;
+  const INSIGHT_CONFIDENCE_THRESHOLD = 0.55;
+  const INSIGHT_MIN_ABS_VALUE = 0.000001;
+  const CHART_VARIANCE_THRESHOLD = 0.015;
+  const CHART_MIN_POINTS = 4;
   const analysisState = {
     activeWalletId: null,
     activeWalletName: '',
+    activeWallet: null,
     status: null,
     pollTimer: 0,
     inFlight: false,
@@ -727,12 +866,22 @@
     apiInsights: null,
     apiSeries: null,
     seriesWindow: '30d',
+    detailMetric: 'net',
+    detailWindow: '30d',
     walletsCount: 0,
-    quickOpen: false,
-    quickBusy: false,
+    detailOpen: false,
+    detailBusy: false,
     lastDataFetchAt: 0
   };
   let recentTransactionsCache = [];
+  const dashboardDataState = {
+    accountsLoaded: false,
+    walletsLoaded: false,
+    transactionsLoaded: false,
+    hasAccounts: false,
+    hasWallets: false,
+    hasTransactions: false
+  };
 
   function q(selector) {
     return document.querySelector(selector);
@@ -784,6 +933,31 @@
         ${actionLabel && action ? `<button type="button" class="ghost inline-cta" data-action="${safeAction}">${escapeHtml(actionLabel)}</button>` : ''}
       </div>
     `;
+  }
+
+  function updateGetStartedSection() {
+    const section = q(selectors.getStartedSection);
+    if (!section) return;
+    const hasAnyLoaded = dashboardDataState.accountsLoaded || dashboardDataState.walletsLoaded || dashboardDataState.transactionsLoaded;
+    if (!hasAnyLoaded) {
+      section.hidden = true;
+      return;
+    }
+    const missingAccount = !dashboardDataState.hasAccounts;
+    const missingTransactions = !dashboardDataState.hasTransactions;
+    const missingWallet = !dashboardDataState.hasWallets;
+    const show = missingAccount || missingTransactions || missingWallet;
+    section.hidden = !show;
+    section.querySelectorAll('[data-action]').forEach((button) => {
+      const action = button.dataset.action || '';
+      if (action === 'open-add-account') {
+        button.hidden = !missingAccount;
+      } else if (action === 'open-add-transaction') {
+        button.hidden = !missingTransactions;
+      } else if (action === 'open-import-history') {
+        button.hidden = !(missingTransactions || missingWallet);
+      }
+    });
   }
 
   function pulseElement(selector) {
@@ -891,6 +1065,8 @@
         q(selectors.addWalletBtn)?.click();
       } else if (action === 'open-add-transaction') {
         q(selectors.addTransactionBtn)?.click();
+      } else if (action === 'open-import-history') {
+        q(selectors.addAccountBtn)?.click();
       } else if (action === 'retry-balance') {
         loadBalance();
       } else if (action === 'retry-wallets') {
@@ -898,7 +1074,7 @@
       } else if (action === 'retry-transactions') {
         loadRecentTransactions();
       } else if (action === 'retry-fx') {
-        loadFxRates();
+        loadReports();
       }
     });
   }
@@ -906,26 +1082,10 @@
   function initMotionController() {
     const root = q(selectors.root);
     if (!root) return;
-    const cards = Array.from(document.querySelectorAll('.dashboard .card'));
-    let rafId = 0;
-    let targetX = 50;
-    let targetY = 24;
-    let currentX = 50;
-    let currentY = 24;
-
     const applyMotionPreference = () => {
-      const reduced = reducedMotionQuery.matches;
-      root.dataset.motionLevel = reduced ? 'reduced' : 'high';
-      if (reduced) {
-        root.style.setProperty('--mouse-x', '50%');
-        root.style.setProperty('--mouse-y', '20%');
-        cards.forEach((card) => {
-          card.classList.remove('is-hovered');
-          card.style.removeProperty('--pointer-x');
-          card.style.removeProperty('--pointer-y');
-        });
-      }
+      root.dataset.motionLevel = reducedMotionQuery.matches ? 'reduced' : 'calm';
     };
+
     applyMotionPreference();
 
     if (typeof reducedMotionQuery.addEventListener === 'function') {
@@ -934,87 +1094,21 @@
       reducedMotionQuery.addListener(applyMotionPreference);
     }
 
-    cards.forEach((card) => {
-      card.addEventListener('pointerenter', () => {
-        if (root.dataset.motionLevel === 'reduced') return;
-        card.classList.add('is-hovered');
-      });
-
-      card.addEventListener('pointermove', (event) => {
-        if (root.dataset.motionLevel === 'reduced' || event.pointerType === 'touch') return;
-        const rect = card.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--pointer-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
-        card.style.setProperty('--pointer-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
-      }, { passive: true });
-
-      card.addEventListener('pointerleave', () => {
-        card.classList.remove('is-hovered');
-        card.style.removeProperty('--pointer-x');
-        card.style.removeProperty('--pointer-y');
-      });
-    });
-
-    const animateAtmosphere = () => {
-      rafId = 0;
-      if (root.dataset.motionLevel === 'reduced' || document.hidden) return;
-      currentX += (targetX - currentX) * 0.022;
-      currentY += (targetY - currentY) * 0.022;
-      root.style.setProperty('--mouse-x', `${currentX.toFixed(2)}%`);
-      root.style.setProperty('--mouse-y', `${currentY.toFixed(2)}%`);
-      if (Math.abs(targetX - currentX) > 0.08 || Math.abs(targetY - currentY) > 0.08) {
-        rafId = requestAnimationFrame(animateAtmosphere);
-      }
-    };
-
-    document.addEventListener('pointermove', (event) => {
-      if (root.dataset.motionLevel === 'reduced' || event.pointerType === 'touch') return;
-      const width = Math.max(window.innerWidth, 1);
-      const height = Math.max(window.innerHeight, 1);
-      targetX = 46 + (event.clientX / width) * 8;
-      targetY = 18 + (event.clientY / height) * 12;
-      if (!rafId && !document.hidden) {
-        rafId = requestAnimationFrame(animateAtmosphere);
-      }
-    }, { passive: true });
-
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         root.classList.add('motion-paused');
-        if (rafId) {
-          cancelAnimationFrame(rafId);
-          rafId = 0;
-        }
       } else {
         root.classList.remove('motion-paused');
-        if (root.dataset.motionLevel !== 'reduced' && !rafId) {
-          rafId = requestAnimationFrame(animateAtmosphere);
-        }
       }
     });
-
-    if (root.dataset.motionLevel !== 'reduced') {
-      rafId = requestAnimationFrame(animateAtmosphere);
-    }
   }
 
   function initScrollReveal() {
     const targets = Array.from(document.querySelectorAll('.dashboard [data-motion="reveal"]'));
     if (!targets.length) return;
-
-    if (reducedMotionQuery.matches) {
-      targets.forEach((el) => el.classList.add('in-view'));
-      return;
-    }
-
-    targets.forEach((el, index) => {
-      const delay = Math.min(index * 18, 90);
-      el.style.setProperty('--reveal-delay', `${delay}ms`);
-      window.setTimeout(() => {
-        el.classList.add('in-view');
-      }, delay);
+    targets.forEach((el) => {
+      el.style.removeProperty('--reveal-delay');
+      el.classList.add('in-view');
     });
   }
 
@@ -1214,6 +1308,42 @@
     });
   }
 
+  const numberFormatterCache = new Map();
+  const dateTimeFormatterCache = new Map();
+
+  function numberFormatter(minimumFractionDigits, maximumFractionDigits) {
+    const locale = getLocale();
+    const key = `${locale}|${minimumFractionDigits}|${maximumFractionDigits}`;
+    const cached = numberFormatterCache.get(key);
+    if (cached) return cached;
+    const formatter = new Intl.NumberFormat(locale, {
+      minimumFractionDigits,
+      maximumFractionDigits
+    });
+    numberFormatterCache.set(key, formatter);
+    return formatter;
+  }
+
+  function formatDecimalIntl(value, minimumFractionDigits, maximumFractionDigits) {
+    const numeric = toNumber(value);
+    if (!Number.isFinite(numeric)) return '—';
+    return numberFormatter(minimumFractionDigits, maximumFractionDigits).format(numeric);
+  }
+
+  function formatDateTimeIntl(value, options) {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const locale = getLocale();
+    const key = `${locale}|${JSON.stringify(options || {})}`;
+    let formatter = dateTimeFormatterCache.get(key);
+    if (!formatter) {
+      formatter = new Intl.DateTimeFormat(locale, options || {});
+      dateTimeFormatterCache.set(key, formatter);
+    }
+    return formatter.format(date);
+  }
+
   function moneyFractionDigits(currency) {
     const cur = (currency || '').trim().toUpperCase();
     if (cur === 'BTC' || cur === 'ETH') return 8;
@@ -1222,10 +1352,12 @@
 
   function formatMoney(value, currency) {
     const cur = currency || baseCurrency || 'USD';
-    const abs = Math.abs(value || 0);
-    const sign = (value || 0) < 0 ? '-' : '';
+    const numeric = toNumber(value);
+    if (!Number.isFinite(numeric)) return '—';
+    const abs = Math.abs(numeric);
+    const sign = numeric < 0 ? '-' : '';
     const digits = moneyFractionDigits(cur);
-    return `${sign}${abs.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${cur}`;
+    return `${sign}${formatDecimalIntl(abs, digits, digits)} ${cur}`;
   }
 
   function escapeHtml(value) {
@@ -1261,21 +1393,46 @@
   function formatFxRate(value) {
     if (typeof value !== 'number' || Number.isNaN(value)) return '—';
     const digits = value < 1 ? 4 : 2;
-    return value.toLocaleString(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    return formatDecimalIntl(value, digits, digits);
   }
 
   function formatFxUpdated(isoValue) {
-    if (!isoValue) return '';
-    const date = new Date(isoValue);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return formatDateTimeIntl(isoValue, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
   function formatShortDay(isoValue) {
-    if (!isoValue) return '';
-    const date = new Date(isoValue);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString(getLocale(), { day: '2-digit', month: 'short' });
+    return formatDateTimeIntl(isoValue, { day: '2-digit', month: 'short' });
+  }
+
+  function seriesVarianceRatio(values) {
+    if (!Array.isArray(values) || values.length < 2) return 0;
+    const finite = values.map((value) => toNumber(value)).filter((value) => Number.isFinite(value));
+    if (finite.length < 2) return 0;
+    const max = Math.max(...finite);
+    const min = Math.min(...finite);
+    const span = Math.abs(max - min);
+    const avg = finite.reduce((sum, value) => sum + value, 0) / finite.length;
+    const baseline = Math.max(Math.abs(avg), Math.abs(finite[0]), Math.abs(finite[finite.length - 1]), 1);
+    return span / baseline;
+  }
+
+  function buildCompactSparkline(values, width, height, stroke) {
+    const finite = values.map((value) => toNumber(value)).filter((value) => Number.isFinite(value));
+    if (finite.length < 2) return '';
+    const max = Math.max(...finite);
+    const min = Math.min(...finite);
+    const span = max - min || 1;
+    const pad = 4;
+    const points = finite.map((value, idx) => {
+      const x = pad + ((width - (pad * 2)) * idx) / Math.max(finite.length - 1, 1);
+      const y = height - pad - ((value - min) / span) * (height - (pad * 2));
+      return `${x},${y}`;
+    }).join(' ');
+    return `
+      <svg viewBox="0 0 ${width} ${height}" class="compact-sparkline" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="${points}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      </svg>
+    `;
   }
 
   function analysisStageLabel(stage) {
@@ -1378,9 +1535,24 @@
     return analysisState.apiInsights.insights.find((item) => String(item.type || '').toUpperCase() === normalized) || null;
   }
 
+  function normalizeSeriesWindow(windowValue) {
+    const value = String(windowValue || '').toLowerCase();
+    if (value === '7d') return '7d';
+    if (value === '30d') return '30d';
+    if (value === '90d') return '90d';
+    if (value === '1y') return '1y';
+    return '30d';
+  }
+
+  function apiSeriesWindow(windowValue) {
+    const normalized = normalizeSeriesWindow(windowValue);
+    if (normalized === '1y') return '90d';
+    return normalized;
+  }
+
   async function fetchAnalysisData(walletId) {
     if (!walletId) return;
-    const seriesWindow = analysisState.seriesWindow || '30d';
+    const seriesWindow = apiSeriesWindow(analysisState.seriesWindow || analysisState.detailWindow || '30d');
     const [summaryRes, insightsRes, seriesRes] = await Promise.all([
       Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/summary`, 'GET', null, true),
       Api.call(`/api/crypto/wallets/${encodeURIComponent(walletId)}/analysis/insights`, 'GET', null, true),
@@ -1561,6 +1733,19 @@
     return `${sign}${value.toFixed(2)}%`;
   }
 
+  function setHeroChangeValue(value) {
+    const el = q(selectors.analysisHeroChange);
+    if (!el) return;
+    el.classList.remove('is-positive', 'is-negative');
+    if (!Number.isFinite(value)) {
+      el.textContent = '—';
+      return;
+    }
+    el.textContent = formatSignedPct(value);
+    if (value > 0) el.classList.add('is-positive');
+    if (value < 0) el.classList.add('is-negative');
+  }
+
   function firstNonEmpty(parts) {
     for (const part of parts) {
       const value = String(part || '').trim();
@@ -1585,45 +1770,180 @@
     renderSparkline(sparkEl, series, '#7cc4ff');
   }
 
-  function setAnalysisQuickOpen(open) {
+  function setAnalysisDetailOpen(open, opener) {
+    const overlay = q(selectors.analysisDetailOverlay);
+    const menu = q(selectors.analysisDetailMenu);
     const card = q(selectors.analysisQuickCard);
-    const panel = q(selectors.analysisQuickPanel);
-    if (!card || !panel) return;
+    if (!overlay || !menu || !card) return;
     const next = Boolean(open);
-    analysisState.quickOpen = next;
-    panel.hidden = !next;
-    panel.dataset.uiState = next ? 'ready' : 'idle';
+    if (next) {
+      openOverlay(overlay, menu, opener || card);
+    } else {
+      closeOverlay(overlay, menu, opener || card);
+    }
+    analysisState.detailOpen = next;
     card.setAttribute('aria-expanded', next ? 'true' : 'false');
     card.classList.toggle('is-open', next);
   }
 
-  function updateAnalysisQuickPanel(model) {
-    const panel = q(selectors.analysisQuickPanel);
-    if (!panel) return;
+  function formatInsightValue(item, base) {
+    const unit = String(item && item.unit ? item.unit : '').toUpperCase();
+    const value = toNumber(item && item.value);
+    if (!Number.isFinite(value)) return '—';
+    if (unit === 'PERCENT') return formatSignedPct(value);
+    if (unit === 'BASE_CURRENCY') {
+      const currency = normalizeCurrency(item && item.currency ? item.currency : base) || base || 'USD';
+      return formatMoney(value, currency);
+    }
+    if (unit === 'COUNT') {
+      return Math.max(0, Math.round(value)).toLocaleString(getLocale());
+    }
+    return value.toLocaleString(getLocale(), { maximumFractionDigits: 4 });
+  }
 
-    const hasWallet = Boolean(analysisState.activeWalletId);
+  function insightComparableValue(item) {
+    const unit = String(item && item.unit ? item.unit : '').toUpperCase();
+    const value = toNumber(item && item.value);
+    if (unit === 'COUNT') return Number.isFinite(value) ? Math.round(value) : NaN;
+    if (Number.isFinite(value)) return value;
+    return toNumber(item && item.avgAmount);
+  }
+
+  function isMeaningfulInsight(item) {
+    if (!item || typeof item !== 'object') return false;
+    const confidence = toNumber(item.confidence);
+    if (Number.isFinite(confidence) && confidence < INSIGHT_CONFIDENCE_THRESHOLD) {
+      return false;
+    }
+    const comparable = insightComparableValue(item);
+    if (!Number.isFinite(comparable)) return false;
+    const unit = String(item.unit || '').toUpperCase();
+    if (unit === 'COUNT') return comparable > 0;
+    return Math.abs(comparable) > INSIGHT_MIN_ABS_VALUE;
+  }
+
+  function renderAnalysisDetailSeries(points, base, sourceLabel, windowLabel) {
+    const chart = q(selectors.analysisDetailSeriesChart);
+    if (!chart) return;
+    if (!Array.isArray(points) || points.length < 2) {
+      chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      return;
+    }
+
+    const width = Math.max(320, chart.clientWidth || 640);
+    const height = 172;
+    const padX = 10;
+    const padY = 14;
+    const values = points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value));
+    if (values.length < 2) {
+      chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      return;
+    }
+    const variance = seriesVarianceRatio(values);
+    const hasMeaningfulMovement = values.length >= CHART_MIN_POINTS && variance >= CHART_VARIANCE_THRESHOLD;
+    if (!hasMeaningfulMovement) {
+      const normalizedWindow = String(windowLabel || '30d').toLowerCase();
+      const note = t('no_meaningful_change_window', { value: normalizedWindow });
+      const delta = values[values.length - 1] - values[0];
+      const spark = buildCompactSparkline(values, 260, 52, delta >= 0 ? '#4f86ff' : '#f17f85');
+      chart.innerHTML = `
+        <div class="compact-chart-state">
+          ${spark}
+          <div class="muted compact-chart-note">${escapeHtml(note)}</div>
+        </div>
+      `;
+      return;
+    }
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const span = max - min || Math.max(Math.abs(max), 1);
+    const coords = values.map((value, idx) => {
+      const x = padX + ((width - (padX * 2)) * idx) / Math.max(values.length - 1, 1);
+      const y = height - padY - ((value - min) / span) * (height - (padY * 2));
+      return { x, y };
+    });
+    const line = coords.map((point) => `${point.x},${point.y}`).join(' ');
+    const area = [
+      `${padX},${height - padY}`,
+      ...coords.map((point) => `${point.x},${point.y}`),
+      `${width - padX},${height - padY}`
+    ].join(' ');
+    const rising = values[values.length - 1] >= values[0];
+    const stroke = rising ? '#78f0d0' : '#ffae7f';
+    const fillId = `analysisSeriesFill${Math.round(values.length * 13)}`;
+    const minText = formatMoney(min, base);
+    const maxText = formatMoney(max, base);
+
+    chart.innerHTML = `
+      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="analysis-detail-series-svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="${stroke}" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="${stroke}" stop-opacity="0.03" />
+          </linearGradient>
+        </defs>
+        <polygon points="${area}" fill="url(#${fillId})"></polygon>
+        <polyline points="${line}" fill="none" stroke="${stroke}" stroke-width="2.4"></polyline>
+      </svg>
+      <div class="analysis-detail-series-axis">
+        <span>${escapeHtml(sourceLabel || '')}</span>
+        <span>${escapeHtml(t('min'))}: ${escapeHtml(minText)} · ${escapeHtml(t('max'))}: ${escapeHtml(maxText)}</span>
+      </div>
+    `;
+  }
+
+  function walletExplorerUrl(network, address) {
+    const rawAddress = String(address || '').trim();
+    if (!rawAddress) return '';
+    const normalizedNetwork = String(network || '').toUpperCase();
+    if (normalizedNetwork === 'BTC') {
+      return `https://www.blockchain.com/explorer/addresses/btc/${encodeURIComponent(rawAddress)}`;
+    }
+    if (normalizedNetwork === 'ARBITRUM') {
+      return `https://arbiscan.io/address/${encodeURIComponent(rawAddress)}`;
+    }
+    return `https://etherscan.io/address/${encodeURIComponent(rawAddress)}`;
+  }
+
+  function detailMetricLabel(metric) {
+    const normalized = String(metric || '').toLowerCase();
+    if (normalized === 'inflow') return t('income_label');
+    if (normalized === 'outflow') return t('expense_label');
+    return t('net_worth_title');
+  }
+
+  function buildAnalysisDetailSeries(metric) {
+    const points = analysisState.apiSeries && Array.isArray(analysisState.apiSeries.points)
+      ? analysisState.apiSeries.points
+      : [];
+    if (String(metric || '').toLowerCase() === 'net') {
+      return points;
+    }
+    const normalized = String(metric || '').toLowerCase();
+    const values = points.map((item) => toNumber(item && item.valueInBase));
+    return points.map((point, idx) => {
+      const current = Number.isFinite(values[idx]) ? values[idx] : NaN;
+      const prev = idx > 0 && Number.isFinite(values[idx - 1]) ? values[idx - 1] : current;
+      const delta = Number.isFinite(current) && Number.isFinite(prev) ? current - prev : NaN;
+      if (normalized === 'inflow') {
+        return { at: point.at, valueInBase: Number.isFinite(delta) ? Math.max(delta, 0) : NaN };
+      }
+      return { at: point.at, valueInBase: Number.isFinite(delta) ? Math.max(-delta, 0) : NaN };
+    }).filter((item) => item.at && Number.isFinite(item.valueInBase));
+  }
+
+  function renderAnalysisDetail(model) {
+    const menu = q(selectors.analysisDetailMenu);
+    if (!menu) return;
+    syncAnalysisDetailTabState();
+
     const data = model || buildAnalysisInsightsModel();
+    const hasWallet = Boolean(analysisState.activeWalletId);
+    const wallet = analysisState.activeWallet || null;
     const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
-    const portfolioText = Number.isFinite(data && data.portfolio) ? formatMoney(data.portfolio, base) : '—';
-    const growthText = Number.isFinite(data && data.growth) ? formatSignedPct(data.growth) : '—';
-    const outflowText = Number.isFinite(data && data.outflowValue) ? formatMoney(-Math.abs(data.outflowValue), base) : '—';
-    const recurringText = Number.isFinite(data && data.recurringValue) ? formatMoney(data.recurringValue, base) : '—';
+    const detailUpdated = q(selectors.analysisDetailUpdated);
 
-    const balanceText = String((q(selectors.totalBalance) && q(selectors.totalBalance).textContent) || '—').trim() || '—';
-    const netText = String((q(selectors.incomeExpenseNet) && q(selectors.incomeExpenseNet).textContent) || '—').trim() || '—';
-    const walletsCount = Math.max(0, Number(analysisState.walletsCount) || 0);
-    const txCount = Math.max(0, Array.isArray(recentTransactionsCache) ? recentTransactionsCache.length : 0);
-
-    setText(selectors.analysisQuickPortfolio, portfolioText);
-    setText(selectors.analysisQuickGrowth, growthText);
-    setText(selectors.analysisQuickOutflow, outflowText);
-    setText(selectors.analysisQuickRecurring, recurringText);
-    setText(selectors.analysisQuickBalance, balanceText);
-    setText(selectors.analysisQuickNet, netText);
-    setText(selectors.analysisQuickWallets, String(walletsCount));
-    setText(selectors.analysisQuickTransactions, String(txCount));
-
-    const updatedAt = analysisState.status && (
+    const statusUpdatedAt = analysisState.status && (
       analysisState.status.finishedAt
       || analysisState.status.updatedAt
       || analysisState.status.startedAt
@@ -1632,27 +1952,179 @@
       || (analysisState.apiInsights && analysisState.apiInsights.asOf)
       || (analysisState.apiSeries && analysisState.apiSeries.asOf)
       || '';
-    const updated = formatFxUpdated(updatedAt || fallbackUpdated);
-    if (analysisState.quickBusy) {
-      setText(selectors.analysisQuickUpdated, t('analysis_quick_refreshing'));
-    } else if (updated) {
-      setText(selectors.analysisQuickUpdated, t('analysis_quick_updated', { value: updated }));
-    } else if (!hasWallet) {
-      setText(selectors.analysisQuickUpdated, t('analysis_quick_not_ready'));
-    } else {
-      setText(selectors.analysisQuickUpdated, t('source_pending'));
+    const updated = formatFxUpdated(statusUpdatedAt || fallbackUpdated);
+
+    const detailSource = !hasWallet
+      ? DATA_SOURCE.pending
+      : (data && data.portfolioLive ? DATA_SOURCE.live : DATA_SOURCE.hybrid);
+    setDataSourceBadge(selectors.analysisDetailSource, detailSource);
+
+    if (detailUpdated) {
+      if (analysisState.detailBusy) {
+        detailUpdated.textContent = t('analysis_quick_refreshing');
+      } else if (!hasWallet) {
+        detailUpdated.textContent = t('analysis_detail_wallet_missing');
+      } else if (updated) {
+        detailUpdated.textContent = t('analysis_detail_updated', { value: updated });
+      } else {
+        detailUpdated.textContent = t('source_pending');
+      }
+    }
+
+    const walletName = hasWallet ? (analysisState.activeWalletName || `#${analysisState.activeWalletId}`) : '—';
+    setText(selectors.analysisDetailWalletName, walletName);
+    setText(selectors.analysisDetailWalletNetwork, hasWallet ? walletNetworkLabel(wallet && wallet.network ? wallet.network : '') : '—');
+    setText(selectors.analysisDetailWalletAddress, hasWallet ? (wallet && wallet.address ? String(wallet.address) : '—') : '—');
+
+    const explorer = q(selectors.analysisDetailExplorerLink);
+    if (explorer) {
+      const href = hasWallet ? walletExplorerUrl(wallet && wallet.network, wallet && wallet.address) : '';
+      explorer.href = href || '#';
+      explorer.hidden = !href;
+    }
+
+    const walletValue = toNumber(wallet && wallet.valueInBase);
+    const walletValueBase = normalizeCurrency(wallet && wallet.baseCurrency ? wallet.baseCurrency : base) || base;
+    const walletBalance = toNumber(wallet && wallet.balance);
+    const walletAsset = walletNativeAsset(wallet && wallet.network ? wallet.network : '');
+    const inflowValue = toNumber(lastReportSummary && lastReportSummary.income);
+    const outflowValue = toNumber(lastReportSummary && lastReportSummary.expense);
+
+    setText(selectors.analysisDetailWalletValue, Number.isFinite(walletValue) ? formatMoney(walletValue, walletValueBase) : '—');
+    setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
+    setText(selectors.analysisDetailPortfolio, Number.isFinite(data && data.portfolio) ? formatMoney(data.portfolio, base) : '—');
+    setText(selectors.analysisDetailGrowth, Number.isFinite(data && data.growth) ? formatSignedPct(data.growth) : '—');
+    setText(selectors.analysisDetailRecurring, Number.isFinite(inflowValue) ? formatMoney(inflowValue, base) : '—');
+    setText(selectors.analysisDetailOutflow, Number.isFinite(outflowValue) ? formatMoney(-Math.abs(outflowValue), base) : '—');
+
+    const balanceText = String((q(selectors.totalBalance) && q(selectors.totalBalance).textContent) || '—').trim() || '—';
+    const netText = String((q(selectors.incomeExpenseNet) && q(selectors.incomeExpenseNet).textContent) || '—').trim() || '—';
+    setText(selectors.analysisDetailBalance, balanceText);
+    setText(selectors.analysisDetailNet, netText);
+
+    const currentMetric = String(analysisState.detailMetric || 'net').toLowerCase();
+    const seriesWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d').toUpperCase();
+    const metricLabel = detailMetricLabel(currentMetric);
+    const seriesLabel = updated
+      ? t('analysis_detail_series_meta', { metric: metricLabel, value: updated })
+      : `${metricLabel} · ${seriesWindow}`;
+    setText(selectors.analysisDetailSeriesMeta, seriesLabel);
+    renderAnalysisDetailSeries(buildAnalysisDetailSeries(currentMetric), base, seriesLabel, seriesWindow);
+
+    const allocationEl = q(selectors.analysisDetailAllocationList);
+    if (allocationEl) {
+      const allocation = analysisState.apiSummary && Array.isArray(analysisState.apiSummary.allocation)
+        ? analysisState.apiSummary.allocation
+        : [];
+      if (!allocation.length) {
+        allocationEl.innerHTML = `<div class="muted">${t('analysis_detail_allocation_empty')}</div>`;
+      } else {
+        allocationEl.innerHTML = `
+          <table class="analysis-detail-table">
+            <thead>
+              <tr>
+                <th>${t('analysis_col_asset')}</th>
+                <th>${t('analysis_col_amount')}</th>
+                <th>${t('analysis_col_value')}</th>
+                <th>${t('analysis_col_share')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allocation.map((item, idx) => {
+                const code = String(item && item.code ? item.code : '—');
+                const value = toNumber(item && item.valueInBase);
+                const share = toNumber(item && item.sharePct);
+                const valueText = Number.isFinite(value) ? formatMoney(value, base) : '—';
+                const shareText = Number.isFinite(share) ? `${share.toFixed(2)}%` : '—';
+                const amountRaw = toNumber(item && item.amount);
+                const amountText = Number.isFinite(amountRaw)
+                  ? formatAssetAmount(amountRaw, code)
+                  : (idx === 0 && Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
+                return `
+                  <tr>
+                    <td>${escapeHtml(code)}</td>
+                    <td>${escapeHtml(amountText)}</td>
+                    <td>${escapeHtml(valueText)}</td>
+                    <td>${escapeHtml(shareText)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }
+
+    const insightsEl = q(selectors.analysisDetailInsightsList);
+    if (insightsEl) {
+      const insights = analysisState.apiInsights && Array.isArray(analysisState.apiInsights.insights)
+        ? analysisState.apiInsights.insights
+        : [];
+      const filteredInsights = insights.filter((item) => isMeaningfulInsight(item));
+      if (!filteredInsights.length) {
+        insightsEl.innerHTML = `
+          <div class="analysis-empty-guide compact-empty-state">
+            <div class="analysis-empty-title">${t('analysis_detail_insights_empty')}</div>
+            <button type="button" class="ghost inline-link" data-action="open-import-history">${t('analysis_insights_step_import')}</button>
+          </div>
+        `;
+      } else {
+        insightsEl.innerHTML = filteredInsights.map((item) => {
+          const title = firstNonEmpty([item && item.title, item && item.type, t('analysis_insight_fallback')]);
+          const label = firstNonEmpty([item && item.label]);
+          const avgAmount = toNumber(item && item.avgAmount);
+          const nextCharge = formatShortDay(item && item.nextEstimatedChargeAt);
+          const confidence = toNumber(item && item.confidence);
+          const confidenceText = Number.isFinite(confidence) ? `${Math.max(0, Math.min(99, Math.round(confidence * 100)))}%` : '—';
+          const metaParts = [
+            label,
+            Number.isFinite(avgAmount) ? `${t('average')}: ${formatMoney(avgAmount, base)}` : '',
+            nextCharge ? `${t('analysis_next_label')}: ${nextCharge}` : '',
+            `${t('analysis_confidence_label')}: ${confidenceText}`
+          ].filter(Boolean);
+          return `
+            <article class="analysis-detail-list-item">
+              <div class="analysis-detail-list-title">${escapeHtml(title)}</div>
+              <div class="analysis-detail-list-value">${escapeHtml(formatInsightValue(item, base))}</div>
+              <div class="muted">${escapeHtml(metaParts.join(' · '))}</div>
+            </article>
+          `;
+        }).join('');
+      }
     }
   }
 
-  async function refreshAllDataForQuickCard() {
-    if (analysisState.quickBusy) return;
-    analysisState.quickBusy = true;
+  function updateAnalysisMiniCard(model) {
+    const data = model || buildAnalysisInsightsModel();
+    const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
+    const valueEl = q(selectors.analysisMiniValue);
+    const growthEl = q(selectors.analysisMiniGrowth);
     const card = q(selectors.analysisQuickCard);
-    if (card) {
-      card.disabled = true;
-      card.dataset.uiState = 'loading';
+    if (!valueEl || !growthEl || !card) return;
+
+    valueEl.textContent = Number.isFinite(data && data.portfolio)
+      ? formatMoney(data.portfolio, base)
+      : '—';
+
+    growthEl.classList.remove('is-positive', 'is-negative');
+    if (Number.isFinite(data && data.growth)) {
+      growthEl.textContent = `${t('analysis_mini_growth_label')} ${formatSignedPct(data.growth)}`;
+      if (data.growth > 0) growthEl.classList.add('is-positive');
+      if (data.growth < 0) growthEl.classList.add('is-negative');
+    } else {
+      growthEl.textContent = `${t('analysis_mini_growth_label')} —`;
     }
-    setText(selectors.analysisQuickUpdated, t('analysis_quick_refreshing'));
+
+    card.dataset.uiState = analysisState.detailBusy ? 'loading' : 'ready';
+    card.setAttribute('title', t('analysis_quick_open_hint'));
+  }
+
+  async function refreshAllDataForAnalysisDetail() {
+    if (analysisState.detailBusy) return;
+    analysisState.detailBusy = true;
+    const card = q(selectors.analysisQuickCard);
+    if (card) card.disabled = true;
+    setText(selectors.analysisDetailUpdated, t('analysis_quick_refreshing'));
 
     try {
       await Promise.allSettled([
@@ -1660,37 +2132,121 @@
         loadReports(),
         loadRecentTransactions(),
         loadWallets(),
-        loadFxRates(),
-        loadCryptoRates(),
         maybeRefreshAnalysisData(true)
       ]);
     } finally {
-      analysisState.quickBusy = false;
-      if (card) {
-        card.disabled = false;
-        card.dataset.uiState = 'ready';
-      }
+      analysisState.detailBusy = false;
+      if (card) card.disabled = false;
       refreshAnalysisPanel();
+    }
+  }
+
+  function syncAnalysisDetailTabState() {
+    const metricRoot = q(selectors.analysisDetailMetricTabs);
+    if (metricRoot) {
+      metricRoot.querySelectorAll('button[data-metric]').forEach((btn) => {
+        const metric = String(btn.dataset.metric || '').toLowerCase();
+        btn.classList.toggle('active', metric === String(analysisState.detailMetric || 'net').toLowerCase());
+      });
+    }
+    const windowRoot = q(selectors.analysisDetailWindowTabs);
+    if (windowRoot) {
+      const activeWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d');
+      windowRoot.querySelectorAll('button[data-window]').forEach((btn) => {
+        const next = normalizeSeriesWindow(btn.dataset.window || '');
+        btn.classList.toggle('active', next === activeWindow);
+      });
     }
   }
 
   function bindAnalysisQuickCard() {
     const card = q(selectors.analysisQuickCard);
-    if (!card) return;
+    const overlay = q(selectors.analysisDetailOverlay);
+    const menu = q(selectors.analysisDetailMenu);
+    const closeBtn = q(selectors.analysisDetailCloseBtn);
+    const copyBtn = q(selectors.analysisDetailCopyBtn);
+    const metricTabs = q(selectors.analysisDetailMetricTabs);
+    const windowTabs = q(selectors.analysisDetailWindowTabs);
+    if (!card || !overlay || !menu || !closeBtn) return;
     if (card.dataset.bound === '1') return;
     card.dataset.bound = '1';
-    setAnalysisQuickOpen(false);
-    updateAnalysisQuickPanel(null);
+    setAnalysisDetailOpen(false, card);
+    updateAnalysisMiniCard(null);
+    renderAnalysisDetail(null);
+    syncAnalysisDetailTabState();
 
-    card.addEventListener('click', async () => {
-      if (analysisState.quickOpen) {
-        setAnalysisQuickOpen(false);
+    const close = () => {
+      if (!analysisState.detailOpen) return;
+      setAnalysisDetailOpen(false, card);
+    };
+
+    card.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (analysisState.detailOpen) {
+        close();
         return;
       }
-      setAnalysisQuickOpen(true);
-      updateAnalysisQuickPanel(null);
-      await refreshAllDataForQuickCard();
-      updateAnalysisQuickPanel(null);
+      setAnalysisDetailOpen(true, card);
+      syncAnalysisDetailTabState();
+      renderAnalysisDetail(null);
+      await refreshAllDataForAnalysisDetail();
+      renderAnalysisDetail(null);
+    });
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      card.click();
+    });
+
+    closeBtn.addEventListener('click', close);
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        const value = String((q(selectors.analysisDetailWalletAddress)?.textContent || '')).trim();
+        if (!value || value === '—') return;
+        try {
+          await navigator.clipboard.writeText(value);
+        } catch (_) {
+          // ignore clipboard errors
+        }
+      });
+    }
+    if (metricTabs) {
+      metricTabs.querySelectorAll('button[data-metric]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          analysisState.detailMetric = String(btn.dataset.metric || 'net').toLowerCase();
+          syncAnalysisDetailTabState();
+          renderAnalysisDetail(null);
+        });
+      });
+    }
+    if (windowTabs) {
+      windowTabs.querySelectorAll('button[data-window]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const nextWindow = normalizeSeriesWindow(btn.dataset.window || '30d');
+          if (nextWindow === normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d')) {
+            syncAnalysisDetailTabState();
+            return;
+          }
+          analysisState.detailWindow = nextWindow;
+          analysisState.seriesWindow = nextWindow;
+          analysisState.lastDataFetchAt = 0;
+          syncAnalysisDetailTabState();
+          renderAnalysisDetail(null);
+          await maybeRefreshAnalysisData(true);
+          renderAnalysisDetail(null);
+        });
+      });
+    }
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) close();
+    });
+    menu.addEventListener('keydown', (event) => {
+      trapFocusKeydown(event, menu);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (analysisState.detailOpen && event.key === 'Escape') {
+        close();
+      }
     });
   }
 
@@ -1819,63 +2375,59 @@
     const updatedValue = formatFxUpdated(
       analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt)
     );
+    const monthlyCashflow = toNumber(lastReportSummary && lastReportSummary.net);
+    const debtValue = computeDebtInBase();
+    const hasDebt = Number.isFinite(debtValue) && debtValue > 0.000001;
+    const debtCard = q(selectors.analysisCardRecurring);
 
     if (!hasWallet) {
       setAnalysisCardState(selectors.analysisCardPortfolio, 'loading');
       setAnalysisCardState(selectors.analysisCardGrowth, 'loading');
-      setAnalysisCardState(selectors.analysisCardOutflow, 'loading');
-      setAnalysisCardState(selectors.analysisCardRecurring, 'loading');
+      setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(monthlyCashflow) ? 'ready' : 'loading');
+      setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
+      setHeroChangeValue(NaN);
       setText(selectors.analysisPortfolioValue, '—');
       setText(selectors.analysisGrowthValue, '—');
-      setText(selectors.analysisOutflowValue, '—');
-      setText(selectors.analysisRecurringValue, '—');
-      setText(selectors.analysisPortfolioMeta, t('analysis_card_waiting'));
-      setText(selectors.analysisGrowthMeta, t('analysis_card_waiting'));
-      setText(selectors.analysisOutflowMeta, t('analysis_card_waiting'));
-      setText(selectors.analysisRecurringMeta, t('analysis_card_waiting'));
+      setText(selectors.analysisOutflowValue, Number.isFinite(monthlyCashflow) ? formatMoney(monthlyCashflow, model.base) : '—');
+      setText(selectors.analysisRecurringValue, hasDebt ? formatMoney(debtValue, model.base) : '—');
+      setText(selectors.analysisPortfolioMeta, '');
+      setText(selectors.analysisGrowthMeta, '');
+      setText(selectors.analysisOutflowMeta, '');
+      setText(selectors.analysisRecurringMeta, '');
       setDataSourceBadge(selectors.analysisPortfolioSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
       setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
+      if (debtCard) debtCard.hidden = !hasDebt;
       renderAnalysisGrowthSpark([]);
       return model;
     }
 
     setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(model.portfolio) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardGrowth, Number.isFinite(model.growth) ? 'ready' : 'loading');
-    setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(model.outflowValue) ? 'ready' : 'loading');
-    setAnalysisCardState(selectors.analysisCardRecurring, Number.isFinite(model.recurringValue) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(monthlyCashflow) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
+    setHeroChangeValue(model.growth);
 
     animateMetricValue(selectors.analysisPortfolioValue, model.portfolio, (value) => formatMoney(value, model.base));
     animateMetricValue(selectors.analysisGrowthValue, model.growth, formatSignedPct);
-    animateMetricValue(selectors.analysisOutflowValue, model.outflowValue, (value) => formatMoney(-Math.abs(value), model.base));
-    animateMetricValue(selectors.analysisRecurringValue, model.recurringValue, (value) => formatMoney(value, model.base));
+    animateMetricValue(selectors.analysisOutflowValue, monthlyCashflow, (value) => formatMoney(value, model.base));
+    if (hasDebt) {
+      animateMetricValue(selectors.analysisRecurringValue, debtValue, (value) => formatMoney(value, model.base));
+    } else {
+      setText(selectors.analysisRecurringValue, '—');
+    }
 
     setAnalysisValueState(selectors.analysisPortfolioValue, model.portfolio);
     setAnalysisValueState(selectors.analysisGrowthValue, model.growth);
-    setAnalysisValueState(selectors.analysisOutflowValue, -Math.abs(model.outflowValue));
-    setAnalysisValueState(selectors.analysisRecurringValue, model.recurringValue);
+    setAnalysisValueState(selectors.analysisOutflowValue, monthlyCashflow);
+    setAnalysisValueState(selectors.analysisRecurringValue, hasDebt ? -Math.abs(debtValue) : NaN);
+    if (debtCard) debtCard.hidden = !hasDebt;
 
-    setText(
-      selectors.analysisPortfolioMeta,
-      updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : t('analysis_card_estimated')
-    );
-    setText(
-      selectors.analysisGrowthMeta,
-      model.growthSeriesSynthetic ? t('analysis_card_estimated') : (updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : t('analysis_card_estimated'))
-    );
-    setText(
-      selectors.analysisOutflowMeta,
-      model.outflowLive ? t('analysis_top_outflow_label', { name: model.outflowLabel }) : t('analysis_top_outflow_estimated')
-    );
-    const recurringConfidencePct = Math.max(0, Math.min(99, Math.round((Number(model.recurringConfidence) || 0) * 100)));
-    const nextLabel = formatShortDay(model.recurringNextChargeAt);
-    setText(
-      selectors.analysisRecurringMeta,
-      model.recurringLive && nextLabel
-        ? t('analysis_recurring_meta_live', { value: nextLabel, confidence: recurringConfidencePct })
-        : t('analysis_recurring_meta_estimated', { confidence: recurringConfidencePct })
-    );
+    setText(selectors.analysisPortfolioMeta, updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : '');
+    setText(selectors.analysisGrowthMeta, '');
+    setText(selectors.analysisOutflowMeta, '');
+    setText(selectors.analysisRecurringMeta, '');
 
     renderAnalysisGrowthSpark(model.growthSeries);
 
@@ -1887,8 +2439,8 @@
       selectors.analysisGrowthSource,
       model.growthLive ? (model.growthSeriesSynthetic ? DATA_SOURCE.synthetic : DATA_SOURCE.live) : DATA_SOURCE.synthetic
     );
-    setDataSourceBadge(selectors.analysisOutflowSource, model.outflowLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
-    setDataSourceBadge(selectors.analysisRecurringSource, model.recurringLive ? DATA_SOURCE.live : DATA_SOURCE.synthetic);
+    setDataSourceBadge(selectors.analysisOutflowSource, Number.isFinite(monthlyCashflow) ? DATA_SOURCE.live : DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisRecurringSource, hasDebt ? DATA_SOURCE.live : DATA_SOURCE.pending);
     return model;
   }
 
@@ -1897,6 +2449,7 @@
     const banner = q(selectors.walletAnalysisBanner);
     const title = q(selectors.analysisBannerTitle);
     const subtitle = q(selectors.analysisBannerSubtitle);
+    const progressWrap = q(selectors.analysisProgressWrap);
     const stageEl = q(selectors.analysisStage);
     const progressTextEl = q(selectors.analysisProgressText);
     const progressBar = q(selectors.analysisProgressBar);
@@ -1913,6 +2466,7 @@
       stageEl.textContent = t('analysis_no_wallet_stage');
       progressTextEl.textContent = '0%';
       progressFill.style.width = '0%';
+      if (progressWrap) progressWrap.hidden = true;
       if (progressBar) progressBar.setAttribute('aria-valuenow', '0');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
       if (updatedEl) updatedEl.textContent = t('source_pending');
@@ -1933,24 +2487,22 @@
     const statusName = String(status.status || 'QUEUED').toUpperCase();
     const progressPct = Math.max(0, Math.min(100, Number(status.progressPct) || 0));
     const safeWalletName = analysisState.activeWalletName || `#${analysisState.activeWalletId}`;
+    const updatedValue = formatFxUpdated(status.finishedAt || status.updatedAt || status.startedAt);
 
     setUiState(panel, 'ready');
     if (banner) banner.dataset.uiState = statusName.toLowerCase();
+    title.textContent = t('analysis_banner_badge');
     if (statusName === 'DONE') {
-      title.textContent = t('analysis_banner_title_done');
-      subtitle.textContent = t('analysis_banner_subtitle_done');
+      subtitle.textContent = updatedValue ? t('analysis_quick_updated', { value: updatedValue }) : t('analysis_banner_subtitle_done');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.live);
     } else if (statusName === 'PARTIAL') {
-      title.textContent = t('analysis_banner_title_partial');
-      subtitle.textContent = t('analysis_banner_subtitle_partial');
+      subtitle.textContent = updatedValue ? t('analysis_quick_updated', { value: updatedValue }) : t('analysis_banner_subtitle_partial');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.hybrid);
     } else if (statusName === 'FAILED') {
-      title.textContent = t('analysis_banner_title_failed');
       subtitle.textContent = t('analysis_banner_subtitle_failed');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.demo);
     } else {
-      title.textContent = t('analysis_banner_title_running', { name: safeWalletName });
-      subtitle.textContent = t('analysis_banner_subtitle_running');
+      subtitle.textContent = t('analysis_banner_title_running', { name: safeWalletName });
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
     }
 
@@ -1960,17 +2512,23 @@
       : stageLabel;
     progressTextEl.textContent = `${progressPct}%`;
     progressFill.style.width = `${progressPct}%`;
+    if (progressWrap) {
+      const showProgress = statusName === 'RUNNING' || statusName === 'QUEUED';
+      progressWrap.hidden = !showProgress;
+    }
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(progressPct));
     if (updatedEl) {
-      const updated = formatFxUpdated(status.finishedAt || status.updatedAt || status.startedAt);
-      updatedEl.textContent = updated ? t('updated_at', { value: updated }) : t('source_pending');
+      updatedEl.textContent = updatedValue ? t('updated_at', { value: updatedValue }) : t('source_pending');
     }
   }
 
   function refreshAnalysisPanel() {
     renderAnalysisBanner();
     const model = renderAnalysisCards();
-    updateAnalysisQuickPanel(model);
+    updateAnalysisMiniCard(model);
+    if (analysisState.detailOpen) {
+      renderAnalysisDetail(model);
+    }
   }
 
   function syncAnalysisWallets(wallets, payload) {
@@ -1983,11 +2541,15 @@
     if (!latestWallet || latestWallet.id == null) {
       analysisState.activeWalletId = null;
       analysisState.activeWalletName = '';
+      analysisState.activeWallet = null;
       analysisState.status = null;
       analysisState.pollError = false;
       analysisState.apiSummary = null;
       analysisState.apiInsights = null;
       analysisState.apiSeries = null;
+      analysisState.seriesWindow = '30d';
+      analysisState.detailWindow = '30d';
+      analysisState.detailMetric = 'net';
       analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       refreshAnalysisPanel();
@@ -1998,6 +2560,7 @@
     const changed = analysisState.activeWalletId !== nextWalletId;
     analysisState.activeWalletId = nextWalletId;
     analysisState.activeWalletName = String(latestWallet.label || walletNetworkLabel(latestWallet.network || ''));
+    analysisState.activeWallet = latestWallet;
 
     refreshAnalysisPanel();
     if (changed) {
@@ -2006,6 +2569,9 @@
       analysisState.apiSummary = null;
       analysisState.apiInsights = null;
       analysisState.apiSeries = null;
+      analysisState.seriesWindow = '30d';
+      analysisState.detailWindow = '30d';
+      analysisState.detailMetric = 'net';
       analysisState.lastDataFetchAt = 0;
       stopAnalysisPolling();
       pollWalletAnalysisStatus();
@@ -2081,9 +2647,9 @@
       return acc + value;
     }, 0);
     if (creditEl) {
-      creditEl.textContent = creditOk
-        ? `${t('credit')}: ${formatMoney(creditInBase || 0, base)}`
-        : `${t('credit')}: —`;
+      const hasDebt = creditOk && Number.isFinite(creditInBase) && creditInBase > 0.000001;
+      creditEl.textContent = hasDebt ? `${t('credit')}: ${formatMoney(creditInBase, base)}` : '';
+      creditEl.hidden = !hasDebt;
     }
 
     const totalsText = totals.length
@@ -2098,11 +2664,14 @@
       : '';
     if (totalsLineEl) {
       totalsLineEl.textContent = totalsText ? `${t('balance_by_currency')}: ${totalsText}` : '';
-      totalsLineEl.style.display = totalsText ? 'block' : 'none';
+      totalsLineEl.hidden = true;
     }
 
     showBalanceError(totalOk && creditOk && conversion && conversion.ok ? '' : t('base_currency_conversion_failed'));
-    updateAnalysisQuickPanel(null);
+    updateAnalysisMiniCard(null);
+    if (analysisState.detailOpen) {
+      renderAnalysisDetail(null);
+    }
   }
 
   function rerenderBalanceSnapshot() {
@@ -2113,12 +2682,19 @@
   function renderIncomeExpenseSummary(summary) {
     const netEl = document.querySelector(selectors.incomeExpenseNet);
     const detailsEl = document.querySelector(selectors.incomeExpenseDetails);
-    if (!netEl && !detailsEl) return;
+    const incomeEl = document.querySelector(selectors.analysisIncomeValue);
+    const expenseEl = document.querySelector(selectors.analysisExpenseValue);
+    const cashflowEl = document.querySelector(selectors.analysisOutflowValue);
+    const debtEl = document.querySelector(selectors.analysisRecurringValue);
+    const debtCard = document.querySelector(selectors.analysisCardRecurring);
+    if (!netEl && !detailsEl && !incomeEl && !expenseEl && !cashflowEl && !debtEl) return;
 
     const base = normalizeCurrency(summary && summary.baseCurrency ? summary.baseCurrency : baseCurrency) || 'USD';
     const income = toNumber(summary && summary.income);
     const expense = toNumber(summary && summary.expense);
     const net = toNumber(summary && summary.net);
+    const debt = computeDebtInBase();
+    const hasDebt = Number.isFinite(debt) && debt > 0.000001;
 
     if (netEl) {
       netEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
@@ -2128,7 +2704,31 @@
         ? `${t('income_label')}: ${formatMoney(income, base)} · ${t('expense_label')}: ${formatMoney(expense, base)}`
         : t('income_expense_details');
     }
-    updateAnalysisQuickPanel(null);
+    if (incomeEl) {
+      incomeEl.textContent = Number.isFinite(income) ? formatMoney(income, base) : '—';
+    }
+    if (expenseEl) {
+      expenseEl.textContent = Number.isFinite(expense) ? formatMoney(-Math.abs(expense), base) : '—';
+      expenseEl.classList.toggle('amount-negative', Number.isFinite(expense));
+    }
+    if (cashflowEl) {
+      cashflowEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
+      cashflowEl.classList.remove('amount-positive', 'amount-negative');
+      if (Number.isFinite(net)) {
+        cashflowEl.classList.add(net >= 0 ? 'amount-positive' : 'amount-negative');
+      }
+    }
+    if (debtEl) {
+      debtEl.textContent = hasDebt ? formatMoney(debt, base) : '—';
+      debtEl.classList.toggle('amount-negative', hasDebt);
+    }
+    if (debtCard) {
+      debtCard.hidden = !hasDebt;
+    }
+    updateAnalysisMiniCard(null);
+    if (analysisState.detailOpen) {
+      renderAnalysisDetail(null);
+    }
   }
 
   function computeAccountsTotalInBase() {
@@ -2165,6 +2765,27 @@
     return (accountsOk ? accounts : 0) + (walletOk ? wallets : 0);
   }
 
+  function computeDebtInBase() {
+    const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts)
+      ? lastBalanceSnapshot.accounts
+      : [];
+    if (!accounts.length || !lastBalanceConversion) return NaN;
+    let hasAny = false;
+    let debt = 0;
+    accounts.forEach((account) => {
+      const balance = toNumber(account && account.balance);
+      if (!Number.isFinite(balance)) return;
+      hasAny = true;
+      if (balance >= 0) return;
+      const converted = convertToBaseAmount(Math.abs(balance), account && account.currency, lastBalanceConversion);
+      if (Number.isFinite(converted)) {
+        debt += converted;
+      }
+    });
+    if (!hasAny) return NaN;
+    return debt;
+  }
+
   async function loadReportSummary() {
     const netEl = document.querySelector(selectors.incomeExpenseNet);
     if (netEl) netEl.textContent = t('loading');
@@ -2174,6 +2795,8 @@
     const res = await Api.call(`/api/reports/summary?${params}`, 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
       if (netEl) netEl.textContent = '—';
+      lastReportSummary = null;
+      renderIncomeExpenseSummary(null);
       return null;
     }
     const payload = res.data;
@@ -2183,11 +2806,15 @@
       updateCurrencyLabels();
     }
     renderIncomeExpenseSummary(payload);
+    lastReportSummary = payload;
     return payload;
   }
 
   async function loadReportByCategory() {
     const target = document.querySelector(selectors.expenseChart);
+    if (!target || target.classList.contains('analysis-compat-hidden')) {
+      return null;
+    }
     if (target) {
       setUiState(target, 'loading');
       target.innerHTML = renderSkeletonList(2);
@@ -2199,8 +2826,16 @@
     const res = await Api.call(`/api/reports/by-category?${params}`, 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
       if (target) {
-        setUiState(target, 'error');
-        target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+        setUiState(target, 'empty');
+        target.innerHTML = `
+          <div class="compact-empty-state">
+            <div class="compact-empty-title">${escapeHtml(t('expense_empty_title'))}</div>
+            <div class="compact-empty-actions">
+              <button type="button" class="ghost inline-cta" data-action="open-add-transaction">${escapeHtml(t('cta_add_transaction'))}</button>
+              <button type="button" class="ghost inline-cta inline-link" data-action="open-add-account">${escapeHtml(t('cta_connect_account'))}</button>
+            </div>
+          </div>
+        `;
       }
       return null;
     }
@@ -2227,7 +2862,15 @@
     if (!items.length) {
       if (target) {
         setUiState(target, 'empty');
-        target.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+        target.innerHTML = `
+          <div class="compact-empty-state">
+            <div class="compact-empty-title">${escapeHtml(t('expense_empty_title'))}</div>
+            <div class="compact-empty-actions">
+              <button type="button" class="ghost inline-cta" data-action="open-add-transaction">${escapeHtml(t('cta_add_transaction'))}</button>
+              <button type="button" class="ghost inline-cta inline-link" data-action="open-add-account">${escapeHtml(t('cta_connect_account'))}</button>
+            </div>
+          </div>
+        `;
       }
       return payload;
     }
@@ -2299,7 +2942,6 @@
 
   async function loadReports() {
     await loadReportSummary();
-    await loadReportByCategory();
     await loadBalanceTrend();
   }
 
@@ -2307,15 +2949,15 @@
     const list = document.querySelector(selectors.accountsList);
     if (!list) return;
     setPanelFeedback(selectors.accountsFeedback, '');
+    dashboardDataState.accountsLoaded = true;
     if (!accounts || accounts.length === 0) {
+      dashboardDataState.hasAccounts = false;
       setUiState(list, 'empty');
-      list.innerHTML = renderEmptyState(
-        `${t('no_accounts')} ${t('empty_accounts_hint')}`,
-        t('cta_add_account'),
-        'open-add-account'
-      );
+      list.innerHTML = renderEmptyState(`${t('no_accounts')} ${t('empty_accounts_hint')}`);
+      updateGetStartedSection();
       return;
     }
+    dashboardDataState.hasAccounts = true;
     setUiState(list, 'ready');
     const base = normalizeCurrency(baseCurrency) || 'USD';
     list.innerHTML = accounts.map((acc) => {
@@ -2328,14 +2970,14 @@
       const safeCurrency = escapeHtml(acc.currency || baseCurrency);
       const safeId = escapeHtml(acc && acc.id != null ? String(acc.id) : '');
       return `
-        <div class="list-item">
-          <div>
-            <div style="font-weight:800;">${safeName}</div>
-            <small>${safeCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
+        <div class="list-item table-row account-row">
+          <div class="account-main">
+            <div class="account-name">${safeName}</div>
+            <small class="muted">${safeCurrency}${acc.archived ? ` · ${t('archived')}` : ''}</small>
           </div>
           <div class="account-actions">
             <div class="${signClass}">${amountText}</div>
-            <button type="button" class="ghost account-remove" data-account-id="${safeId}" data-account-name="${safeName}" title="${t('account_remove')}" aria-label="${t('account_remove')}">✕</button>
+            <button type="button" class="ghost account-remove menu-trigger" data-account-id="${safeId}" data-account-name="${safeName}" title="${t('account_remove')}" aria-label="${t('account_remove')}">⋯</button>
           </div>
         </div>
       `;
@@ -2362,6 +3004,7 @@
         await loadReports();
       });
     });
+    updateGetStartedSection();
   }
 
   function applyTxPeriodButtons() {
@@ -2432,21 +3075,25 @@
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString(getLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return formatDateTimeIntl(date, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
   function renderTransactionsList(transactions) {
     const list = document.querySelector(selectors.transactionsList);
     if (!list) return;
+    dashboardDataState.transactionsLoaded = true;
     if (!Array.isArray(transactions) || transactions.length === 0) {
+      dashboardDataState.hasTransactions = false;
       setUiState(list, 'empty');
-      list.innerHTML = renderEmptyState(
-        `${t('transactions_empty')} ${t('empty_transactions_hint')}`,
-        t('cta_add_transaction'),
-        'open-add-transaction'
-      );
+      list.innerHTML = `
+        <div class="table-empty-row">
+          <div class="muted">${escapeHtml(t('transactions_empty'))}</div>
+        </div>
+      `;
+      updateGetStartedSection();
       return;
     }
+    dashboardDataState.hasTransactions = true;
     setUiState(list, 'ready');
 
     const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts) ? lastBalanceSnapshot.accounts : [];
@@ -2478,23 +3125,23 @@
       const signClass = isIncome ? 'amount-positive' : 'amount-negative';
       const safeCategory = escapeHtml(categoryName || t('transaction_category_label'));
       const safeAccount = escapeHtml(accountName || t('transaction_account_label'));
-      const safeWhen = escapeHtml(formatTxTimestamp(tx && tx.transactionDate) || '');
+      const safeWhen = escapeHtml(formatTxTimestamp(tx && tx.transactionDate) || '—');
       const description = tx && tx.description ? String(tx.description) : '';
-      const safeDesc = description ? escapeHtml(description) : '';
-      const descPart = safeDesc ? `<span>·</span><span class="tx-desc">${safeDesc}</span>` : '';
-      const accountPart = safeAccount ? `<span>·</span><span>${safeAccount}</span>` : '';
-      const meta = safeWhen ? `${safeWhen}${accountPart}${descPart}` : `${safeAccount}${descPart}`;
+      const safeDesc = escapeHtml(description || safeCategory);
 
       return `
-        <div class="list-item">
-          <div>
-            <div style="font-weight:800;">${safeCategory}</div>
-            <small class="tx-meta">${meta}</small>
+        <div class="list-item table-row tx-row">
+          <div class="tx-cell tx-date">${safeWhen}</div>
+          <div class="tx-cell tx-merchant">
+            <div class="tx-primary">${safeDesc}</div>
+            <div class="muted tx-secondary">${safeAccount}</div>
           </div>
-          <div class="${signClass}">${amountText}</div>
+          <div class="tx-cell tx-category">${safeCategory}</div>
+          <div class="tx-cell tx-amount ${signClass}">${amountText}</div>
         </div>
       `;
     }).join('');
+    updateGetStartedSection();
   }
 
   async function loadRecentTransactions() {
@@ -2514,12 +3161,15 @@
 
     const res = await Api.call(`/api/transactions?${params}`, 'GET', null, true);
     if (!res.ok || !Array.isArray(res.data)) {
+      dashboardDataState.transactionsLoaded = true;
+      dashboardDataState.hasTransactions = false;
       if (list) {
         setUiState(list, 'error');
         list.innerHTML = renderErrorState(t('transactions_load_failed_short'), t('cta_retry'), 'retry-transactions');
       }
       setPanelFeedback(selectors.transactionsFeedback, t('transactions_load_failed'), true);
       recentTransactionsCache = [];
+      updateGetStartedSection();
       refreshAnalysisPanel();
       return;
     }
@@ -3062,6 +3712,8 @@
 
     const res = await Api.call('/api/accounts/balance', 'GET', null, true);
     if (!res.ok) {
+      dashboardDataState.accountsLoaded = true;
+      dashboardDataState.hasAccounts = false;
       showBalanceError(t('balance_load_failed'));
       if (list) {
         setUiState(list, 'error');
@@ -3069,6 +3721,7 @@
       }
       setPanelFeedback(selectors.accountsFeedback, t('balance_load_failed'), true);
       lastAccountsTotalInBase = NaN;
+      updateGetStartedSection();
       return;
     }
     const payload = res.data && typeof res.data === 'object' ? res.data : {};
@@ -3262,24 +3915,45 @@
   function renderLineChart(target, data, currency) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el || !Array.isArray(data) || data.length === 0) return;
-    const labels = Array.from({ length: data.length }, (_, idx) => {
+    const values = data.map((value) => toNumber(value)).filter((value) => Number.isFinite(value));
+    if (values.length < 2) {
+      el.innerHTML = `<div class="muted">${escapeHtml(t('no_data'))}</div>`;
+      return;
+    }
+
+    const variance = seriesVarianceRatio(values);
+    const hasMeaningfulMovement = values.length >= CHART_MIN_POINTS && variance >= CHART_VARIANCE_THRESHOLD;
+    const deltaCompact = values[values.length - 1] - values[0];
+    if (!hasMeaningfulMovement) {
+      const note = t('no_meaningful_change_window', { value: '30d' });
+      const spark = buildCompactSparkline(values, 220, 48, deltaCompact >= 0 ? '#4f86ff' : '#f17f85');
+      el.innerHTML = `
+        <div class="compact-chart-state">
+          ${spark}
+          <div class="muted compact-chart-note">${escapeHtml(note)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const labels = Array.from({ length: values.length }, (_, idx) => {
       const d = new Date();
-      d.setMonth(d.getMonth() - (data.length - 1 - idx));
-      return d.toLocaleString(getLocale(), { month: 'short' });
+      d.setMonth(d.getMonth() - (values.length - 1 - idx));
+      return formatDateTimeIntl(d, { month: 'short' });
     });
 
     const width = Math.max(el.clientWidth || 520, 520);
-    const height = 200;
-    const padLeft = 110;
-    const padRight = 16;
-    const padTop = 18;
-    const padBottom = 34;
-    const max = Math.max(...data);
-    const min = Math.min(...data);
+    const height = 156;
+    const padLeft = 14;
+    const padRight = 10;
+    const padTop = 10;
+    const padBottom = 24;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
     const span = max - min || 1;
 
-    const points = data.map((v, i) => {
-      const x = padLeft + (i / Math.max(data.length - 1, 1)) * (width - padLeft - padRight);
+    const points = values.map((v, i) => {
+      const x = padLeft + (i / Math.max(values.length - 1, 1)) * (width - padLeft - padRight);
       const y = height - padBottom - ((v - min) / span) * (height - padTop - padBottom);
       return { x, y };
     });
@@ -3291,24 +3965,23 @@
     ].join(' ');
 
     const linePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
-    const yTicks = 4;
+    const yTicks = 1;
     const gridLines = Array.from({ length: yTicks + 1 }, (_, i) => {
       const value = min + (span / yTicks) * i;
       const y = height - padBottom - ((value - min) / span) * (height - padTop - padBottom);
-      return `
-        <line x1="${padLeft}" x2="${width - padRight}" y1="${y}" y2="${y}" class="chart-gridline"></line>
-        <text x="${padLeft - 10}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${formatMoney(value, currency || baseCurrency)}</text>
-      `;
+      void value;
+      return `<line x1="${padLeft}" x2="${width - padRight}" y1="${y}" y2="${y}" class="chart-gridline"></line>`;
     }).join('');
 
     const xLabels = labels.map((label, idx) => {
       const x = points[idx]?.x || padLeft;
+      if (labels.length > 8 && idx % 2 !== 0 && idx !== labels.length - 1) return '';
       return `<text x="${x}" y="${height - padBottom + 18}" text-anchor="middle" class="chart-axis-label">${label}</text>`;
     }).join('');
 
-    const delta = data[data.length - 1] - data[0];
-    const avg = data.reduce((a, b) => a + b, 0) / (data.length || 1);
-    const deltaPct = data[0] !== 0 ? (delta / data[0]) * 100 : 0;
+    const delta = values[values.length - 1] - values[0];
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const deltaPct = values[0] !== 0 ? (delta / values[0]) * 100 : 0;
     const formatPercent = (val) => `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
 
     el.innerHTML = `
@@ -3316,11 +3989,7 @@
         <defs>
           <linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stop-color="#4f8bff" stop-opacity="0.32" />
-            <stop offset="100%" stop-color="#3cc7c4" stop-opacity="0.08" />
-          </linearGradient>
-          <linearGradient id="lineStroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stop-color="#4f8bff" />
-            <stop offset="100%" stop-color="#3cc7c4" />
+            <stop offset="100%" stop-color="#4f8bff" stop-opacity="0.04" />
           </linearGradient>
         </defs>
         ${gridLines}
@@ -3328,27 +3997,16 @@
         <polyline points="${linePoints}" class="chart-line" stroke-linecap="round" stroke-linejoin="round" />
         ${xLabels}
       </svg>
-      <div class="mini-stats">
-        <div class="stat-chip">
-          <div class="muted">${t('min')}</div>
-          <div class="stat-value">${formatMoney(min, currency || baseCurrency)}</div>
-        </div>
-        <div class="stat-chip">
-          <div class="muted">${t('max')}</div>
-          <div class="stat-value">${formatMoney(max, currency || baseCurrency)}</div>
-        </div>
-        <div class="stat-chip">
-          <div class="muted">${t('change')}</div>
-          <div class="stat-value">${formatMoney(delta, currency || baseCurrency)}</div>
-        </div>
-        <div class="stat-chip">
-          <div class="muted">${t('average')}</div>
-          <div class="stat-value">${formatMoney(avg, currency || baseCurrency)}</div>
-        </div>
-        <div class="stat-chip">
-          <div class="muted">${t('trend_pct')}</div>
-          <div class="stat-value">${formatPercent(deltaPct)}</div>
-        </div>
+      <div class="chart-summary-line">
+        <span><strong>${t('min')}:</strong> ${formatMoney(min, currency || baseCurrency)}</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>${t('max')}:</strong> ${formatMoney(max, currency || baseCurrency)}</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>${t('average')}:</strong> ${formatMoney(avg, currency || baseCurrency)}</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>${t('change')}:</strong> ${formatMoney(delta, currency || baseCurrency)}</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>${t('trend_pct')}:</strong> ${formatPercent(deltaPct)}</span>
       </div>
     `;
   }
@@ -3470,7 +4128,7 @@
     if (!Number.isFinite(amount)) return '—';
     const code = (asset || '').toUpperCase();
     const digits = code === 'BTC' ? 8 : 6;
-    return `${amount.toLocaleString(getLocale(), { minimumFractionDigits: 0, maximumFractionDigits: digits })} ${code || ''}`.trim();
+    return `${formatDecimalIntl(amount, 0, digits)} ${code || ''}`.trim();
   }
 
   function walletNetworkLabel(network) {
@@ -3491,15 +4149,15 @@
     const list = document.querySelector(selectors.walletsList);
     if (!list) return;
     setPanelFeedback(selectors.walletsFeedback, '');
+    dashboardDataState.walletsLoaded = true;
     if (!Array.isArray(wallets) || wallets.length === 0) {
+      dashboardDataState.hasWallets = false;
       setUiState(list, 'empty');
-      list.innerHTML = renderEmptyState(
-        `${t('wallets_empty')} ${t('empty_wallets_hint')}`,
-        t('cta_add_wallet'),
-        'open-add-wallet'
-      );
+      list.innerHTML = renderEmptyState(`${t('wallets_empty')} ${t('empty_wallets_hint')}`);
+      updateGetStartedSection();
       return;
     }
+    dashboardDataState.hasWallets = true;
     setUiState(list, 'ready');
     list.innerHTML = wallets.map((wallet) => {
       const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
@@ -3511,24 +4169,66 @@
       const base = wallet && wallet.baseCurrency ? String(wallet.baseCurrency) : baseCurrency;
       const valueText = Number.isFinite(Number(valueInBase)) ? formatMoney(Number(valueInBase), base) : '';
       const mainValueText = valueText ? `≈ ${valueText}` : '—';
+      const safeWalletId = escapeHtml(wallet && wallet.id != null ? String(wallet.id) : '');
+      const openLabel = t('analysis_quick_open_hint');
       return `
-        <div class="list-item wallet-item">
+        <div
+          class="list-item wallet-item table-row wallet-open"
+          data-wallet-id="${safeWalletId}"
+          role="button"
+          tabindex="0"
+          aria-label="${escapeHtml(openLabel)}"
+        >
           <div class="wallet-left">
-            <div style="font-weight:800;">${label || escapeHtml(networkLabel)}</div>
-            <small>${escapeHtml(networkLabel)}${addressShort ? ` · ${addressShort}` : ''}</small>
+            <div class="wallet-title">${label || escapeHtml(networkLabel)}</div>
+            <small class="muted">${escapeHtml(networkLabel)}${addressShort ? ` · ${addressShort}` : ''}</small>
           </div>
           <div class="wallet-actions">
             <div class="wallet-right">
               <div class="amount-positive">${mainValueText}</div>
               <small class="muted">${formatAssetAmount(balance, walletNativeAsset(network))}</small>
             </div>
-            <button type="button" class="ghost wallet-remove" data-wallet-id="${wallet.id || ''}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">✕</button>
+            <span class="wallet-chevron" aria-hidden="true">›</span>
+            <button type="button" class="ghost wallet-remove menu-trigger" data-wallet-id="${safeWalletId}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">⋯</button>
           </div>
         </div>
       `;
     }).join('');
 
-    list.querySelectorAll('[data-wallet-id]').forEach((btn) => {
+    list.querySelectorAll('.wallet-open[data-wallet-id]').forEach((row) => {
+      const activateWalletFromRow = () => {
+        const walletId = Number(row.dataset.walletId);
+        if (!Number.isFinite(walletId)) return;
+        const selected = wallets.find((item) => Number(item && item.id) === walletId);
+        if (!selected) return;
+        const changed = analysisState.activeWalletId !== walletId;
+        analysisState.activeWalletId = walletId;
+        analysisState.activeWalletName = String(selected.label || walletNetworkLabel(selected.network || ''));
+        analysisState.activeWallet = selected;
+        if (changed) {
+          analysisState.status = null;
+          analysisState.apiSummary = null;
+          analysisState.apiInsights = null;
+          analysisState.apiSeries = null;
+          analysisState.lastDataFetchAt = 0;
+        }
+      };
+
+      row.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('.wallet-remove')) return;
+        activateWalletFromRow();
+        q(selectors.analysisQuickCard)?.click();
+      });
+      row.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        if (event.target instanceof Element && event.target.closest('.wallet-remove')) return;
+        event.preventDefault();
+        activateWalletFromRow();
+        q(selectors.analysisQuickCard)?.click();
+      });
+    });
+
+    list.querySelectorAll('button.wallet-remove[data-wallet-id]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.walletId;
         if (!id) return;
@@ -3542,6 +4242,7 @@
         await loadWallets();
       });
     });
+    updateGetStartedSection();
   }
 
   async function loadWallets() {
@@ -3553,6 +4254,8 @@
     setPanelFeedback(selectors.walletsFeedback, '');
     const res = await Api.call('/api/crypto/wallets/summary', 'GET', null, true);
     if (!res.ok) {
+      dashboardDataState.walletsLoaded = true;
+      dashboardDataState.hasWallets = false;
       if (list) {
         setUiState(list, 'error');
         list.innerHTML = renderErrorState(t('wallets_loading_failed'), t('cta_retry'), 'retry-wallets');
@@ -3560,6 +4263,7 @@
       setPanelFeedback(selectors.walletsFeedback, t('wallets_loading_failed'), true);
       cryptoWalletTotalInBase = NaN;
       analysisState.walletsCount = 0;
+      updateGetStartedSection();
       rerenderBalanceSnapshot();
       refreshAnalysisPanel();
       return;
@@ -3840,8 +4544,6 @@
         close();
         await Promise.all([
           loadBalance(),
-          loadFxRates(),
-          loadCryptoRates(),
           loadWallets(),
           updateDemoAmounts()
         ]);
@@ -4066,8 +4768,6 @@
       bindFxControls();
       await Promise.all([
         loadTransactionCategories(),
-        loadFxRates(),
-        loadCryptoRates(),
         loadWallets(),
         updateDemoAmounts()
       ]);
