@@ -11,12 +11,29 @@ test('dashboard empty states expose action CTAs', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-empty');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
-  await expect(page.locator('#getStartedSection')).toBeVisible();
-  await expect(page.locator('#getStartedSection [data-action="open-add-account"]')).toBeVisible();
-  await expect(page.locator('#getStartedSection [data-action="open-add-transaction"]')).toBeVisible();
-  await expect(page.locator('#getStartedSection [data-action="open-import-history"]')).toBeVisible();
+  const getStarted = page.getByTestId('get-started');
+  await expect(getStarted).toBeVisible();
+  await expect(getStarted.locator('[data-action="open-add-account"]')).toBeVisible();
+  await expect(getStarted.locator('[data-action="open-add-transaction"]')).toBeVisible();
+  await expect(getStarted.locator('[data-action="open-import-history"]')).toBeVisible();
   await expect(page.locator('#transactionsList')).toContainText('No transactions yet.');
   await expect(page.locator('#btn-add-transaction')).toBeVisible();
+
+  const sectionBox = await getStarted.boundingBox();
+  const pageBox = await page.locator('.dashboard-main.page').boundingBox();
+  expect(sectionBox).toBeTruthy();
+  expect(pageBox).toBeTruthy();
+  expect(Math.abs(sectionBox.x - pageBox.x)).toBeLessThanOrEqual(6);
+  expect(Math.abs((sectionBox.x + sectionBox.width) - (pageBox.x + pageBox.width))).toBeLessThanOrEqual(6);
+
+  const hasTruncation = await page.evaluate(() => {
+    const root = document.querySelector('[data-testid=\"get-started\"]');
+    const title = root ? root.querySelector('.section-title') : null;
+    const subtitle = root ? root.querySelector('.get-started-subtitle') : null;
+    const nodes = [title, subtitle].filter(Boolean);
+    return nodes.some((el) => el.scrollWidth > (el.clientWidth + 1));
+  });
+  expect(hasTruncation).toBeFalsy();
 });
 
 test('modal supports keyboard escape and focus restore', async ({ page }, testInfo) => {

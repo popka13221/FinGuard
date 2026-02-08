@@ -21,7 +21,7 @@
   </div>
 
   <div class="container">
-    <header class="nav" data-motion="reveal">
+    <header class="nav glass" data-motion="reveal">
       <div class="brand">
         <img src="/app/assets/white-big-logo.svg" alt="FinGuard" class="brand-logo">
         <div class="brand-copy">
@@ -48,7 +48,7 @@
     </header>
 
     <main class="dashboard-main page" data-motion="reveal">
-      <section class="card section hero-section analysis-strip" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal">
+      <section class="card section hero-section analysis-strip glass" id="walletAnalysisPanel" data-ui-state="idle" data-motion="reveal" data-testid="hero">
         <div class="hero-head" id="walletAnalysisBanner" data-ui-state="idle">
           <div>
             <h1 class="hero-main-title" data-i18n="net_worth_title">Net worth</h1>
@@ -56,9 +56,8 @@
             <div class="hero-change-row">
               <span class="hero-change-value" id="analysisHeroChange">—</span>
               <span class="hero-change-period" data-i18n="period_7d_compact">• 7d</span>
-            </div>
-            <div class="hero-inline-meta">
-              <span class="hero-status" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</span>
+              <span class="hero-change-divider" aria-hidden="true">·</span>
+              <span class="hero-status hero-updated-inline" id="analysisUpdatedAt" data-i18n="source_pending" aria-live="polite">Ожидаем данные</span>
             </div>
           </div>
 
@@ -67,11 +66,12 @@
               type="button"
               class="analysis-text-link"
               id="analysisQuickCard"
+              data-testid="wallet-intelligence-link"
               aria-controls="analysis-detail-overlay"
               aria-haspopup="dialog"
               aria-expanded="false"
               data-i18n="analysis_open_link"
-            >Wallet intelligence →</button>
+            >Аналитика кошелька →</button>
           </div>
         </div>
 
@@ -87,12 +87,12 @@
           </article>
 
           <article class="analysis-card stat-item" id="analysisCardOutflow" data-ui-state="loading">
-            <div class="analysis-card-label" data-i18n="cashflow_30d">Cashflow (30d)</div>
+            <div class="analysis-card-label" data-i18n="cashflow_30d">Денежный поток (30д)</div>
             <div class="analysis-card-value" id="analysisOutflowValue">—</div>
           </article>
 
           <article class="analysis-card stat-item" id="analysisCardRecurring" data-ui-state="loading">
-            <div class="analysis-card-label" data-i18n="debt_label">Debt</div>
+            <div class="analysis-card-label" data-i18n="debt_label">Долг</div>
             <div class="analysis-card-value" id="analysisRecurringValue">—</div>
           </article>
         </div>
@@ -132,19 +132,19 @@
         </div>
       </section>
 
-      <section class="card section get-started-section" id="getStartedSection" hidden data-motion="reveal">
+      <section class="card section get-started-section glass" id="getStartedSection" hidden data-motion="reveal" data-testid="get-started">
         <div class="section-head">
-          <h2 class="section-title" data-i18n="get_started_title">Get started</h2>
+          <h2 class="section-title" data-i18n="get_started_title">С чего начать</h2>
         </div>
-        <div class="muted get-started-subtitle" data-i18n="get_started_subtitle">Complete one step to unlock analytics.</div>
+        <div class="muted get-started-subtitle" data-i18n="get_started_subtitle">Сделайте один шаг, чтобы открыть аналитику.</div>
         <div class="get-started-actions">
-          <button type="button" class="ghost" data-action="open-add-account" data-i18n="get_started_connect">Connect account</button>
-          <button type="button" class="ghost" data-action="open-add-transaction" data-i18n="get_started_add_tx">Add transaction</button>
-          <button type="button" class="ghost" data-action="open-import-history" data-i18n="get_started_import">Import history</button>
+          <button type="button" class="get-started-primary" data-action="open-add-account" data-i18n="get_started_connect">Подключить счёт</button>
+          <button type="button" class="ghost get-started-secondary" data-action="open-add-transaction" data-i18n="get_started_add_tx">Добавить транзакцию</button>
+          <button type="button" class="ghost inline-link get-started-link" data-action="open-import-history" data-i18n="get_started_import">Импортировать историю</button>
         </div>
       </section>
 
-      <section class="card section transactions-section" data-motion="reveal">
+      <section class="card section transactions-section glass" data-motion="reveal">
         <div class="section-head tx-head">
           <h2 class="section-title" data-i18n="recent_transactions_title">Транзакции</h2>
           <div class="tx-toolbar">
@@ -167,7 +167,7 @@
         </div>
       </section>
 
-      <section class="card section portfolio-section" data-motion="reveal">
+      <section class="card section portfolio-section glass" data-motion="reveal">
         <div class="section-head">
           <div>
             <h2 class="section-title" data-i18n="balance_trend_title">Динамика капитала</h2>
@@ -193,7 +193,7 @@
       </section>
 
       <section class="dashboard-columns" data-motion="reveal">
-        <article class="card section">
+        <article class="card section glass">
           <div class="section-head">
             <h2 class="section-title" data-i18n="your_cards">Ваши карты</h2>
             <button type="button" class="ghost" id="btn-add-account" data-i18n="add">Добавить</button>
@@ -208,7 +208,7 @@
           </div>
         </article>
 
-        <article class="card section">
+        <article class="card section glass">
           <div class="section-head">
             <h2 class="section-title" data-i18n="wallets_title">Крипто-кошельки</h2>
             <button type="button" class="ghost" id="btn-add-wallet" data-i18n="add">Добавить</button>
@@ -223,7 +223,7 @@
         </article>
       </section>
 
-      <section class="card section upcoming-section" data-motion="reveal">
+      <section class="card section upcoming-section glass" data-motion="reveal">
         <div class="section-head">
           <h2 class="section-title" data-i18n="upcoming_payments">Ближайшие платежи</h2>
           <button type="button" class="ghost" id="btn-upcoming-add" data-i18n="add">Добавить</button>
@@ -283,44 +283,44 @@
   </div>
 
   <div id="analysis-detail-overlay" class="overlay analysis-detail-overlay" hidden data-ui-state="closed">
-    <div class="analysis-detail-menu" id="analysis-detail-menu" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Аналитика кошелька" data-i18n-aria="analysis_detail_menu_aria">
+    <div class="analysis-detail-menu" id="analysis-detail-menu" data-testid="wallet-intelligence-page" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1" aria-label="Аналитика кошелька" data-i18n-aria="analysis_detail_menu_aria">
       <div class="analysis-detail-head">
         <div class="analysis-detail-identity">
+          <button type="button" class="analysis-back-link" id="btn-analysis-detail-close" data-i18n="back_to_dashboard" data-i18n-aria="close_dialog">← Назад</button>
           <h3 class="analysis-detail-title" id="analysisDetailWalletName">—</h3>
           <div class="muted analysis-detail-subtitle" id="analysisDetailWalletNetwork">—</div>
           <div class="analysis-detail-address-row">
             <code class="analysis-detail-address" id="analysisDetailWalletAddress">—</code>
-            <button type="button" class="ghost" id="analysisDetailCopyBtn" data-i18n="copy">Copy</button>
-            <a class="ghost link-btn" id="analysisDetailExplorerLink" href="#" target="_blank" rel="noopener noreferrer" data-i18n="open_explorer">Explorer</a>
+            <button type="button" class="ghost analysis-inline-action" id="analysisDetailCopyBtn" data-i18n="copy">Копировать</button>
+            <a class="ghost link-btn analysis-inline-action" id="analysisDetailExplorerLink" href="#" target="_blank" rel="noopener noreferrer" data-i18n="open_explorer">Эксплорер</a>
           </div>
         </div>
         <div class="analysis-detail-head-actions">
           <div class="analysis-detail-updated" id="analysisDetailUpdated" data-i18n="analysis_detail_wallet_missing">Данные появятся после подключения кошелька.</div>
-          <button type="button" class="ghost" id="btn-analysis-detail-close" data-i18n="back_to_dashboard" data-i18n-aria="close_dialog">Назад</button>
           <span id="analysisDetailSource" class="analysis-compat-hidden" data-data-source="pending">pending</span>
         </div>
       </div>
 
       <div class="analysis-detail-body">
-        <section class="analysis-detail-section analysis-detail-stats-row">
+        <section class="analysis-detail-section analysis-detail-stats-row glass">
           <article class="analysis-detail-metric">
-            <div class="analysis-detail-metric-label" data-i18n="analysis_card_portfolio">Portfolio value</div>
+            <div class="analysis-detail-metric-label" data-i18n="analysis_card_portfolio">Стоимость портфеля</div>
             <div class="analysis-detail-metric-value" id="analysisDetailPortfolio">—</div>
           </article>
           <article class="analysis-detail-metric">
-            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_wallet_balance">Balance</div>
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_wallet_balance">Баланс</div>
             <div class="analysis-detail-metric-value" id="analysisDetailWalletBalance">—</div>
           </article>
           <article class="analysis-detail-metric">
-            <div class="analysis-detail-metric-label" data-i18n="analysis_card_growth">7d growth</div>
+            <div class="analysis-detail-metric-label" data-i18n="analysis_card_growth">Изм. за 7д</div>
             <div class="analysis-detail-metric-value" id="analysisDetailGrowth">—</div>
           </article>
           <article class="analysis-detail-metric">
-            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_inflow_30d">Inflow (30d)</div>
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_inflow_30d">Приток (30д)</div>
             <div class="analysis-detail-metric-value" id="analysisDetailRecurring">—</div>
           </article>
           <article class="analysis-detail-metric">
-            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_outflow_30d">Outflow (30d)</div>
+            <div class="analysis-detail-metric-label" data-i18n="analysis_detail_outflow_30d">Отток (30д)</div>
             <div class="analysis-detail-metric-value" id="analysisDetailOutflow">—</div>
           </article>
           <div hidden id="analysisDetailWalletValue">—</div>
@@ -328,7 +328,7 @@
           <div hidden id="analysisDetailNet">—</div>
         </section>
 
-        <section class="analysis-detail-section">
+        <section class="analysis-detail-section glass">
           <div class="section-head analysis-detail-chart-head">
             <h4 class="analysis-detail-section-title" data-i18n="analysis_detail_series_title">Динамика портфеля</h4>
             <div class="analysis-detail-chart-controls">
@@ -349,12 +349,12 @@
           <div class="analysis-detail-series-chart" id="analysisDetailSeriesChart"></div>
         </section>
 
-        <section class="analysis-detail-section">
+        <section class="analysis-detail-section glass">
           <div class="analysis-detail-section-title" data-i18n="analysis_detail_allocation_title">Структура портфеля</div>
           <div class="analysis-detail-list" id="analysisDetailAllocationList"></div>
         </section>
 
-        <section class="analysis-detail-section">
+        <section class="analysis-detail-section glass">
           <div class="analysis-detail-section-title" data-i18n="analysis_detail_insights_title">Инсайты</div>
           <div class="analysis-detail-list" id="analysisDetailInsightsList"></div>
         </section>

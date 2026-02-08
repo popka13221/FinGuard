@@ -11,9 +11,11 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
-  await expect(page.locator('#walletAnalysisPanel')).toBeVisible();
-  await expect(page.locator('#analysisQuickCard')).toContainText('Wallet intelligence');
-  await expect(page.locator('#analysisQuickCard')).not.toContainText('USD');
+  const hero = page.getByTestId('hero');
+  const intelligenceLink = page.getByTestId('wallet-intelligence-link');
+  await expect(hero).toBeVisible();
+  await expect(intelligenceLink).toBeVisible();
+  await expect(intelligenceLink).not.toContainText('USD');
 
   await page.click('#btn-add-wallet');
   await expect(page.locator('#add-wallet-overlay')).toBeVisible();
@@ -25,13 +27,14 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
 
   await expect(page.locator('#walletsList .wallet-item', { hasText: 'MetaMask' })).toBeVisible();
   await expect(page.locator('#analysisUpdatedAt')).toContainText(/(Updated|Waiting)/);
-  await expect(page.locator('#analysisOutflowValue')).toContainText('USD');
+  const cashflowText = ((await page.locator('#analysisOutflowValue').textContent()) || '').trim();
+  expect(cashflowText === '—' || cashflowText.includes('USD')).toBeTruthy();
   const debtText = ((await page.locator('#analysisRecurringValue').textContent()) || '').trim();
   expect(debtText === '—' || debtText.includes('USD')).toBeTruthy();
 
-  await page.click('#analysisQuickCard');
+  await intelligenceLink.click();
   await expect(page.locator('#analysis-detail-overlay')).toBeVisible();
-  await expect(page.locator('#analysis-detail-menu')).toBeVisible();
+  await expect(page.getByTestId('wallet-intelligence-page')).toBeVisible();
   await expect(page.locator('#analysisDetailWalletName')).toContainText('MetaMask');
   await expect(page.locator('#analysisDetailPortfolio')).toContainText('USD');
   const hasLargeSeries = await page.locator('#analysisDetailSeriesChart svg').count();

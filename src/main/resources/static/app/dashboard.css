@@ -5297,3 +5297,480 @@ body.dashboard::after {
     text-align: left;
   }
 }
+
+/* FinGuard Dashboard v4.2: premium polish pass */
+.dashboard .get-started-section {
+  grid-column: 1 / -1 !important;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard .get-started-section .section-head {
+  margin-bottom: 4px;
+}
+
+.dashboard .get-started-section .section-title,
+.dashboard .get-started-subtitle {
+  max-width: 100%;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.dashboard .get-started-subtitle {
+  margin-top: 0;
+  line-height: 1.4;
+}
+
+.dashboard .get-started-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.dashboard .get-started-primary {
+  border: 0 !important;
+  border-radius: 8px;
+  background: var(--fg-accent) !important;
+  color: #071524 !important;
+  font-weight: 600;
+  padding: 7px 12px;
+}
+
+.dashboard .get-started-secondary {
+  border: 1px solid var(--fg-border) !important;
+  border-radius: 8px !important;
+  background: var(--fg-surface-1) !important;
+  color: var(--fg-text-soft) !important;
+  padding: 7px 12px;
+}
+
+.dashboard .get-started-link,
+.dashboard .get-started-link.ghost,
+.dashboard .get-started-link:hover,
+.dashboard .get-started-link:focus-visible {
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: var(--fg-text-muted) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dashboard .hero-inline-meta {
+  display: none !important;
+}
+
+.dashboard .hero-change-row {
+  margin-top: 6px;
+  margin-bottom: 0;
+  gap: 8px;
+}
+
+.dashboard .hero-change-divider {
+  color: var(--fg-text-faint);
+}
+
+.dashboard .hero-updated-inline {
+  white-space: nowrap;
+  color: var(--fg-text-muted) !important;
+}
+
+.dashboard .analysis-detail-head {
+  align-items: flex-start;
+}
+
+.dashboard .analysis-back-link,
+.dashboard .analysis-back-link.ghost,
+.dashboard .analysis-back-link:hover,
+.dashboard .analysis-back-link:focus-visible {
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: var(--fg-text-muted) !important;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.dashboard .analysis-back-link:hover,
+.dashboard .analysis-back-link:focus-visible {
+  color: var(--fg-text) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dashboard .analysis-detail-address-row {
+  margin-top: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard .analysis-inline-action,
+.dashboard .analysis-inline-action.ghost,
+.dashboard .analysis-inline-action.link-btn,
+.dashboard .analysis-inline-action:hover,
+.dashboard .analysis-inline-action:focus-visible {
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: var(--fg-text-muted) !important;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.dashboard .analysis-inline-action:hover,
+.dashboard .analysis-inline-action:focus-visible {
+  color: var(--fg-text-soft) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dashboard .analysis-detail-head-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .dashboard .get-started-actions {
+    align-items: stretch;
+  }
+
+  .dashboard .get-started-primary,
+  .dashboard .get-started-secondary {
+    width: 100%;
+    text-align: left;
+  }
+
+  .dashboard .get-started-link {
+    width: auto;
+  }
+}
+
+/* FinGuard Dashboard v5: premium minimal glass */
+:root {
+  --glass-bg0: #060b14;
+  --glass-bg1: #0a1320;
+  --glass-bg: rgba(15, 24, 38, 0.58);
+  --glass-bg-fallback: rgba(11, 18, 30, 0.9);
+  --glass-border: rgba(182, 206, 238, 0.12);
+  --glass-border-strong: rgba(198, 220, 248, 0.2);
+  --glass-shadow: 0 20px 52px rgba(2, 7, 16, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --glass-radius: 16px;
+  --glass-blur: 16px;
+  --glass-divider: rgba(171, 193, 226, 0.13);
+  --glass-row-hover: rgba(176, 198, 231, 0.08);
+  --glass-text-strong: rgba(243, 249, 255, 0.92);
+  --glass-text-muted: rgba(183, 199, 223, 0.64);
+  --glass-text-faint: rgba(164, 180, 207, 0.46);
+  --glass-focus: rgba(129, 163, 255, 0.64);
+  --glass-focus-halo: rgba(94, 124, 206, 0.25);
+  --glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23ffffff' fill-opacity='0.5'%3E%3Ccircle cx='12' cy='14' r='1'/%3E%3Ccircle cx='46' cy='27' r='1'/%3E%3Ccircle cx='88' cy='15' r='1'/%3E%3Ccircle cx='128' cy='24' r='1'/%3E%3Ccircle cx='169' cy='17' r='1'/%3E%3Ccircle cx='24' cy='63' r='1'/%3E%3Ccircle cx='72' cy='49' r='1'/%3E%3Ccircle cx='113' cy='67' r='1'/%3E%3Ccircle cx='153' cy='56' r='1'/%3E%3Ccircle cx='35' cy='98' r='1'/%3E%3Ccircle cx='82' cy='106' r='1'/%3E%3Ccircle cx='137' cy='101' r='1'/%3E%3Ccircle cx='17' cy='142' r='1'/%3E%3Ccircle cx='59' cy='147' r='1'/%3E%3Ccircle cx='106' cy='160' r='1'/%3E%3Ccircle cx='165' cy='145' r='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+html,
+body,
+body.dashboard {
+  min-height: 100%;
+  background: var(--glass-bg0) !important;
+}
+
+body.dashboard {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  color: var(--glass-text-strong);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.dashboard::before {
+  content: "";
+  position: fixed;
+  inset: -20vmax;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(56% 45% at 12% 9%, rgba(91, 137, 255, 0.2), transparent 70%),
+    radial-gradient(48% 38% at 84% 12%, rgba(78, 199, 178, 0.16), transparent 72%),
+    radial-gradient(50% 40% at 54% 94%, rgba(124, 103, 245, 0.14), transparent 76%),
+    linear-gradient(160deg, var(--glass-bg1) 0%, var(--glass-bg0) 65%, #050911 100%);
+  transform: translateZ(0);
+}
+
+body.dashboard::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(125% 95% at 50% 50%, transparent 40%, rgba(1, 4, 10, 0.72) 100%),
+    var(--glass-noise);
+  background-size: auto, 190px 190px;
+  background-repeat: no-repeat, repeat;
+  opacity: 1;
+  mix-blend-mode: soft-light;
+}
+
+.dashboard .dash-atmosphere {
+  display: none !important;
+}
+
+.dashboard .container,
+.dashboard .dashboard-main,
+.dashboard .analysis-detail-menu {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard .glass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--glass-radius) !important;
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+}
+
+.dashboard .glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(138deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.03) 28%, rgba(255, 255, 255, 0) 58%);
+  opacity: 0.22;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dashboard .glass {
+    background: var(--glass-bg-fallback) !important;
+  }
+
+  .dashboard .glass::before {
+    opacity: 0.14;
+  }
+}
+
+.dashboard .overlay,
+.dashboard .analysis-detail-overlay {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dashboard .analysis-detail-menu {
+  background: transparent !important;
+}
+
+.dashboard :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--glass-focus) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--glass-focus-halo) !important;
+}
+
+.dashboard button.ghost,
+.dashboard .ghost,
+.dashboard a.ghost,
+.dashboard .markets-link {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--glass-text-muted) !important;
+}
+
+.dashboard button.ghost:hover,
+.dashboard a.ghost:hover,
+.dashboard .ghost:focus-visible,
+.dashboard .markets-link:hover,
+.dashboard .markets-link:focus-visible {
+  background: rgba(182, 203, 237, 0.09) !important;
+  border-color: rgba(182, 203, 237, 0.18) !important;
+  color: var(--glass-text-strong) !important;
+}
+
+.dashboard .analysis-text-link,
+.dashboard .analysis-back-link,
+.dashboard .analysis-inline-action {
+  color: var(--glass-text-muted) !important;
+  text-decoration: none !important;
+}
+
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:focus-visible,
+.dashboard .analysis-back-link:hover,
+.dashboard .analysis-back-link:focus-visible,
+.dashboard .analysis-inline-action:hover,
+.dashboard .analysis-inline-action:focus-visible {
+  color: var(--glass-text-strong) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+.dashboard .get-started-primary {
+  border-radius: 999px !important;
+  border: 1px solid rgba(211, 226, 250, 0.14) !important;
+  background: rgba(112, 146, 248, 0.2) !important;
+  color: var(--glass-text-strong) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .get-started-primary:hover,
+.dashboard .get-started-primary:focus-visible {
+  background: rgba(132, 162, 251, 0.26) !important;
+  border-color: rgba(215, 230, 255, 0.22) !important;
+}
+
+.dashboard .hero-main-title {
+  color: var(--glass-text-faint) !important;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard .hero-value {
+  color: var(--glass-text-strong) !important;
+  font-size: clamp(2.25rem, 1.82rem + 1.28vw, 3.06rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.dashboard .hero-change-row {
+  color: var(--glass-text-muted);
+}
+
+.dashboard .hero-updated-inline,
+.dashboard .analysis-detail-updated {
+  color: var(--glass-text-faint) !important;
+  font-size: 0.78rem;
+}
+
+.dashboard .muted {
+  color: var(--glass-text-muted) !important;
+}
+
+.dashboard .analysis-card-label,
+.dashboard .analysis-detail-metric-label,
+.dashboard .table-head span,
+.dashboard .payment-due {
+  color: var(--glass-text-faint) !important;
+  font-size: 0.74rem;
+}
+
+.dashboard .analysis-card-value,
+.dashboard .analysis-detail-metric-value,
+.dashboard .payment-amount,
+.dashboard .tx-amount {
+  color: var(--glass-text-strong) !important;
+}
+
+.dashboard .section {
+  padding: 22px !important;
+}
+
+.dashboard .get-started-section {
+  grid-column: 1 / -1 !important;
+}
+
+.dashboard .get-started-subtitle {
+  max-width: 72ch;
+  white-space: normal !important;
+}
+
+.dashboard .table-row,
+.dashboard .list-item {
+  border-bottom: 1px solid var(--glass-divider) !important;
+  background: transparent !important;
+}
+
+.dashboard .table-row:hover,
+.dashboard .list-item:hover,
+.dashboard .wallet-item:hover,
+.dashboard .account-row:hover,
+.dashboard .tx-row:hover,
+.dashboard .payment-row:hover {
+  background: var(--glass-row-hover) !important;
+}
+
+.dashboard .table-row {
+  padding: 12px 4px !important;
+}
+
+.dashboard .chart-shell,
+.dashboard .analysis-detail-series-chart {
+  border-color: var(--glass-divider) !important;
+  background: rgba(10, 16, 27, 0.42) !important;
+}
+
+.dashboard .chart-shell.is-compact-chart,
+.dashboard .analysis-detail-series-chart.is-compact-chart {
+  min-height: 96px !important;
+}
+
+.dashboard .empty-block,
+.dashboard .error-block,
+.dashboard .compact-empty-state {
+  border: 1px solid var(--glass-divider) !important;
+  background: rgba(11, 18, 30, 0.42) !important;
+}
+
+.dashboard .table-empty-row {
+  border-bottom-color: var(--glass-divider);
+}
+
+.dashboard .nav-email,
+.dashboard .account-name,
+.dashboard .wallet-title,
+.dashboard .tx-primary,
+.dashboard .analysis-detail-title,
+.dashboard .analysis-detail-subtitle,
+.dashboard .analysis-card-label,
+.dashboard .analysis-detail-updated {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard .tx-amount,
+.dashboard .payment-amount,
+.dashboard .account-actions > div {
+  text-align: right;
+}
+
+.dashboard .analysis-detail-head-actions {
+  align-items: center;
+}
+
+@media (max-width: 1023px) {
+  .dashboard .section {
+    padding: 18px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .get-started-actions {
+    gap: 8px;
+  }
+
+  .dashboard .get-started-primary,
+  .dashboard .get-started-secondary {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .dashboard .nav-email {
+    max-width: 170px;
+  }
+}

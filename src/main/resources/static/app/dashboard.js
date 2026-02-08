@@ -182,7 +182,7 @@
       payment_due_jan19: 'Срок: 19 янв',
       payment_mobile: 'Мобильная связь',
       payment_due_jan22: 'Срок: 22 янв',
-      net_worth_title: 'Net worth',
+      net_worth_title: 'Капитал',
       demo: 'Демо',
       balance_trend_title: 'Динамика баланса',
       last_6_months: 'Последние 6 месяцев,',
@@ -192,7 +192,7 @@
       current_month: 'Текущий месяц,',
       expense_chart_aria: 'Диаграмма расходов',
       expense_empty_title: 'Нет данных за текущий месяц',
-      markets_badge: 'Markets',
+      markets_badge: 'Рынки',
       crypto_badge: 'Crypto',
       fx_badge: 'FX',
       fx_radar_title: 'FX Radar',
@@ -206,10 +206,10 @@
       updated: 'Обновлено',
       updated_at: 'Обновлено {value}',
       source_pending: 'Ожидаем данные',
-      source_live: 'Live',
+      source_live: 'Онлайн',
       source_demo: 'Оценка',
       source_synthetic: 'Оценка',
-      source_hybrid: 'Live',
+      source_hybrid: 'Онлайн',
       base_label: 'База:',
       all_currencies: 'Все валюты',
       hide: 'Скрыть',
@@ -298,7 +298,7 @@
       wallet_address: 'Адрес',
       wallet_address_placeholder: '0x… / bc1…',
       copy: 'Копировать',
-      open_explorer: 'Explorer',
+      open_explorer: 'Эксплорер',
       back_to_dashboard: 'Назад',
       wallet_remove: 'Удалить',
       wallet_delete_confirm: 'Удалить кошелёк “{name}”?',
@@ -317,6 +317,7 @@
       cta_retry: 'Повторить',
       period_7d: 'за 7д',
       period_7d_compact: '• 7d',
+      period_30d_short: '30д',
       period_24h: 'за 24ч',
       min: 'Мин',
       max: 'Макс',
@@ -328,15 +329,15 @@
       expense_transport: 'Транспорт',
       expense_subscriptions: 'Подписки',
       expense_other: 'Прочее',
-      analysis_banner_badge: 'Wallet intelligence',
-      analysis_open_link: 'Wallet intelligence →',
+      analysis_banner_badge: 'Аналитика кошелька',
+      analysis_open_link: 'Аналитика кошелька →',
       analysis_banner_title_idle: 'Подключите кошелёк',
       analysis_banner_subtitle_idle: 'После подключения аналитика появится автоматически.',
       analysis_banner_title_running: 'Синхронизация {name}',
       analysis_banner_subtitle_running: 'Собираем данные кошелька.',
       analysis_banner_title_partial: 'Часть данных готова',
-      analysis_banner_subtitle_partial: 'Откройте Wallet intelligence для деталей.',
-      analysis_banner_title_done: 'Wallet intelligence обновлён',
+      analysis_banner_subtitle_partial: 'Откройте аналитику кошелька для деталей.',
+      analysis_banner_title_done: 'Аналитика кошелька обновлена',
       analysis_banner_subtitle_done: 'Все метрики синхронизированы.',
       analysis_banner_title_failed: 'Анализ временно недоступен',
       analysis_banner_subtitle_failed: 'Попробуем обновить анализ автоматически.',
@@ -351,10 +352,10 @@
       analysis_status_partial: 'Частично готово',
       analysis_status_done: 'Готово',
       analysis_status_failed: 'Ошибка',
-      analysis_card_portfolio: 'Portfolio value',
-      analysis_card_growth: '7d growth',
-      analysis_card_outflow: 'Top outflow',
-      analysis_card_recurring: 'Recurring spend',
+      analysis_card_portfolio: 'Стоимость портфеля',
+      analysis_card_growth: 'Изм. за 7д',
+      analysis_card_outflow: 'Крупный отток',
+      analysis_card_recurring: 'Регулярные траты',
       analysis_card_waiting: 'Ожидаем метрики…',
       analysis_card_updated_live: 'Live: обновлено {value}',
       analysis_card_estimated: 'Оценка на основе истории',
@@ -362,7 +363,7 @@
       analysis_polling_error: 'Не удалось обновить статус анализа',
       analysis_top_outflow_label: 'Крупнейший отток: {name}',
       analysis_top_outflow_estimated: 'Оценка оттока пока нет новых операций',
-      analysis_recurring_live: 'Recurring по последним операциям',
+      analysis_recurring_live: 'Регулярные по последним операциям',
       analysis_recurring_estimated: 'Оценка до завершения анализа',
       analysis_recurring_meta_live: 'След.: {value} · {confidence}%',
       analysis_recurring_meta_estimated: 'Оценка · {confidence}%',
@@ -376,17 +377,17 @@
       analysis_mini_portfolio_label: 'Портфель',
       analysis_mini_growth_label: '7д',
       analysis_detail_menu_aria: 'Детальная аналитика кошелька',
-      analysis_detail_title: 'Wallet intelligence',
+      analysis_detail_title: 'Аналитика кошелька',
       analysis_detail_subtitle: 'Полная детализация активного кошелька, структуры и инсайтов.',
       analysis_detail_wallet_title: 'Активный кошелёк',
       analysis_detail_wallet_balance: 'Баланс',
-      analysis_detail_inflow_30d: 'Inflow (30d)',
-      analysis_detail_outflow_30d: 'Outflow (30d)',
+      analysis_detail_inflow_30d: 'Приток (30д)',
+      analysis_detail_outflow_30d: 'Отток (30д)',
       analysis_detail_wallet_missing: 'Подключите кошелёк, чтобы открыть полный анализ.',
       analysis_detail_metrics_title: 'Ключевые метрики',
       analysis_detail_series_title: 'Динамика портфеля',
-      analysis_detail_series_live: 'Live-series ({value})',
-      analysis_detail_series_estimated: 'Estimated series ({value})',
+      analysis_detail_series_live: 'Ряд данных ({value})',
+      analysis_detail_series_estimated: 'Оценочный ряд ({value})',
       analysis_detail_allocation_title: 'Структура портфеля',
       analysis_detail_allocation_empty: 'Пока нет структуры по активам.',
       analysis_detail_insights_title: 'Инсайты',
@@ -406,7 +407,7 @@
       analysis_insight_fallback: 'Инсайт',
       no_meaningful_change: 'Нет значимых изменений',
       no_meaningful_change_window: 'Нет значимых изменений ({value})',
-      get_started_title: 'Начало',
+      get_started_title: 'С чего начать',
       get_started_subtitle: 'Сделайте один шаг, чтобы открыть аналитику.',
       get_started_connect: 'Подключить счёт',
       get_started_add_tx: 'Добавить транзакцию',
@@ -575,6 +576,7 @@
       cta_retry: 'Retry',
       period_7d: 'in 7d',
       period_7d_compact: '• 7d',
+      period_30d_short: '30d',
       period_24h: 'in 24h',
       min: 'Min',
       max: 'Max',
@@ -832,6 +834,8 @@
   let lastBalanceSnapshot = null;
   let lastBalanceConversion = null;
   let lastReportSummary = null;
+  let reportSummaryLoaded = false;
+  let reportSummaryConfirmed = false;
   const txListLimit = 20;
   let txCategories = [];
   let txCategoriesById = new Map();
@@ -1822,10 +1826,28 @@
     return Math.abs(comparable) > INSIGHT_MIN_ABS_VALUE;
   }
 
+  function hasConfirmedTransactionMetrics(summary) {
+    if (!summary || typeof summary !== 'object') return false;
+    if (!reportSummaryLoaded || !reportSummaryConfirmed) return false;
+    if (!dashboardDataState.transactionsLoaded || !dashboardDataState.hasTransactions) return false;
+    if (summary.synthetic === true) return false;
+    return true;
+  }
+
+  function localizedWindowLabel(rawValue) {
+    const value = String(rawValue || '').toLowerCase();
+    if (value === '30d') return t('period_30d_short');
+    if (value === '7d') return currentLang === 'ru' ? '7д' : '7d';
+    if (value === '90d') return currentLang === 'ru' ? '90д' : '90d';
+    if (value === '1y') return currentLang === 'ru' ? '1г' : '1y';
+    return value || t('period_30d_short');
+  }
+
   function renderAnalysisDetailSeries(points, base, sourceLabel, windowLabel) {
     const chart = q(selectors.analysisDetailSeriesChart);
     if (!chart) return;
     if (!Array.isArray(points) || points.length < 2) {
+      chart.classList.remove('is-compact-chart');
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
@@ -1836,13 +1858,15 @@
     const padY = 14;
     const values = points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value));
     if (values.length < 2) {
+      chart.classList.remove('is-compact-chart');
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
     const variance = seriesVarianceRatio(values);
     const hasMeaningfulMovement = values.length >= CHART_MIN_POINTS && variance >= CHART_VARIANCE_THRESHOLD;
     if (!hasMeaningfulMovement) {
-      const normalizedWindow = String(windowLabel || '30d').toLowerCase();
+      chart.classList.add('is-compact-chart');
+      const normalizedWindow = localizedWindowLabel(windowLabel || '30d');
       const note = t('no_meaningful_change_window', { value: normalizedWindow });
       const delta = values[values.length - 1] - values[0];
       const spark = buildCompactSparkline(values, 260, 52, delta >= 0 ? '#4f86ff' : '#f17f85');
@@ -1854,6 +1878,7 @@
       `;
       return;
     }
+    chart.classList.remove('is-compact-chart');
     const max = Math.max(...values);
     const min = Math.min(...values);
     const span = max - min || Math.max(Math.abs(max), 1);
@@ -1987,8 +2012,11 @@
     const walletValueBase = normalizeCurrency(wallet && wallet.baseCurrency ? wallet.baseCurrency : base) || base;
     const walletBalance = toNumber(wallet && wallet.balance);
     const walletAsset = walletNativeAsset(wallet && wallet.network ? wallet.network : '');
-    const inflowValue = toNumber(lastReportSummary && lastReportSummary.income);
-    const outflowValue = toNumber(lastReportSummary && lastReportSummary.expense);
+    const reportConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
+    const inflowValueRaw = toNumber(lastReportSummary && lastReportSummary.income);
+    const outflowValueRaw = toNumber(lastReportSummary && lastReportSummary.expense);
+    const inflowValue = reportConfirmed ? inflowValueRaw : NaN;
+    const outflowValue = reportConfirmed ? outflowValueRaw : NaN;
 
     setText(selectors.analysisDetailWalletValue, Number.isFinite(walletValue) ? formatMoney(walletValue, walletValueBase) : '—');
     setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
@@ -2004,12 +2032,13 @@
 
     const currentMetric = String(analysisState.detailMetric || 'net').toLowerCase();
     const seriesWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d').toUpperCase();
+    const seriesWindowLocalized = localizedWindowLabel(seriesWindow);
     const metricLabel = detailMetricLabel(currentMetric);
     const seriesLabel = updated
       ? t('analysis_detail_series_meta', { metric: metricLabel, value: updated })
-      : `${metricLabel} · ${seriesWindow}`;
+      : `${metricLabel} · ${seriesWindowLocalized}`;
     setText(selectors.analysisDetailSeriesMeta, seriesLabel);
-    renderAnalysisDetailSeries(buildAnalysisDetailSeries(currentMetric), base, seriesLabel, seriesWindow);
+    renderAnalysisDetailSeries(buildAnalysisDetailSeries(currentMetric), base, seriesLabel, seriesWindowLocalized);
 
     const allocationEl = q(selectors.analysisDetailAllocationList);
     if (allocationEl) {
@@ -2375,7 +2404,8 @@
     const updatedValue = formatFxUpdated(
       analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt)
     );
-    const monthlyCashflow = toNumber(lastReportSummary && lastReportSummary.net);
+    const monthlyCashflowRaw = toNumber(lastReportSummary && lastReportSummary.net);
+    const monthlyCashflow = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyCashflowRaw : NaN;
     const debtValue = computeDebtInBase();
     const hasDebt = Number.isFinite(debtValue) && debtValue > 0.000001;
     const debtCard = q(selectors.analysisCardRecurring);
@@ -2693,6 +2723,7 @@
     const income = toNumber(summary && summary.income);
     const expense = toNumber(summary && summary.expense);
     const net = toNumber(summary && summary.net);
+    const confirmedMetrics = hasConfirmedTransactionMetrics(summary);
     const debt = computeDebtInBase();
     const hasDebt = Number.isFinite(debt) && debt > 0.000001;
 
@@ -2700,21 +2731,21 @@
       netEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
     }
     if (detailsEl) {
-      detailsEl.textContent = Number.isFinite(income) && Number.isFinite(expense)
+      detailsEl.textContent = confirmedMetrics && Number.isFinite(income) && Number.isFinite(expense)
         ? `${t('income_label')}: ${formatMoney(income, base)} · ${t('expense_label')}: ${formatMoney(expense, base)}`
         : t('income_expense_details');
     }
     if (incomeEl) {
-      incomeEl.textContent = Number.isFinite(income) ? formatMoney(income, base) : '—';
+      incomeEl.textContent = confirmedMetrics && Number.isFinite(income) ? formatMoney(income, base) : '—';
     }
     if (expenseEl) {
-      expenseEl.textContent = Number.isFinite(expense) ? formatMoney(-Math.abs(expense), base) : '—';
-      expenseEl.classList.toggle('amount-negative', Number.isFinite(expense));
+      expenseEl.textContent = confirmedMetrics && Number.isFinite(expense) ? formatMoney(-Math.abs(expense), base) : '—';
+      expenseEl.classList.toggle('amount-negative', confirmedMetrics && Number.isFinite(expense));
     }
     if (cashflowEl) {
-      cashflowEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
+      cashflowEl.textContent = confirmedMetrics && Number.isFinite(net) ? formatMoney(net, base) : '—';
       cashflowEl.classList.remove('amount-positive', 'amount-negative');
-      if (Number.isFinite(net)) {
+      if (confirmedMetrics && Number.isFinite(net)) {
         cashflowEl.classList.add(net >= 0 ? 'amount-positive' : 'amount-negative');
       }
     }
@@ -2789,6 +2820,8 @@
   async function loadReportSummary() {
     const netEl = document.querySelector(selectors.incomeExpenseNet);
     if (netEl) netEl.textContent = t('loading');
+    reportSummaryLoaded = false;
+    reportSummaryConfirmed = false;
 
     const params = new URLSearchParams();
     params.set('period', 'MONTH');
@@ -2800,6 +2833,8 @@
       return null;
     }
     const payload = res.data;
+    reportSummaryLoaded = true;
+    reportSummaryConfirmed = payload.synthetic !== true;
     const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
     if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
       baseCurrency = serverBase;
@@ -2951,12 +2986,14 @@
     setPanelFeedback(selectors.accountsFeedback, '');
     dashboardDataState.accountsLoaded = true;
     if (!accounts || accounts.length === 0) {
+      list.classList.add('is-empty');
       dashboardDataState.hasAccounts = false;
       setUiState(list, 'empty');
       list.innerHTML = renderEmptyState(`${t('no_accounts')} ${t('empty_accounts_hint')}`);
       updateGetStartedSection();
       return;
     }
+    list.classList.remove('is-empty');
     dashboardDataState.hasAccounts = true;
     setUiState(list, 'ready');
     const base = normalizeCurrency(baseCurrency) || 'USD';
@@ -3083,6 +3120,7 @@
     if (!list) return;
     dashboardDataState.transactionsLoaded = true;
     if (!Array.isArray(transactions) || transactions.length === 0) {
+      list.classList.add('is-empty');
       dashboardDataState.hasTransactions = false;
       setUiState(list, 'empty');
       list.innerHTML = `
@@ -3090,9 +3128,13 @@
           <div class="muted">${escapeHtml(t('transactions_empty'))}</div>
         </div>
       `;
+      if (lastReportSummary) {
+        renderIncomeExpenseSummary(lastReportSummary);
+      }
       updateGetStartedSection();
       return;
     }
+    list.classList.remove('is-empty');
     dashboardDataState.hasTransactions = true;
     setUiState(list, 'ready');
 
@@ -3141,12 +3183,16 @@
         </div>
       `;
     }).join('');
+    if (lastReportSummary) {
+      renderIncomeExpenseSummary(lastReportSummary);
+    }
     updateGetStartedSection();
   }
 
   async function loadRecentTransactions() {
     const list = document.querySelector(selectors.transactionsList);
     if (list) {
+      list.classList.remove('is-empty');
       setUiState(list, 'loading');
       list.innerHTML = renderSkeletonList(3);
     }
@@ -3702,6 +3748,7 @@
   async function loadBalance() {
     const list = document.querySelector(selectors.accountsList);
     if (list) {
+      list.classList.remove('is-empty');
       setUiState(list, 'loading');
       list.innerHTML = renderSkeletonList(3);
     }
@@ -3917,6 +3964,7 @@
     if (!el || !Array.isArray(data) || data.length === 0) return;
     const values = data.map((value) => toNumber(value)).filter((value) => Number.isFinite(value));
     if (values.length < 2) {
+      el.classList.remove('is-compact-chart');
       el.innerHTML = `<div class="muted">${escapeHtml(t('no_data'))}</div>`;
       return;
     }
@@ -3925,7 +3973,8 @@
     const hasMeaningfulMovement = values.length >= CHART_MIN_POINTS && variance >= CHART_VARIANCE_THRESHOLD;
     const deltaCompact = values[values.length - 1] - values[0];
     if (!hasMeaningfulMovement) {
-      const note = t('no_meaningful_change_window', { value: '30d' });
+      el.classList.add('is-compact-chart');
+      const note = t('no_meaningful_change_window', { value: localizedWindowLabel('30d') });
       const spark = buildCompactSparkline(values, 220, 48, deltaCompact >= 0 ? '#4f86ff' : '#f17f85');
       el.innerHTML = `
         <div class="compact-chart-state">
@@ -3935,6 +3984,7 @@
       `;
       return;
     }
+    el.classList.remove('is-compact-chart');
 
     const labels = Array.from({ length: values.length }, (_, idx) => {
       const d = new Date();
@@ -4151,12 +4201,14 @@
     setPanelFeedback(selectors.walletsFeedback, '');
     dashboardDataState.walletsLoaded = true;
     if (!Array.isArray(wallets) || wallets.length === 0) {
+      list.classList.add('is-empty');
       dashboardDataState.hasWallets = false;
       setUiState(list, 'empty');
       list.innerHTML = renderEmptyState(`${t('wallets_empty')} ${t('empty_wallets_hint')}`);
       updateGetStartedSection();
       return;
     }
+    list.classList.remove('is-empty');
     dashboardDataState.hasWallets = true;
     setUiState(list, 'ready');
     list.innerHTML = wallets.map((wallet) => {
@@ -4248,6 +4300,7 @@
   async function loadWallets() {
     const list = document.querySelector(selectors.walletsList);
     if (list) {
+      list.classList.remove('is-empty');
       setUiState(list, 'loading');
       list.innerHTML = renderSkeletonList(2);
     }
