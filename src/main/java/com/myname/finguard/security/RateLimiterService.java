@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +32,8 @@ public class RateLimiterService {
     private final LongSupplier nowMs;
     private final AtomicBoolean cleanupInProgress;
     private final AtomicLong lastDbCleanupMs;
+    private static final int DB_CLEANUP_BATCH_LIMIT = 200;
+    private static final int DB_CLEANUP_BATCH_ROUNDS = 3;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RateLimiterService.class);
 
     @Autowired
@@ -170,23 +171,11 @@ public class RateLimiterService {
                 return nowMs - bucket.windowStartMs >= window;
             });
         } else {
-            List<String> expiredKeys = rateLimitBucketRepository.findExpiredBucketKeys(
-                    nowMs,
-                    PageRequest.of(0, Math.max(1, Math.min(200, maxEntries)))
-            );
-            if (expiredKeys == null || expiredKeys.isEmpty()) {
-                return;
-            }
-            for (String key : expiredKeys) {
-                if (key == null || key.isBlank()) {
-                    continue;
-                }
-                try {
-                    rateLimitBucketRepository.deleteById(key);
-                } catch (DataAccessException ex) {
-                    log.debug("Rate limiter expired cleanup skipped key={} due to DB contention: {}", shortKey(key), ex.getClass().getSimpleName());
-                } catch (RuntimeException ex) {
-                    log.debug("Rate limiter expired cleanup skipped key={} due to runtime contention: {}", shortKey(key), ex.getClass().getSimpleName());
+            int batchSize = Math.max(1, Math.min(DB_CLEANUP_BATCH_LIMIT, maxEntries));
+            for (int round = 0; round < DB_CLEANUP_BATCH_ROUNDS; round += 1) {
+                int deleted = rateLimitBucketRepository.deleteExpiredBatchSkipLocked(nowMs, batchSize);
+                if (deleted <= 0) {
+                    break;
                 }
             }
             pruneLocks();

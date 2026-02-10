@@ -3,7 +3,6 @@ package com.myname.finguard.security.repository;
 import com.myname.finguard.security.model.RateLimitBucket;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,18 +13,22 @@ public interface RateLimitBucketRepository extends JpaRepository<RateLimitBucket
 
     Optional<RateLimitBucket> findByBucketKey(String key);
 
-    @Query("""
-            select b.bucketKey
-            from RateLimitBucket b
-            where b.expiresAtMs < :nowMs
-            order by b.expiresAtMs asc, b.updatedAt asc
-            """)
-    List<String> findExpiredBucketKeys(@Param("nowMs") long nowMs, Pageable pageable);
-
-    @Modifying
-    @Query("delete from RateLimitBucket b where b.expiresAtMs < :nowMs")
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            with expired as (
+                select ctid
+                from rate_limit_buckets
+                where expires_at_ms < :nowMs
+                order by expires_at_ms asc
+                for update skip locked
+                limit :batchSize
+            )
+            delete from rate_limit_buckets b
+            using expired
+            where b.ctid = expired.ctid
+            """, nativeQuery = true)
     @Transactional
-    void deleteExpired(@Param("nowMs") long nowMs);
+    int deleteExpiredBatchSkipLocked(@Param("nowMs") long nowMs, @Param("batchSize") int batchSize);
 
     List<RateLimitBucket> findTop100ByOrderByUpdatedAtAsc();
 }

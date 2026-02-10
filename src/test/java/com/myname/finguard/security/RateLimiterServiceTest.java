@@ -2,6 +2,7 @@ package com.myname.finguard.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -112,7 +113,7 @@ class RateLimiterServiceTest {
         RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
         when(repo.findByBucketKey(anyString())).thenReturn(Optional.empty());
         when(repo.save(any(RateLimitBucket.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(repo.findExpiredBucketKeys(anyLong(), any())).thenThrow(new CannotAcquireLockException("deadlock in cleanup"));
+        when(repo.deleteExpiredBatchSkipLocked(anyLong(), anyInt())).thenThrow(new CannotAcquireLockException("deadlock in cleanup"));
 
         AtomicLong now = new AtomicLong(1_000);
         RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
@@ -128,14 +129,15 @@ class RateLimiterServiceTest {
         RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
         when(repo.findByBucketKey(anyString())).thenReturn(Optional.empty());
         when(repo.save(any(RateLimitBucket.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(repo.findExpiredBucketKeys(anyLong(), any())).thenReturn(List.of("rl:expired"));
-        when(repo.count()).thenReturn(1L);
-        when(repo.findTop100ByOrderByUpdatedAtAsc()).thenReturn(List.of());
-        org.mockito.Mockito.doThrow(new CannotAcquireLockException("deadlock in delete"))
-                .when(repo).deleteById("rl:expired");
+        when(repo.deleteExpiredBatchSkipLocked(anyLong(), anyInt())).thenReturn(0);
+        when(repo.count()).thenReturn(1001L);
+        RateLimitBucket stale = new RateLimitBucket();
+        stale.setBucketKey("rl:expired");
+        when(repo.findTop100ByOrderByUpdatedAtAsc()).thenReturn(List.of(stale));
+        org.mockito.Mockito.doThrow(new CannotAcquireLockException("deadlock in delete")).when(repo).deleteById("rl:expired");
 
         AtomicLong now = new AtomicLong(1_000);
-        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
+        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, 0, now::get);
 
         RateLimiterService.Result result = limiter.check("cleanup-lock-delete", 5, 60_000);
 
