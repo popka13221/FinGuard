@@ -49,3 +49,4 @@ config/secrets.properties
 dump/
 dump/**/*.sql
 *.pid
+tmp/
