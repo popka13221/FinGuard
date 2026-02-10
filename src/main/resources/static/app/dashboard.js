@@ -862,6 +862,7 @@
   const INSIGHT_CONFIDENCE_THRESHOLD = 0.55;
   const INSIGHT_MIN_ABS_VALUE = 0.000001;
   const CHART_VARIANCE_THRESHOLD = 0.015;
+  const DETAIL_CHART_VARIANCE_THRESHOLD = 0.022;
   const CHART_MIN_POINTS = 4;
   const analysisState = {
     activeWalletId: null,
@@ -1096,19 +1097,33 @@
   }
 
   function bindActionCtas() {
+    const openActionMenu = (selector) => {
+      const trigger = q(selector);
+      if (!trigger) return;
+      if (analysisState.detailOpen) {
+        const opener = q(selectors.analysisQuickCard);
+        setAnalysisDetailOpen(false, opener || trigger);
+        window.setTimeout(() => {
+          trigger.click();
+        }, 40);
+        return;
+      }
+      trigger.click();
+    };
+
     document.addEventListener('click', (event) => {
       const target = event.target instanceof HTMLElement ? event.target.closest('[data-action]') : null;
       if (!(target instanceof HTMLElement)) return;
       const action = target.dataset.action;
       if (!action) return;
       if (action === 'open-add-account') {
-        q(selectors.addAccountBtn)?.click();
+        openActionMenu(selectors.addAccountBtn);
       } else if (action === 'open-add-wallet') {
-        q(selectors.addWalletBtn)?.click();
+        openActionMenu(selectors.addWalletBtn);
       } else if (action === 'open-add-transaction') {
-        q(selectors.addTransactionBtn)?.click();
+        openActionMenu(selectors.addTransactionBtn);
       } else if (action === 'open-import-history') {
-        q(selectors.addAccountBtn)?.click();
+        openActionMenu(selectors.addAccountBtn);
       } else if (action === 'retry-balance') {
         loadBalance();
       } else if (action === 'retry-wallets') {
@@ -1984,68 +1999,29 @@
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
-
-    const width = Math.max(320, chart.clientWidth || 640);
-    const height = 172;
-    const padX = 10;
-    const padY = 14;
     const values = points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value));
     if (values.length < 2) {
       chart.classList.remove('is-compact-chart');
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
+
     const variance = seriesVarianceRatio(values);
-    const hasMeaningfulMovement = values.length >= CHART_MIN_POINTS && variance >= CHART_VARIANCE_THRESHOLD;
-    if (!hasMeaningfulMovement) {
-      chart.classList.add('is-compact-chart');
-      const normalizedWindow = localizedWindowLabel(windowLabel || '30d');
-      const note = t('no_meaningful_change_window', { value: normalizedWindow });
-      const delta = values[values.length - 1] - values[0];
-      const spark = buildCompactSparkline(values, 260, 52, delta >= 0 ? '#4f86ff' : '#f17f85');
-      chart.innerHTML = `
-        <div class="compact-chart-state">
-          ${spark}
-          <div class="muted compact-chart-note">${escapeHtml(note)}</div>
-        </div>
-      `;
-      return;
-    }
-    chart.classList.remove('is-compact-chart');
+    const normalizedWindow = localizedWindowLabel(windowLabel || '30d');
+    const delta = values[values.length - 1] - values[0];
     const max = Math.max(...values);
     const min = Math.min(...values);
-    const span = max - min || Math.max(Math.abs(max), 1);
-    const coords = values.map((value, idx) => {
-      const x = padX + ((width - (padX * 2)) * idx) / Math.max(values.length - 1, 1);
-      const y = height - padY - ((value - min) / span) * (height - (padY * 2));
-      return { x, y };
-    });
-    const line = coords.map((point) => `${point.x},${point.y}`).join(' ');
-    const area = [
-      `${padX},${height - padY}`,
-      ...coords.map((point) => `${point.x},${point.y}`),
-      `${width - padX},${height - padY}`
-    ].join(' ');
-    const rising = values[values.length - 1] >= values[0];
-    const stroke = rising ? '#78f0d0' : '#ffae7f';
-    const fillId = `analysisSeriesFill${Math.round(values.length * 13)}`;
-    const minText = formatMoney(min, base);
-    const maxText = formatMoney(max, base);
+    const sparkWidth = Math.max(180, Math.min(380, (chart.clientWidth || 320) - 12));
+    const spark = buildCompactSparkline(values, sparkWidth, 42, delta >= 0 ? '#4f86ff' : '#f17f85');
+    const note = variance < DETAIL_CHART_VARIANCE_THRESHOLD
+      ? t('no_meaningful_change_window', { value: normalizedWindow })
+      : `${sourceLabel || ''} · ${t('min')}: ${formatMoney(min, base)} · ${t('max')}: ${formatMoney(max, base)}`;
 
+    chart.classList.add('is-compact-chart');
     chart.innerHTML = `
-      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="analysis-detail-series-svg" aria-hidden="true">
-        <defs>
-          <linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="${stroke}" stop-opacity="0.28" />
-            <stop offset="100%" stop-color="${stroke}" stop-opacity="0.03" />
-          </linearGradient>
-        </defs>
-        <polygon points="${area}" fill="url(#${fillId})"></polygon>
-        <polyline points="${line}" fill="none" stroke="${stroke}" stroke-width="2.4"></polyline>
-      </svg>
-      <div class="analysis-detail-series-axis">
-        <span>${escapeHtml(sourceLabel || '')}</span>
-        <span>${escapeHtml(t('min'))}: ${escapeHtml(minText)} · ${escapeHtml(t('max'))}: ${escapeHtml(maxText)}</span>
+      <div class="compact-chart-state compact-chart-state-tight">
+        ${spark}
+        <div class="muted compact-chart-note">${escapeHtml(note)}</div>
       </div>
     `;
   }
@@ -2335,7 +2311,17 @@
     if (!card || !overlay || !menu || !closeBtn) return;
     if (card.dataset.bound === '1') return;
     card.dataset.bound = '1';
-    setAnalysisDetailOpen(false, card);
+    // Initialize closed state without forcing focus back to the trigger.
+    overlay.classList.remove('is-open');
+    overlay.hidden = true;
+    overlay.dataset.uiState = 'closed';
+    menu.setAttribute('aria-hidden', 'true');
+    menu.style.removeProperty('--sheet-drag-offset');
+    menu.style.removeProperty('transition');
+    analysisState.detailOpen = false;
+    document.body.classList.remove('analysis-drawer-open');
+    card.setAttribute('aria-expanded', 'false');
+    card.classList.remove('is-open');
     updateAnalysisMiniCard(null);
     renderAnalysisDetail(null);
     syncAnalysisDetailTabState();

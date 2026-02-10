@@ -7706,3 +7706,310 @@ body.dashboard::after {
     transition: none !important;
   }
 }
+
+/* FinGuard Dashboard v5.8: wallet intelligence link consistency */
+.dashboard .analysis-text-link,
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:active,
+.dashboard .analysis-text-link:focus,
+.dashboard .analysis-text-link:focus-visible {
+  font-family: "FinGuard Text", "Avenir Next", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 0.86rem !important;
+  font-weight: 520 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.22 !important;
+  text-decoration: none !important;
+  text-underline-offset: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  transform: none !important;
+}
+
+.dashboard .analysis-text-link {
+  color: rgba(181, 203, 236, 0.72) !important;
+}
+
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:focus-visible {
+  color: rgba(226, 237, 255, 0.94) !important;
+}
+
+.dashboard .analysis-text-link:focus-visible {
+  outline: 2px solid rgba(133, 174, 245, 0.34) !important;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* FinGuard Dashboard v5.10: compact wallet series block */
+.dashboard .analysis-detail-series-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head controls"
+    "meta controls"
+    "chart controls";
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: start;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-chart-head {
+  grid-area: head;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-series-meta {
+  grid-area: meta;
+  margin-top: 0 !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-series-chart {
+  grid-area: chart;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-chart-controls {
+  grid-area: controls;
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px !important;
+  min-width: 176px;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs {
+  width: 100%;
+  justify-content: space-between;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  padding: 2px !important;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs .text-tab,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs .text-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 999px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs .text-tab.active,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs .text-tab.active {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-series-chart,
+.dashboard .analysis-detail-series-chart.is-compact-chart {
+  min-height: 84px !important;
+  max-height: 104px;
+  padding: 6px 8px !important;
+}
+
+.dashboard .analysis-detail-series-section .compact-chart-state {
+  min-height: 0 !important;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.dashboard .analysis-detail-series-section .compact-sparkline {
+  height: 34px !important;
+  width: 100% !important;
+}
+
+.dashboard .analysis-detail-series-section .compact-chart-note {
+  font-size: 0.72rem !important;
+  line-height: 1.22;
+}
+
+@media (max-width: 980px) {
+  .dashboard .analysis-detail-series-section {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "controls"
+      "meta"
+      "chart";
+  }
+
+  .dashboard .analysis-detail-series-section .analysis-detail-chart-controls {
+    min-width: 0;
+  }
+}
+
+/* FinGuard Dashboard v5.9: wallet modal chart/tabs polish */
+.dashboard .overlay.is-open:not(.analysis-detail-overlay) {
+  z-index: 240 !important;
+}
+
+.dashboard .analysis-detail-series-chart {
+  min-height: 126px !important;
+  padding: 6px 8px !important;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.dashboard .analysis-detail-series-svg {
+  height: 108px !important;
+}
+
+.dashboard .analysis-detail-series-axis {
+  margin-top: 0 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.22;
+}
+
+.dashboard #analysisDetailMetricTabs,
+.dashboard #analysisDetailWindowTabs {
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  padding: 2px !important;
+  gap: 2px !important;
+}
+
+.dashboard #analysisDetailMetricTabs .text-tab,
+.dashboard #analysisDetailWindowTabs .text-tab {
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  margin: 0 !important;
+  border-radius: 999px !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+.dashboard #analysisDetailMetricTabs .text-tab.active,
+.dashboard #analysisDetailWindowTabs .text-tab.active {
+  border-radius: 999px !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* FinGuard Dashboard v5.11: force tiny wallet series + right controls */
+.dashboard .analysis-detail-series-section {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 176px !important;
+  grid-template-areas:
+    "head controls"
+    "meta controls"
+    "chart controls" !important;
+  column-gap: 10px !important;
+  row-gap: 4px !important;
+  align-items: start !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-chart-head {
+  grid-area: head !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-chart-controls {
+  grid-area: controls !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 6px !important;
+  min-width: 176px !important;
+  max-width: 176px !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-series-meta {
+  grid-area: meta !important;
+  margin: 0 !important;
+  font-size: 0.74rem !important;
+}
+
+.dashboard .analysis-detail-series-section .analysis-detail-series-chart {
+  grid-area: chart !important;
+  min-height: 74px !important;
+  max-height: 86px !important;
+  padding: 4px 6px !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+.dashboard .analysis-detail-series-section .compact-chart-state {
+  min-height: 0 !important;
+  gap: 2px !important;
+  align-items: flex-start !important;
+}
+
+.dashboard .analysis-detail-series-section .compact-sparkline {
+  width: 100% !important;
+  height: 24px !important;
+}
+
+.dashboard .analysis-detail-series-section .compact-chart-note {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 0.68rem !important;
+  line-height: 1.15 !important;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs {
+  width: 100% !important;
+  justify-content: space-between !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  padding: 2px !important;
+  gap: 2px !important;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs .text-tab,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs .text-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 24px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 999px !important;
+  line-height: 1 !important;
+}
+
+.dashboard .analysis-detail-series-section #analysisDetailMetricTabs .text-tab.active,
+.dashboard .analysis-detail-series-section #analysisDetailWindowTabs .text-tab.active {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 980px) {
+  .dashboard .analysis-detail-series-section {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "head"
+      "controls"
+      "meta"
+      "chart" !important;
+  }
+
+  .dashboard .analysis-detail-series-section .analysis-detail-chart-controls {
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .dashboard .analysis-detail-series-section .analysis-detail-series-chart {
+    min-height: 86px !important;
+    max-height: 102px !important;
+  }
+}
