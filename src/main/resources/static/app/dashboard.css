@@ -5774,3 +5774,1935 @@ body.dashboard::after {
     max-width: 170px;
   }
 }
+
+/* FinGuard Dashboard v5.1: drawer-first wallet intelligence + layout hardening */
+body.dashboard::before,
+body.dashboard::after {
+  display: block !important;
+}
+
+.dashboard.analysis-drawer-open {
+  overflow: hidden !important;
+}
+
+.dashboard .dashboard-main.page {
+  grid-template-columns: 1fr;
+}
+
+.dashboard .get-started-section {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard .get-started-subtitle {
+  margin: 0 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.dashboard .get-started-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 12px !important;
+  min-width: 0;
+}
+
+.dashboard .get-started-actions > * {
+  max-width: 100%;
+}
+
+.dashboard .get-started-primary,
+.dashboard .get-started-secondary,
+.dashboard .get-started-link {
+  white-space: nowrap;
+}
+
+.dashboard .analysis-detail-overlay {
+  inset: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  overflow: hidden;
+  background: rgba(4, 8, 15, 0.52) !important;
+  backdrop-filter: blur(8px) saturate(112%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(112%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  margin: 0 0 0 auto !important;
+  width: clamp(480px, 42vw, 560px) !important;
+  max-width: min(560px, 100vw) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 100dvh !important;
+  border: 0 !important;
+  border-left: 1px solid var(--glass-border-strong) !important;
+  border-radius: 0 !important;
+  padding: 20px 22px 24px !important;
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(10, 16, 28, 0.86) !important;
+  box-shadow: -34px 0 82px rgba(2, 6, 12, 0.52) !important;
+  transform: translateX(16px);
+  opacity: 0;
+  transition:
+    transform 220ms var(--ease-standard),
+    opacity 220ms var(--ease-standard);
+}
+
+.dashboard .analysis-detail-overlay.is-open .analysis-detail-menu {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.dashboard .analysis-detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid var(--glass-divider) !important;
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.96) 0%, rgba(10, 16, 28, 0.8) 100%) !important;
+}
+
+.dashboard .analysis-detail-identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.dashboard .analysis-detail-title {
+  margin: 0;
+  color: var(--glass-text-strong) !important;
+  font-size: 1.08rem !important;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.dashboard .analysis-detail-wallet-name {
+  margin-top: 4px;
+  color: var(--glass-text-strong);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard .analysis-detail-subtitle {
+  margin-top: 2px;
+  font-size: 0.76rem;
+  color: var(--glass-text-faint) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard .analysis-detail-address-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  min-width: 0;
+  flex-wrap: nowrap !important;
+}
+
+.dashboard .analysis-detail-address {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 !important;
+  color: var(--glass-text-muted) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.77rem;
+  border: 0 !important;
+  background: transparent !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard .analysis-inline-action {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 0.77rem !important;
+  color: var(--glass-text-muted) !important;
+}
+
+.dashboard .analysis-inline-action:hover,
+.dashboard .analysis-inline-action:focus-visible {
+  color: var(--glass-text-strong) !important;
+}
+
+.dashboard .analysis-detail-head-actions {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.dashboard .analysis-detail-updated {
+  max-width: 156px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  font-size: 0.75rem !important;
+}
+
+.dashboard .analysis-close-btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 999px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--glass-text-muted) !important;
+  line-height: 1;
+  font-size: 1.1rem;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.dashboard .analysis-close-btn:hover,
+.dashboard .analysis-close-btn:focus-visible {
+  border-color: rgba(194, 213, 242, 0.2) !important;
+  background: rgba(174, 196, 232, 0.11) !important;
+  color: var(--glass-text-strong) !important;
+}
+
+.dashboard .analysis-detail-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 2px 2px 0;
+  margin-top: 0 !important;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.dashboard .analysis-detail-section {
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  background: rgba(12, 20, 34, 0.56) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .analysis-detail-stats-row {
+  gap: 10px !important;
+}
+
+.dashboard .analysis-detail-metric {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard .analysis-detail-metric + .analysis-detail-metric {
+  padding-left: 10px !important;
+  border-left: 1px solid var(--glass-divider) !important;
+}
+
+.dashboard .analysis-detail-series-chart {
+  min-height: 180px;
+}
+
+.dashboard .analysis-detail-list-item {
+  border: 1px solid var(--glass-divider) !important;
+  background: rgba(15, 24, 41, 0.48) !important;
+}
+
+@media (max-width: 1023px) {
+  .dashboard .analysis-detail-overlay {
+    align-items: flex-end !important;
+    justify-content: stretch !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    height: min(90dvh, 860px) !important;
+    max-height: 90dvh !important;
+    min-height: 0 !important;
+    border-left: 0 !important;
+    border-top: 1px solid var(--glass-border-strong) !important;
+    border-radius: 22px 22px 0 0 !important;
+    padding: 16px 14px 18px !important;
+    transform: translateY(20px);
+    box-shadow: 0 -26px 64px rgba(2, 6, 12, 0.52) !important;
+  }
+
+  .dashboard .analysis-detail-overlay.is-open .analysis-detail-menu {
+    transform: translateY(0);
+  }
+
+  .dashboard .analysis-detail-head {
+    padding-bottom: 10px !important;
+  }
+
+  .dashboard .analysis-detail-head::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    width: 38px;
+    height: 4px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(196, 212, 238, 0.3);
+  }
+
+  .dashboard .analysis-detail-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard .analysis-detail-metric + .analysis-detail-metric {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+
+  .dashboard .analysis-detail-updated {
+    max-width: 132px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard .get-started-actions {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .dashboard .get-started-primary,
+  .dashboard .get-started-secondary {
+    width: auto !important;
+    justify-content: center !important;
+  }
+
+  .dashboard .analysis-detail-title {
+    font-size: 1rem !important;
+  }
+
+  .dashboard .analysis-detail-address-row {
+    gap: 8px;
+  }
+}
+
+/* FinGuard Dashboard v5.2: premium minimal hierarchy + centered modal desktop */
+@keyframes fgAtmosphereDrift {
+  0% { transform: translate3d(-1.2%, -0.8%, 0) scale(1.02); opacity: 0.95; }
+  50% { transform: translate3d(1.1%, 0.9%, 0) scale(1.045); opacity: 1; }
+  100% { transform: translate3d(-0.6%, 1.3%, 0) scale(1.02); opacity: 0.93; }
+}
+
+@keyframes fgNoiseDrift {
+  0% { background-position: center center, 0 0; }
+  100% { background-position: center center, 140px 100px; }
+}
+
+body.dashboard::before {
+  animation: fgAtmosphereDrift 34s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+body.dashboard::after {
+  animation: fgNoiseDrift 32s steps(8, end) infinite;
+  opacity: 0.9;
+}
+
+.dashboard .section.glass {
+  border-color: rgba(182, 204, 236, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .hero-section.glass,
+.dashboard .get-started-section.glass {
+  background: rgba(14, 23, 38, 0.6) !important;
+  border-color: rgba(192, 214, 244, 0.11) !important;
+  box-shadow: 0 16px 48px rgba(2, 8, 16, 0.38) !important;
+  backdrop-filter: blur(14px) saturate(118%);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+}
+
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass,
+.dashboard .dashboard-columns .card.glass {
+  background: rgba(11, 18, 31, 0.48) !important;
+  border-color: rgba(174, 198, 232, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dashboard .card:hover,
+.dashboard .list-item:hover,
+.dashboard .table-row:hover,
+.dashboard .wallet-item:hover {
+  box-shadow: none !important;
+  transform: translateY(-1px);
+}
+
+.dashboard .analysis-cards {
+  --analysis-stats-count: 4;
+  grid-template-columns: repeat(var(--analysis-stats-count), minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  border-top: 0 !important;
+  margin-top: 12px !important;
+}
+
+.dashboard .analysis-cards.is-collapsed {
+  display: none !important;
+}
+
+.dashboard .analysis-card {
+  border: 1px solid rgba(176, 196, 226, 0.08) !important;
+  background: rgba(15, 24, 38, 0.52) !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+}
+
+.dashboard .analysis-card.is-quiet {
+  opacity: 0.62;
+}
+
+.dashboard .hero-section.hero-compact .hero-head {
+  margin-bottom: 0;
+}
+
+.dashboard .dashboard-columns {
+  order: 2;
+}
+
+.dashboard .transactions-section {
+  order: 3 !important;
+}
+
+.dashboard .upcoming-section {
+  order: 4;
+}
+
+.dashboard .portfolio-section {
+  order: 5 !important;
+}
+
+.dashboard .wallet-item {
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard .wallet-left {
+  min-width: 0;
+}
+
+.dashboard .wallet-title {
+  font-size: 0.92rem;
+}
+
+.dashboard .wallet-left .muted {
+  font-size: 0.76rem;
+}
+
+.dashboard .wallet-right {
+  text-align: right;
+}
+
+.dashboard .wallets-expand-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0 !important;
+  border-bottom: 0 !important;
+}
+
+.dashboard .wallets-expand-toggle,
+.dashboard .wallets-expand-toggle.ghost {
+  min-height: 0 !important;
+  padding: 2px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--glass-text-muted) !important;
+  font-size: 0.8rem;
+}
+
+.dashboard .wallets-expand-toggle:hover,
+.dashboard .wallets-expand-toggle:focus-visible {
+  color: var(--glass-text-strong) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dashboard .table-empty-row {
+  padding: 10px 0 !important;
+}
+
+.dashboard .analysis-text-link {
+  font-size: 0.86rem !important;
+  color: rgba(188, 208, 238, 0.78) !important;
+}
+
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:focus-visible {
+  color: rgba(220, 233, 252, 0.96) !important;
+}
+
+.dashboard .analysis-detail-overlay {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: min(4vh, 32px) 24px !important;
+  background: rgba(4, 8, 15, 0.58) !important;
+  backdrop-filter: blur(10px) saturate(114%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(114%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  margin: 0 !important;
+  width: min(920px, calc(100vw - 48px)) !important;
+  max-width: 920px !important;
+  height: auto !important;
+  max-height: min(88dvh, 860px) !important;
+  min-height: 0 !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(183, 208, 244, 0.14) !important;
+  background: rgba(10, 16, 28, 0.9) !important;
+  box-shadow: 0 34px 90px rgba(2, 6, 12, 0.58) !important;
+  transform: translateY(8px) scale(0.988);
+  opacity: 0;
+  transition:
+    transform 220ms var(--ease-standard),
+    opacity 220ms var(--ease-standard);
+}
+
+.dashboard .analysis-detail-overlay.is-open .analysis-detail-menu {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.dashboard .analysis-detail-head {
+  padding-bottom: 10px !important;
+}
+
+.dashboard .analysis-detail-body {
+  padding-top: 12px !important;
+}
+
+@media (max-width: 900px) {
+  .dashboard .analysis-detail-overlay {
+    align-items: flex-end !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 90dvh !important;
+    height: min(90dvh, 860px) !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    transform: translateY(18px) scale(1);
+  }
+
+  .dashboard .analysis-detail-overlay.is-open .analysis-detail-menu {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.dashboard::before,
+  body.dashboard::after {
+    animation: none !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* FinGuard Dashboard v5.3: sticky app-nav + cleaner hierarchy + quieter modal */
+body.dashboard {
+  --app-nav-height: 70px;
+}
+
+.dashboard .container {
+  padding-top: calc(var(--app-nav-height) + 26px) !important;
+}
+
+.dashboard .dashboard-main.page {
+  margin-top: 0 !important;
+}
+
+.dashboard .nav {
+  position: fixed !important;
+  top: 12px !important;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1240px, calc(100vw - 28px));
+  min-height: var(--app-nav-height);
+  z-index: 84 !important;
+  border: 1px solid rgba(187, 207, 236, 0.13) !important;
+  border-bottom-color: rgba(169, 191, 225, 0.16) !important;
+  background: rgba(11, 19, 33, 0.74) !important;
+  box-shadow:
+    0 9px 28px rgba(3, 8, 18, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+  backdrop-filter: blur(12px) saturate(112%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(112%) !important;
+}
+
+.dashboard .nav::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(172, 196, 233, 0.28), transparent);
+  pointer-events: none;
+}
+
+.dashboard .brand-copy .muted {
+  font-size: 0.74rem;
+}
+
+.dashboard .nav-email {
+  max-width: 360px;
+}
+
+.dashboard .hero-section.glass {
+  background: rgba(15, 24, 40, 0.66) !important;
+  border-color: rgba(193, 214, 244, 0.14) !important;
+  box-shadow: 0 18px 50px rgba(2, 8, 16, 0.36) !important;
+}
+
+.dashboard .get-started-section.glass {
+  background: rgba(14, 22, 36, 0.58) !important;
+  border-color: rgba(182, 203, 236, 0.1) !important;
+}
+
+.dashboard .dashboard-columns .card.glass,
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass {
+  border-color: rgba(166, 189, 223, 0.06) !important;
+  background: rgba(10, 17, 29, 0.44) !important;
+}
+
+.dashboard .hero-main-title {
+  color: rgba(172, 190, 218, 0.52) !important;
+}
+
+.dashboard .hero-value {
+  letter-spacing: -0.028em;
+}
+
+.dashboard .hero-change-row {
+  color: rgba(171, 190, 220, 0.62) !important;
+}
+
+.dashboard .analysis-cards {
+  margin-top: 10px !important;
+}
+
+.dashboard .analysis-cards.is-collapsed {
+  display: none !important;
+}
+
+.dashboard .analysis-card {
+  border-color: rgba(173, 196, 230, 0.07) !important;
+  background: rgba(16, 25, 39, 0.5) !important;
+}
+
+.dashboard .analysis-text-link,
+.dashboard .analysis-text-link:focus-visible,
+.dashboard .analysis-text-link:hover {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.dashboard .tx-toolbar #btn-add-transaction {
+  border-radius: 999px !important;
+  border: 1px solid rgba(190, 212, 248, 0.16) !important;
+  background: rgba(103, 137, 230, 0.24) !important;
+  color: rgba(235, 243, 255, 0.95) !important;
+  font-weight: 600;
+}
+
+.dashboard .tx-toolbar #btn-add-transaction:hover,
+.dashboard .tx-toolbar #btn-add-transaction:focus-visible {
+  border-color: rgba(202, 221, 252, 0.28) !important;
+  background: rgba(120, 151, 241, 0.28) !important;
+}
+
+.dashboard .table-empty-row {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.dashboard .table-empty-row .muted {
+  font-size: 0.84rem;
+}
+
+.dashboard .portfolio-section .chart-shell.is-compact-chart {
+  min-height: 108px !important;
+  padding: 8px 10px !important;
+}
+
+.dashboard .wallet-item {
+  position: relative;
+}
+
+@media (hover: hover) {
+  .dashboard .wallet-item .wallet-remove {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(4px);
+    transition: opacity 140ms var(--ease-standard), transform 140ms var(--ease-standard);
+  }
+
+  .dashboard .wallet-item:hover .wallet-remove,
+  .dashboard .wallet-item:focus-within .wallet-remove {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+}
+
+.dashboard .analysis-detail-overlay {
+  background: rgba(5, 10, 17, 0.48) !important;
+  backdrop-filter: blur(4px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(108%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  width: min(860px, calc(100vw - 56px)) !important;
+  max-height: min(84dvh, 820px) !important;
+  border: 1px solid rgba(185, 208, 243, 0.13) !important;
+  background: rgba(10, 16, 28, 0.86) !important;
+  box-shadow: 0 28px 76px rgba(2, 7, 15, 0.5) !important;
+}
+
+.dashboard .analysis-detail-head {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dashboard .analysis-detail-updated {
+  font-size: 0.74rem !important;
+  color: rgba(176, 194, 219, 0.56) !important;
+}
+
+.dashboard .analysis-detail-body {
+  gap: 10px;
+}
+
+.dashboard .analysis-detail-section {
+  border-color: rgba(167, 190, 225, 0.09) !important;
+  background: rgba(12, 20, 34, 0.5) !important;
+}
+
+@media (max-width: 900px) {
+  body.dashboard {
+    --app-nav-height: 58px;
+  }
+
+  .dashboard .container {
+    padding-top: calc(var(--app-nav-height) + 16px) !important;
+  }
+
+  .dashboard .nav {
+    top: 6px !important;
+    width: calc(100vw - 12px);
+    min-height: var(--app-nav-height);
+    padding: 9px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .dashboard .brand-logo {
+    height: 28px;
+  }
+
+  .dashboard .brand-copy .muted {
+    display: none;
+  }
+
+  .dashboard .actions {
+    gap: 4px !important;
+  }
+
+  .dashboard .nav-email {
+    max-width: 120px !important;
+    font-size: 0.72rem;
+  }
+
+  .dashboard .actions .markets-link {
+    display: none !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 90dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  .dashboard .analysis-detail-head::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -9px;
+    width: 36px;
+    height: 4px;
+    margin-left: -18px;
+    border-radius: 999px;
+    background: rgba(191, 210, 240, 0.33);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .wallet-item .wallet-remove {
+    transition: none !important;
+  }
+}
+
+/* FinGuard Dashboard v5.4: app-like sticky nav + quieter premium polish */
+body.dashboard {
+  --app-nav-height: 68px;
+}
+
+.dashboard .overlay {
+  z-index: 160 !important;
+}
+
+.dashboard .container {
+  padding-top: calc(var(--app-nav-height) + 22px) !important;
+}
+
+.dashboard .nav {
+  position: fixed !important;
+  top: 10px !important;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1240px, calc(100vw - 24px));
+  min-height: var(--app-nav-height);
+  padding: 10px 14px !important;
+  z-index: 96 !important;
+  transition:
+    min-height 180ms var(--ease-standard),
+    padding 180ms var(--ease-standard),
+    background 180ms var(--ease-standard),
+    border-color 180ms var(--ease-standard),
+    box-shadow 180ms var(--ease-standard);
+}
+
+.dashboard.nav-condensed .nav {
+  min-height: 58px;
+  padding: 8px 12px !important;
+  background: rgba(10, 17, 30, 0.78) !important;
+  border-color: rgba(176, 198, 229, 0.11) !important;
+  box-shadow: 0 8px 22px rgba(3, 8, 18, 0.28) !important;
+}
+
+.dashboard .dashboard-main.page {
+  margin-top: 0 !important;
+}
+
+@keyframes fgAtmosphereDriftV54 {
+  0% { transform: translate3d(-0.9%, -0.5%, 0) scale(1.015); opacity: 0.94; }
+  50% { transform: translate3d(0.75%, 0.55%, 0) scale(1.028); opacity: 0.98; }
+  100% { transform: translate3d(-0.45%, 0.85%, 0) scale(1.015); opacity: 0.93; }
+}
+
+@keyframes fgNoiseDriftV54 {
+  0% { background-position: center center, 0 0; }
+  100% { background-position: center center, 96px 74px; }
+}
+
+body.dashboard::before {
+  animation: fgAtmosphereDriftV54 40s ease-in-out infinite alternate;
+  opacity: 0.96;
+}
+
+body.dashboard::after {
+  animation: fgNoiseDriftV54 40s steps(8, end) infinite;
+  opacity: 0.78;
+}
+
+.dashboard .hero-section.glass {
+  border-color: rgba(189, 210, 240, 0.13) !important;
+  background: rgba(14, 23, 38, 0.64) !important;
+}
+
+.dashboard .get-started-section.glass {
+  border-color: rgba(177, 200, 233, 0.11) !important;
+  background: rgba(13, 21, 35, 0.58) !important;
+}
+
+.dashboard .dashboard-columns .card.glass,
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass {
+  border-color: rgba(160, 184, 218, 0.06) !important;
+  background: rgba(10, 17, 30, 0.42) !important;
+}
+
+.dashboard .card:hover,
+.dashboard .table-row:hover,
+.dashboard .list-item:hover {
+  transform: translateY(-0.5px);
+}
+
+.dashboard .analysis-detail-overlay {
+  background: rgba(4, 8, 15, 0.44) !important;
+  backdrop-filter: blur(2px) saturate(105%) !important;
+  -webkit-backdrop-filter: blur(2px) saturate(105%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  width: min(840px, calc(100vw - 64px)) !important;
+  max-height: min(84dvh, 800px) !important;
+  background: rgba(10, 16, 28, 0.84) !important;
+}
+
+.dashboard .wallets-expand-toggle,
+.dashboard .wallets-expand-toggle.ghost {
+  opacity: 0.86;
+}
+
+.dashboard .wallets-expand-toggle:hover,
+.dashboard .wallets-expand-toggle:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .dashboard .wallet-item .wallet-remove {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(4px);
+  }
+
+  .dashboard .wallet-item:hover .wallet-remove,
+  .dashboard .wallet-item:focus-within .wallet-remove {
+    opacity: 0.96;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 900px) {
+  body.dashboard {
+    --app-nav-height: 56px;
+  }
+
+  .dashboard .container {
+    padding-top: calc(var(--app-nav-height) + 14px) !important;
+  }
+
+  .dashboard .nav {
+    top: 6px !important;
+    width: calc(100vw - 10px);
+    min-height: var(--app-nav-height);
+    padding: 8px 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .dashboard.nav-condensed .nav {
+    min-height: 52px;
+    padding: 7px 8px !important;
+  }
+
+  .dashboard .actions {
+    gap: 3px !important;
+  }
+
+  .dashboard .nav-email {
+    max-width: 112px !important;
+    font-size: 0.71rem !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+    transform: translateY(calc(var(--sheet-drag-offset, 0px) + 16px)) scale(1) !important;
+    transition:
+      transform 220ms var(--ease-standard),
+      opacity 220ms var(--ease-standard) !important;
+    touch-action: pan-y;
+  }
+
+  .dashboard .analysis-detail-overlay.is-open .analysis-detail-menu {
+    transform: translateY(var(--sheet-drag-offset, 0px)) scale(1) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.dashboard::before,
+  body.dashboard::after {
+    animation: none !important;
+  }
+
+  .dashboard .nav {
+    transition: none !important;
+  }
+}
+
+/* FinGuard Dashboard v5.5: app-shell hierarchy polish */
+body.dashboard {
+  --app-nav-top: 10px;
+  --app-nav-height: 68px;
+}
+
+.dashboard .container {
+  padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 24px) !important;
+}
+
+.dashboard .nav {
+  top: var(--app-nav-top) !important;
+  min-height: var(--app-nav-height);
+  background: rgba(10, 17, 30, 0.72) !important;
+  border-color: rgba(171, 194, 228, 0.11) !important;
+}
+
+.dashboard.nav-condensed .nav {
+  min-height: 56px;
+  padding: 7px 11px !important;
+  background: rgba(8, 14, 25, 0.84) !important;
+  border-color: rgba(188, 208, 240, 0.16) !important;
+  box-shadow:
+    0 10px 26px rgba(2, 7, 14, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+.dashboard.nav-condensed .nav .brand-title,
+.dashboard.nav-condensed .nav .nav-email,
+.dashboard.nav-condensed .nav .nav-link,
+.dashboard.nav-condensed .nav .nav-icon {
+  color: rgba(232, 241, 255, 0.94) !important;
+}
+
+.dashboard .dashboard-main.page {
+  padding-top: 0 !important;
+}
+
+.dashboard .hero-section.glass {
+  box-shadow:
+    0 18px 48px rgba(2, 7, 15, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+.dashboard .get-started-section.glass {
+  box-shadow:
+    0 14px 40px rgba(2, 7, 14, 0.26),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+}
+
+.dashboard .dashboard-columns .card.glass,
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass {
+  border-color: rgba(153, 178, 213, 0.055) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .section-head > .ghost,
+.dashboard .section-head .tx-toolbar > .ghost {
+  min-height: 32px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(167, 190, 225, 0.13) !important;
+  background: rgba(120, 149, 220, 0.1) !important;
+  color: rgba(198, 216, 245, 0.82) !important;
+  font-size: 0.79rem;
+  font-weight: 500;
+  padding: 0 11px !important;
+}
+
+.dashboard .section-head > .ghost:hover,
+.dashboard .section-head > .ghost:focus-visible,
+.dashboard .section-head .tx-toolbar > .ghost:hover,
+.dashboard .section-head .tx-toolbar > .ghost:focus-visible {
+  border-color: rgba(188, 209, 241, 0.24) !important;
+  background: rgba(136, 162, 228, 0.16) !important;
+  color: rgba(229, 239, 255, 0.95) !important;
+}
+
+.dashboard .analysis-text-link {
+  color: rgba(183, 205, 237, 0.7) !important;
+  font-weight: 500;
+}
+
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:focus-visible {
+  color: rgba(219, 232, 252, 0.94) !important;
+}
+
+body.dashboard::before {
+  opacity: 0.9;
+}
+
+body.dashboard::after {
+  opacity: 0.58;
+}
+
+.dashboard .analysis-detail-overlay {
+  background: rgba(5, 10, 18, 0.4) !important;
+  backdrop-filter: blur(1.5px) saturate(103%) !important;
+  -webkit-backdrop-filter: blur(1.5px) saturate(103%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  width: min(820px, calc(100vw - 76px)) !important;
+  max-height: min(82dvh, 780px) !important;
+}
+
+.dashboard .analysis-detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(166, 188, 220, 0.11) !important;
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.94) 0%, rgba(10, 16, 28, 0.82) 100%) !important;
+}
+
+.dashboard .analysis-detail-stats-row {
+  background: rgba(14, 22, 36, 0.42) !important;
+  border-color: rgba(164, 187, 223, 0.1) !important;
+}
+
+.dashboard .analysis-detail-metric {
+  border-right: 1px solid rgba(164, 187, 223, 0.1) !important;
+  padding-right: 10px !important;
+}
+
+.dashboard .analysis-detail-metric:last-child {
+  border-right: 0 !important;
+}
+
+.dashboard .table-empty-row .muted {
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  body.dashboard {
+    --app-nav-top: 6px;
+    --app-nav-height: 56px;
+  }
+
+  .dashboard .container {
+    padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 14px) !important;
+  }
+
+  .dashboard .nav {
+    width: calc(100vw - 10px);
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  .dashboard .analysis-detail-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard .analysis-detail-metric {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(164, 187, 223, 0.1) !important;
+    padding-right: 0 !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard.nav-condensed .nav {
+    min-height: var(--app-nav-height);
+  }
+}
+
+/* FinGuard Dashboard v5.6: app-like shell + premium minimal consistency */
+body.dashboard {
+  --app-nav-top: 10px;
+  --app-nav-height: 68px;
+  --surface-primary-bg: rgba(13, 21, 36, 0.68);
+  --surface-primary-border: rgba(190, 210, 238, 0.12);
+  --surface-secondary-bg: rgba(9, 16, 28, 0.44);
+  --surface-secondary-border: rgba(156, 179, 213, 0.065);
+}
+
+.dashboard .container {
+  padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 22px) !important;
+}
+
+.dashboard .nav {
+  position: fixed !important;
+  top: var(--app-nav-top) !important;
+  left: 0 !important;
+  right: 0 !important;
+  inset-inline: 12px;
+  transform: none !important;
+  width: auto !important;
+  max-width: min(1240px, calc(100vw - 24px)) !important;
+  min-height: var(--app-nav-height);
+  margin-inline: auto !important;
+  padding: 10px 14px !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  z-index: 120 !important;
+  border-color: rgba(178, 200, 233, 0.115) !important;
+  background: rgba(8, 14, 25, 0.74) !important;
+  box-shadow:
+    0 8px 24px rgba(2, 7, 14, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+body.dashboard.nav-condensed .nav {
+  min-height: 56px;
+  padding: 8px 12px !important;
+  border-color: rgba(194, 212, 240, 0.15) !important;
+  background: rgba(7, 12, 22, 0.86) !important;
+  box-shadow:
+    0 12px 28px rgba(2, 7, 14, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.07) inset !important;
+}
+
+.dashboard .actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  min-width: 0;
+}
+
+.dashboard .nav-email {
+  max-width: min(44vw, 500px) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(198, 215, 242, 0.76) !important;
+}
+
+body.dashboard::before {
+  background:
+    radial-gradient(66% 54% at 8% 8%, rgba(66, 116, 228, 0.17), transparent 70%),
+    radial-gradient(52% 44% at 88% 12%, rgba(39, 156, 215, 0.12), transparent 72%),
+    radial-gradient(58% 50% at 56% 92%, rgba(111, 87, 202, 0.09), transparent 72%),
+    radial-gradient(160% 120% at 50% 126%, rgba(2, 6, 12, 0.6), rgba(2, 6, 12, 0.88) 72%) !important;
+  opacity: 0.82 !important;
+  animation: fgAtmosphereDriftV56 34s ease-in-out infinite alternate !important;
+}
+
+body.dashboard::after {
+  background-image:
+    radial-gradient(circle at center, transparent 40%, rgba(2, 5, 10, 0.62) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23ffffff' fill-opacity='0.14'%3E%3Ccircle cx='3' cy='5' r='1'/%3E%3Ccircle cx='42' cy='28' r='1'/%3E%3Ccircle cx='91' cy='64' r='1'/%3E%3Ccircle cx='127' cy='38' r='1'/%3E%3Ccircle cx='154' cy='112' r='1'/%3E%3Ccircle cx='64' cy='140' r='1'/%3E%3Ccircle cx='18' cy='124' r='1'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 100% 100%, 180px 180px !important;
+  opacity: 0.32 !important;
+  animation: fgNoiseDriftV56 40s linear infinite !important;
+}
+
+.dashboard .dash-atmosphere {
+  opacity: 0.5 !important;
+}
+
+.dashboard .grid-noise,
+.dashboard .secure-grid,
+.dashboard .vault-halo,
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  opacity: 0.24 !important;
+}
+
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  display: none !important;
+}
+
+.dashboard .hero-section.glass,
+.dashboard .get-started-section.glass {
+  background: var(--surface-primary-bg) !important;
+  border-color: var(--surface-primary-border) !important;
+  box-shadow:
+    0 16px 40px rgba(2, 7, 14, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass,
+.dashboard .dashboard-columns .card.glass {
+  background: var(--surface-secondary-bg) !important;
+  border-color: var(--surface-secondary-border) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .card:hover,
+.dashboard .table-row:hover,
+.dashboard .list-item:hover {
+  transform: translateY(-1px) !important;
+}
+
+.dashboard .section-head > .ghost,
+.dashboard .section-head .tx-toolbar > .ghost,
+.dashboard .section-head > .section-action,
+.dashboard .section-head .tx-toolbar > .section-action {
+  min-height: 30px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(166, 189, 224, 0.12) !important;
+  background: rgba(122, 149, 208, 0.08) !important;
+  color: rgba(196, 214, 243, 0.78) !important;
+  font-size: 0.77rem;
+  font-weight: 500;
+  padding: 0 11px !important;
+}
+
+.dashboard .section-head > .ghost:hover,
+.dashboard .section-head > .ghost:focus-visible,
+.dashboard .section-head .tx-toolbar > .ghost:hover,
+.dashboard .section-head .tx-toolbar > .ghost:focus-visible,
+.dashboard .section-head > .section-action:hover,
+.dashboard .section-head > .section-action:focus-visible,
+.dashboard .section-head .tx-toolbar > .section-action:hover,
+.dashboard .section-head .tx-toolbar > .section-action:focus-visible {
+  border-color: rgba(186, 208, 240, 0.21) !important;
+  background: rgba(128, 158, 224, 0.14) !important;
+  color: rgba(228, 238, 255, 0.94) !important;
+}
+
+.dashboard .hero-main-title,
+.dashboard .hero-change-row,
+.dashboard .section-title,
+.dashboard .analysis-detail-title,
+.dashboard .analysis-detail-updated {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard .analysis-text-link {
+  color: rgba(181, 203, 236, 0.73) !important;
+}
+
+.dashboard .analysis-text-link:hover,
+.dashboard .analysis-text-link:focus-visible {
+  color: rgba(226, 237, 255, 0.95) !important;
+}
+
+.dashboard .analysis-cards.is-collapsed {
+  margin-top: 0 !important;
+}
+
+.dashboard .table-list .table-row,
+.dashboard .upcoming-list .payment-row {
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(155, 179, 216, 0.13) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 12px 2px !important;
+}
+
+.dashboard .table-list .table-row:first-child,
+.dashboard .upcoming-list .payment-row:first-child {
+  border-top-color: rgba(171, 193, 225, 0.2) !important;
+}
+
+.dashboard .table-empty-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.dashboard .table-empty-copy .muted {
+  color: rgba(164, 182, 211, 0.72) !important;
+}
+
+.dashboard .analysis-detail-overlay {
+  z-index: 180 !important;
+  background: rgba(4, 8, 15, 0.42) !important;
+  backdrop-filter: blur(2px) saturate(104%) !important;
+  -webkit-backdrop-filter: blur(2px) saturate(104%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  width: min(800px, calc(100vw - 88px)) !important;
+  max-height: min(84dvh, 790px) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(183, 205, 236, 0.12) !important;
+  border-radius: 20px !important;
+  background: rgba(9, 15, 26, 0.9) !important;
+  box-shadow: 0 28px 72px rgba(2, 7, 14, 0.52) !important;
+}
+
+.dashboard .analysis-detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 14px 16px 12px !important;
+  border-bottom: 1px solid rgba(168, 190, 225, 0.11) !important;
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.96) 0%, rgba(10, 16, 28, 0.84) 100%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dashboard .analysis-detail-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  gap: 10px;
+  padding-right: 3px;
+}
+
+.dashboard .analysis-detail-stats-row {
+  border-color: rgba(160, 184, 221, 0.1) !important;
+  background: rgba(14, 22, 36, 0.38) !important;
+}
+
+.dashboard .analysis-detail-metric {
+  border-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+@keyframes fgAtmosphereDriftV56 {
+  0% { transform: translate3d(-0.6%, -0.4%, 0) scale(1.01); }
+  50% { transform: translate3d(0.55%, 0.5%, 0) scale(1.025); }
+  100% { transform: translate3d(-0.35%, 0.8%, 0) scale(1.01); }
+}
+
+@keyframes fgNoiseDriftV56 {
+  0% { background-position: center center, 0 0; }
+  100% { background-position: center center, 96px 76px; }
+}
+
+@media (max-width: 900px) {
+  body.dashboard {
+    --app-nav-top: 6px;
+    --app-nav-height: 56px;
+  }
+
+  .dashboard .container {
+    padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 14px) !important;
+  }
+
+  .dashboard .nav {
+    inset-inline: 6px;
+    max-width: calc(100vw - 12px) !important;
+    padding: 8px 9px !important;
+    min-height: var(--app-nav-height);
+    border-radius: 14px !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  body.dashboard.nav-condensed .nav {
+    min-height: 52px;
+    padding: 7px 8px !important;
+  }
+
+  .dashboard .actions {
+    flex-wrap: nowrap !important;
+    gap: 2px !important;
+  }
+
+  .dashboard .nav-email {
+    display: none !important;
+  }
+
+  .dashboard .nav-divider {
+    display: none !important;
+  }
+
+  .dashboard .table-empty-copy {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  .dashboard .analysis-detail-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.dashboard::before,
+  body.dashboard::after {
+    animation: none !important;
+  }
+}
+
+/* FinGuard Dashboard v5.7: app-shell + hierarchy + empty states + premium dialog */
+body.dashboard {
+  --app-nav-top: 8px;
+  --app-nav-height: 68px;
+  --surface-primary-bg: rgba(12, 20, 34, 0.72);
+  --surface-primary-border: rgba(188, 208, 238, 0.14);
+  --surface-secondary-bg: rgba(9, 15, 27, 0.48);
+  --surface-secondary-border: rgba(155, 179, 213, 0.07);
+}
+
+.dashboard .container {
+  max-width: 1248px !important;
+  padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 20px) !important;
+}
+
+.dashboard .nav {
+  position: fixed !important;
+  top: var(--app-nav-top) !important;
+  left: 0 !important;
+  right: 0 !important;
+  inset-inline: 12px;
+  transform: none !important;
+  width: auto !important;
+  max-width: min(1248px, calc(100vw - 24px)) !important;
+  margin-inline: auto !important;
+  min-height: var(--app-nav-height);
+  padding: 10px 14px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(178, 199, 230, 0.12) !important;
+  background: rgba(8, 14, 25, 0.78) !important;
+  box-shadow:
+    0 8px 24px rgba(2, 6, 12, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+  backdrop-filter: blur(9px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(9px) saturate(108%) !important;
+  transition:
+    min-height 180ms var(--ease-standard),
+    padding 180ms var(--ease-standard),
+    border-color 180ms var(--ease-standard),
+    box-shadow 180ms var(--ease-standard),
+    background 180ms var(--ease-standard);
+}
+
+body.dashboard.nav-condensed .nav {
+  min-height: 56px;
+  padding: 7px 12px !important;
+  border-color: rgba(196, 214, 242, 0.16) !important;
+  background: rgba(7, 12, 22, 0.88) !important;
+  box-shadow:
+    0 10px 28px rgba(2, 6, 12, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+  backdrop-filter: blur(6px) saturate(106%) !important;
+  -webkit-backdrop-filter: blur(6px) saturate(106%) !important;
+}
+
+.dashboard .actions {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.dashboard .nav-profile {
+  min-width: 0;
+  max-width: 360px;
+}
+
+.dashboard .nav-email {
+  max-width: 100% !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(194, 212, 240, 0.78) !important;
+  font-size: 0.76rem !important;
+}
+
+.dashboard .nav-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dashboard .nav-locale-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid rgba(166, 188, 221, 0.14);
+  border-radius: 999px;
+  padding: 1px;
+  background: rgba(98, 127, 196, 0.08);
+}
+
+.dashboard .nav-locale-group .nav-locale-btn {
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(193, 211, 238, 0.86) !important;
+  font-size: 0.74rem !important;
+}
+
+.dashboard .nav-locale-group .nav-locale-btn:hover,
+.dashboard .nav-locale-group .nav-locale-btn:focus-visible {
+  background: rgba(129, 157, 223, 0.16) !important;
+  color: rgba(230, 240, 255, 0.95) !important;
+}
+
+.dashboard .markets-link {
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(166, 188, 221, 0.12) !important;
+  background: rgba(106, 135, 204, 0.08) !important;
+}
+
+.dashboard .nav-icon {
+  width: 28px;
+  height: 28px;
+  min-height: 28px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(160, 184, 220, 0.12) !important;
+  background: rgba(114, 144, 210, 0.08) !important;
+  color: rgba(198, 216, 244, 0.86) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard .nav-icon:hover,
+.dashboard .nav-icon:focus-visible {
+  border-color: rgba(187, 209, 242, 0.22) !important;
+  background: rgba(131, 159, 223, 0.16) !important;
+}
+
+body.dashboard::before {
+  opacity: 0.78 !important;
+}
+
+body.dashboard::after {
+  opacity: 0.24 !important;
+  filter: none !important;
+}
+
+.dashboard .dash-atmosphere {
+  opacity: 0.34 !important;
+}
+
+.dashboard .grid-noise,
+.dashboard .secure-grid,
+.dashboard .vault-halo,
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  opacity: 0.16 !important;
+}
+
+.dashboard .secure-scan,
+.dashboard .signal-nodes {
+  display: none !important;
+}
+
+.dashboard .hero-section.glass,
+.dashboard .get-started-section.glass {
+  background: var(--surface-primary-bg) !important;
+  border-color: var(--surface-primary-border) !important;
+  box-shadow:
+    0 16px 40px rgba(2, 7, 14, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+.dashboard .transactions-section.glass,
+.dashboard .upcoming-section.glass,
+.dashboard .portfolio-section.glass,
+.dashboard .dashboard-columns .card.glass {
+  background: var(--surface-secondary-bg) !important;
+  border-color: var(--surface-secondary-border) !important;
+  box-shadow: none !important;
+}
+
+.dashboard .section-title {
+  font-size: clamp(1.04rem, 0.98rem + 0.24vw, 1.2rem) !important;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.dashboard .hero-main-title {
+  font-size: 0.7rem !important;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(162, 183, 217, 0.76) !important;
+}
+
+.dashboard .hero-value {
+  font-size: clamp(2rem, 1.72rem + 1.1vw, 2.68rem) !important;
+  letter-spacing: -0.024em !important;
+}
+
+.dashboard .muted {
+  color: rgba(162, 181, 210, 0.74) !important;
+}
+
+.dashboard .hero-value,
+.dashboard .analysis-card-value,
+.dashboard .analysis-detail-metric-value,
+.dashboard .tx-amount,
+.dashboard .payment-amount,
+.dashboard .amount-positive,
+.dashboard .amount-negative {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.dashboard .section-head > .ghost,
+.dashboard .section-head .tx-toolbar > .ghost,
+.dashboard .section-head > .section-action,
+.dashboard .section-head .tx-toolbar > .section-action {
+  min-height: 30px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(166, 188, 220, 0.12) !important;
+  background: rgba(116, 145, 211, 0.08) !important;
+  color: rgba(196, 213, 241, 0.82) !important;
+  font-size: 0.77rem;
+  font-weight: 500;
+  padding: 0 11px !important;
+}
+
+.dashboard .section-head > .ghost:hover,
+.dashboard .section-head > .ghost:focus-visible,
+.dashboard .section-head .tx-toolbar > .ghost:hover,
+.dashboard .section-head .tx-toolbar > .ghost:focus-visible,
+.dashboard .section-head > .section-action:hover,
+.dashboard .section-head > .section-action:focus-visible,
+.dashboard .section-head .tx-toolbar > .section-action:hover,
+.dashboard .section-head .tx-toolbar > .section-action:focus-visible {
+  border-color: rgba(190, 210, 241, 0.2) !important;
+  background: rgba(132, 159, 224, 0.15) !important;
+  color: rgba(229, 239, 255, 0.94) !important;
+}
+
+.dashboard .empty-block,
+.dashboard .table-empty-copy,
+.dashboard .analysis-empty-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard .empty-state-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard .inline-cta {
+  min-height: 28px !important;
+  border-radius: 999px !important;
+}
+
+.dashboard .inline-cta-primary {
+  border: 1px solid rgba(176, 198, 232, 0.18) !important;
+  background: rgba(117, 145, 210, 0.18) !important;
+  color: rgba(229, 239, 255, 0.94) !important;
+}
+
+.dashboard .inline-cta-secondary {
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(177, 198, 231, 0.78) !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(177, 198, 231, 0.34);
+  text-decoration-thickness: 1px;
+}
+
+.dashboard .upcoming-list .payment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name amount"
+    "due amount";
+  align-items: center;
+  row-gap: 3px;
+}
+
+.dashboard .upcoming-list .payment-name {
+  grid-area: name;
+  font-weight: 560;
+}
+
+.dashboard .upcoming-list .payment-due {
+  grid-area: due;
+  font-size: 0.72rem;
+}
+
+.dashboard .upcoming-list .payment-amount {
+  grid-area: amount;
+  justify-self: end;
+}
+
+.dashboard .wallet-item .wallet-remove {
+  transition: opacity 140ms var(--ease-standard), transform 140ms var(--ease-standard) !important;
+}
+
+.dashboard .analysis-detail-overlay {
+  background: rgba(4, 8, 15, 0.36) !important;
+  backdrop-filter: blur(1.2px) saturate(102%) !important;
+  -webkit-backdrop-filter: blur(1.2px) saturate(102%) !important;
+}
+
+.dashboard .analysis-detail-menu {
+  width: min(800px, calc(100vw - 92px)) !important;
+  max-height: min(84dvh, 790px) !important;
+  background: rgba(9, 15, 26, 0.9) !important;
+}
+
+.dashboard .analysis-detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.dashboard .analysis-detail-body {
+  overflow-y: auto;
+}
+
+.dashboard .analysis-detail-head-actions {
+  align-items: center !important;
+  gap: 8px;
+}
+
+.dashboard .analysis-inline-action.icon-action {
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(164, 187, 223, 0.12) !important;
+  background: rgba(108, 137, 204, 0.08) !important;
+  color: rgba(182, 203, 234, 0.78) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.dashboard #analysisDetailCopyBtn.icon-action::before,
+.dashboard #analysisDetailExplorerLink.icon-action::before {
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.dashboard #analysisDetailCopyBtn.icon-action::before {
+  content: "⧉";
+}
+
+.dashboard #analysisDetailExplorerLink.icon-action::before {
+  content: "↗";
+}
+
+.dashboard .analysis-inline-action.icon-action:hover,
+.dashboard .analysis-inline-action.icon-action:focus-visible {
+  border-color: rgba(188, 209, 240, 0.24) !important;
+  background: rgba(133, 160, 224, 0.16) !important;
+  color: rgba(230, 240, 255, 0.96) !important;
+}
+
+.dashboard #analysisDetailMetricTabs,
+.dashboard #analysisDetailWindowTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid rgba(166, 188, 222, 0.13);
+  border-radius: 999px;
+  background: rgba(96, 125, 193, 0.08);
+  padding: 2px;
+}
+
+.dashboard #analysisDetailMetricTabs .text-tab,
+.dashboard #analysisDetailWindowTabs .text-tab {
+  min-height: 26px;
+  border-radius: 999px;
+  border: 0 !important;
+  padding: 0 9px !important;
+}
+
+.dashboard #analysisDetailMetricTabs .text-tab.active,
+.dashboard #analysisDetailWindowTabs .text-tab.active {
+  background: rgba(137, 163, 227, 0.22) !important;
+  color: rgba(232, 240, 255, 0.96) !important;
+}
+
+@media (max-width: 900px) {
+  body.dashboard {
+    --app-nav-top: 6px;
+    --app-nav-height: 56px;
+  }
+
+  .dashboard .container {
+    padding-top: calc(var(--app-nav-top) + var(--app-nav-height) + 12px) !important;
+  }
+
+  .dashboard .nav {
+    inset-inline: 6px;
+    max-width: calc(100vw - 12px) !important;
+    min-height: var(--app-nav-height);
+    padding: 8px 9px !important;
+    border-radius: 12px !important;
+  }
+
+  body.dashboard.nav-condensed .nav {
+    min-height: 52px;
+  }
+
+  .dashboard .nav-profile {
+    display: none !important;
+  }
+
+  .dashboard .nav-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .dashboard .markets-link {
+    padding-inline: 8px !important;
+  }
+
+  .dashboard .analysis-detail-menu {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  .dashboard .empty-state-actions {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .card,
+  .dashboard .nav,
+  .dashboard .analysis-detail-menu {
+    transition: none !important;
+  }
+}

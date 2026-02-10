@@ -7,9 +7,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('wallet analysis strip shows progress and compact wallet intelligence card', async ({ page }) => {
+test('wallet analysis strip shows progress and compact wallet intelligence card', async ({ page }, testInfo) => {
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
+  const startUrl = page.url();
 
   const hero = page.getByTestId('hero');
   const intelligenceLink = page.getByTestId('wallet-intelligence-link');
@@ -35,15 +36,72 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   await intelligenceLink.click();
   await expect(page.locator('#analysis-detail-overlay')).toBeVisible();
   await expect(page.getByTestId('wallet-intelligence-page')).toBeVisible();
+  await expect(page.locator('body.dashboard.analysis-drawer-open')).toBeVisible();
+  await expect(page.locator('body.dashboard')).toHaveCSS('overflow', 'hidden');
   await expect(page.locator('#analysisDetailWalletName')).toContainText('MetaMask');
   await expect(page.locator('#analysisDetailPortfolio')).toContainText('USD');
+  await expect(page.url()).toBe(startUrl);
+  const detailHeader = page.getByTestId('wallet-intelligence-header');
+  const detailBody = page.getByTestId('wallet-intelligence-body');
+  await expect(detailHeader).toBeVisible();
+  await expect(detailBody).toBeVisible();
+  const headerBeforeScroll = await detailHeader.boundingBox();
+  await detailBody.evaluate((el) => { el.scrollTop = 280; });
+  await page.waitForTimeout(120);
+  const headerAfterScroll = await detailHeader.boundingBox();
+  if (!headerBeforeScroll || !headerAfterScroll) {
+    throw new Error('Wallet intelligence header bounds are unavailable');
+  }
+  expect(Math.abs(headerBeforeScroll.y - headerAfterScroll.y)).toBeLessThanOrEqual(3);
   const hasLargeSeries = await page.locator('#analysisDetailSeriesChart svg').count();
   const hasCompactSeries = await page.locator('#analysisDetailSeriesChart .compact-sparkline').count();
   expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
   await expect(page.locator('#analysisDetailInsightsList')).toBeVisible();
   await expect.poll(async () => ((await page.locator('#analysisDetailInsightsList').textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);
+
+  const overlay = page.getByTestId('wallet-intelligence-overlay');
+  const menu = page.getByTestId('wallet-intelligence-page');
+  const overlayBox = await overlay.boundingBox();
+  const menuBox = await menu.boundingBox();
+  if (!overlayBox || !menuBox) {
+    throw new Error('Wallet intelligence modal bounds are unavailable');
+  }
+  if (testInfo.project.name.includes('mobile')) {
+    expect(menuBox.width).toBeGreaterThan((overlayBox.width * 0.94));
+    expect(Math.abs((menuBox.y + menuBox.height) - (overlayBox.y + overlayBox.height))).toBeLessThanOrEqual(6);
+  } else {
+    expect(menuBox.width).toBeGreaterThan(overlayBox.width * 0.45);
+    expect(menuBox.width).toBeLessThan(overlayBox.width * 0.9);
+    const leftInset = menuBox.x - overlayBox.x;
+    const rightInset = (overlayBox.x + overlayBox.width) - (menuBox.x + menuBox.width);
+    expect(Math.abs(leftInset - rightInset)).toBeLessThanOrEqual(24);
+  }
+
   await page.click('#btn-analysis-detail-close');
   await expect(page.locator('#analysis-detail-overlay')).toBeHidden();
+  await expect(page.locator('body.dashboard.analysis-drawer-open')).toBeHidden();
+  await expect(page.url()).toBe(startUrl);
+  if (!testInfo.project.name.includes('mobile')) {
+    await expect(intelligenceLink).toBeFocused();
+  }
+
+  await intelligenceLink.click();
+  await expect(page.locator('#analysis-detail-overlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#analysis-detail-overlay')).toBeHidden();
+  await expect(page.url()).toBe(startUrl);
+  if (!testInfo.project.name.includes('mobile')) {
+    await expect(intelligenceLink).toBeFocused();
+  }
+
+  await intelligenceLink.click();
+  await expect(page.locator('#analysis-detail-overlay')).toBeVisible();
+  await page.getByTestId('wallet-intelligence-overlay').click({ position: { x: 10, y: 10 } });
+  await expect(page.locator('#analysis-detail-overlay')).toBeHidden();
+  await expect(page.url()).toBe(startUrl);
+  if (!testInfo.project.name.includes('mobile')) {
+    await expect(intelligenceLink).toBeFocused();
+  }
 });
 
 test('wallet analysis strip resets after wallet deletion', async ({ page }) => {

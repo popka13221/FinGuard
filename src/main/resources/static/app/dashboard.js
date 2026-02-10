@@ -3,6 +3,7 @@
     root: 'body.dashboard',
     userEmail: '#userEmail',
     logoutBtn: '#btn-logout',
+    refreshBtn: '#btn-refresh',
     baseCurrencyBtn: '#btn-base-currency',
     langBtn: '#btn-lang',
     balanceChart: '#balanceChart',
@@ -158,6 +159,7 @@
       dashboard_page_title: 'FinGuard | Дашборд',
       dashboard_title: 'Личный кабинет',
       logout: 'Выйти',
+      refresh: 'Обновить',
       base_currency_button: 'Валюта: {value}',
       balance: 'Баланс',
       credit: 'Кредит',
@@ -287,6 +289,8 @@
       wallets_title: 'Крипто-кошельки',
       wallets_empty: 'Кошельки не добавлены.',
       empty_wallets_hint: 'Добавьте watch-only кошелёк, чтобы видеть оценку крипто-портфеля.',
+      wallets_show_all: 'Показать все ({value})',
+      wallets_show_less: 'Свернуть',
       wallets_loading_failed: 'Не удалось загрузить кошельки.',
       add_wallet_menu_aria: 'Добавить кошелёк',
       add_wallet_title: 'Добавить кошелёк',
@@ -417,6 +421,7 @@
       dashboard_page_title: 'FinGuard | Dashboard',
       dashboard_title: 'Dashboard',
       logout: 'Log out',
+      refresh: 'Refresh',
       base_currency_button: 'Currency: {value}',
       balance: 'Balance',
       credit: 'Credit',
@@ -546,6 +551,8 @@
       wallets_title: 'Crypto wallets',
       wallets_empty: 'No wallets added yet.',
       empty_wallets_hint: 'Add a watch-only wallet to estimate your crypto portfolio value.',
+      wallets_show_all: 'Show all ({value})',
+      wallets_show_less: 'Show less',
       wallets_loading_failed: 'Failed to load wallets.',
       add_wallet_menu_aria: 'Add wallet',
       add_wallet_title: 'Add wallet',
@@ -886,6 +893,7 @@
     hasWallets: false,
     hasTransactions: false
   };
+  let walletListExpanded = false;
 
   function q(selector) {
     return document.querySelector(selector);
@@ -914,16 +922,28 @@
     return `<div class="skeleton-list" aria-hidden="true">${Array.from({ length: Math.max(count, 1) }, () => '<div class="skeleton-item"></div>').join('')}</div>`;
   }
 
-  function renderEmptyState(message, actionLabel, action) {
+  function renderEmptyState(message, actionLabel, action, secondaryLabel, secondaryAction) {
     const safeMsg = escapeHtml(message || '');
     const safeAction = escapeHtml(action || '');
-    if (!actionLabel || !action) {
+    const safeSecondaryAction = escapeHtml(secondaryAction || '');
+    const hasPrimary = Boolean(actionLabel && action);
+    const hasSecondary = Boolean(secondaryLabel && secondaryAction);
+    if (!hasPrimary && !hasSecondary) {
       return `<div class="empty-block muted">${safeMsg}</div>`;
     }
+    const primary = hasPrimary
+      ? `<button type="button" class="ghost inline-cta inline-cta-primary" data-action="${safeAction}">${escapeHtml(actionLabel)}</button>`
+      : '';
+    const secondary = hasSecondary
+      ? `<button type="button" class="ghost inline-cta inline-cta-secondary" data-action="${safeSecondaryAction}">${escapeHtml(secondaryLabel)}</button>`
+      : '';
     return `
       <div class="empty-block">
         <div class="muted">${safeMsg}</div>
-        <button type="button" class="ghost inline-cta" data-action="${safeAction}">${escapeHtml(actionLabel)}</button>
+        <div class="empty-state-actions">
+          ${primary}
+          ${secondary}
+        </div>
       </div>
     `;
   }
@@ -945,6 +965,7 @@
     const hasAnyLoaded = dashboardDataState.accountsLoaded || dashboardDataState.walletsLoaded || dashboardDataState.transactionsLoaded;
     if (!hasAnyLoaded) {
       section.hidden = true;
+      updateActionPriority();
       return;
     }
     const missingAccount = !dashboardDataState.hasAccounts;
@@ -962,6 +983,23 @@
         button.hidden = !(missingTransactions || missingWallet);
       }
     });
+    updateActionPriority();
+  }
+
+  function updateActionPriority() {
+    const onboardingSection = q(selectors.getStartedSection);
+    const hasAnyLoaded = dashboardDataState.accountsLoaded || dashboardDataState.walletsLoaded || dashboardDataState.transactionsLoaded;
+    const onboardingVisible = !hasAnyLoaded || Boolean(onboardingSection && !onboardingSection.hidden);
+    const txBtn = q(selectors.addTransactionBtn);
+    const accountBtn = q(selectors.addAccountBtn);
+    const walletBtn = q(selectors.addWalletBtn);
+    const upcomingBtn = q('#btn-upcoming-add');
+
+    // Keep one clear primary action: onboarding when data is missing, transaction action otherwise.
+    if (txBtn) txBtn.hidden = onboardingVisible;
+    if (accountBtn) accountBtn.hidden = false;
+    if (walletBtn) walletBtn.hidden = false;
+    if (upcomingBtn) upcomingBtn.hidden = true;
   }
 
   function pulseElement(selector) {
@@ -1310,6 +1348,58 @@
       Api.clearToken();
       window.location.href = '/';
     });
+  }
+
+  function bindRefresh() {
+    const btn = document.querySelector(selectors.refreshBtn);
+    if (!btn) return;
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        await Promise.all([
+          loadBalance(),
+          loadWallets(),
+          loadRecentTransactions(),
+          loadReports()
+        ]);
+        if (analysisState.detailOpen) {
+          await refreshAllDataForAnalysisDetail();
+          renderAnalysisDetail(null);
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  function bindTopNavState() {
+    const root = q(selectors.root);
+    const nav = q('[data-testid="top-nav"]');
+    if (!root || !nav) return;
+    if (nav.dataset.scrollBound === '1') return;
+    nav.dataset.scrollBound = '1';
+
+    let ticking = false;
+    const sync = () => {
+      const condensed = window.scrollY > 28;
+      root.classList.toggle('nav-condensed', condensed);
+      const state = condensed ? 'compact' : 'top';
+      nav.dataset.navState = state;
+      root.dataset.navState = state;
+    };
+    sync();
+
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        sync();
+        ticking = false;
+      });
+    }, { passive: true });
   }
 
   const numberFormatterCache = new Map();
@@ -1774,6 +1864,32 @@
     renderSparkline(sparkEl, series, '#7cc4ff');
   }
 
+  function updateAnalysisCardsVisibility() {
+    const container = q('#analysisCards');
+    if (!container) return;
+    const cards = [
+      ['#analysisCardIncome', selectors.analysisIncomeValue],
+      ['#analysisCardSpend', selectors.analysisExpenseValue],
+      ['#analysisCardOutflow', selectors.analysisOutflowValue],
+      ['#analysisCardRecurring', selectors.analysisRecurringValue]
+    ];
+    let visible = 0;
+    cards.forEach(([cardSelector, valueSelector]) => {
+      const card = q(cardSelector);
+      const valueEl = q(valueSelector);
+      if (!card || !valueEl) return;
+      const text = String(valueEl.textContent || '').trim();
+      const show = Boolean(text) && text !== '—';
+      card.hidden = !show;
+      card.classList.toggle('is-quiet', !show);
+      if (show) visible += 1;
+    });
+    container.classList.toggle('is-collapsed', visible === 0);
+    container.style.setProperty('--analysis-stats-count', String(Math.max(visible, 1)));
+    const hero = q('#walletAnalysisPanel');
+    if (hero) hero.classList.toggle('hero-compact', visible === 0);
+  }
+
   function setAnalysisDetailOpen(open, opener) {
     const overlay = q(selectors.analysisDetailOverlay);
     const menu = q(selectors.analysisDetailMenu);
@@ -1782,10 +1898,27 @@
     const next = Boolean(open);
     if (next) {
       openOverlay(overlay, menu, opener || card);
+      q(selectors.analysisDetailCloseBtn)?.focus();
     } else {
       closeOverlay(overlay, menu, opener || card);
+      const focusTarget = opener || card;
+      let focusRetries = 0;
+      const restoreFocus = () => {
+        focusRetries += 1;
+        if (focusTarget && typeof focusTarget.focus === 'function' && !focusTarget.disabled) {
+          focusTarget.focus();
+          return;
+        }
+        if (focusRetries < 6) {
+          window.setTimeout(restoreFocus, 40);
+        }
+      };
+      window.setTimeout(restoreFocus, 0);
     }
+    menu.style.removeProperty('--sheet-drag-offset');
+    menu.style.removeProperty('transition');
     analysisState.detailOpen = next;
+    document.body.classList.toggle('analysis-drawer-open', next);
     card.setAttribute('aria-expanded', next ? 'true' : 'false');
     card.classList.toggle('is-open', next);
   }
@@ -2094,7 +2227,10 @@
         insightsEl.innerHTML = `
           <div class="analysis-empty-guide compact-empty-state">
             <div class="analysis-empty-title">${t('analysis_detail_insights_empty')}</div>
-            <button type="button" class="ghost inline-link" data-action="open-import-history">${t('analysis_insights_step_import')}</button>
+            <div class="empty-state-actions">
+              <button type="button" class="ghost inline-cta inline-cta-primary" data-action="open-import-history">${t('analysis_insights_step_import')}</button>
+              <button type="button" class="ghost inline-cta inline-cta-secondary" data-action="open-add-wallet">${t('cta_add_wallet')}</button>
+            </div>
           </div>
         `;
       } else {
@@ -2208,6 +2344,18 @@
       if (!analysisState.detailOpen) return;
       setAnalysisDetailOpen(false, card);
     };
+    const isMobileSheet = () => window.matchMedia('(max-width: 900px)').matches;
+    const head = menu.querySelector('.analysis-detail-head');
+    let dragPointerId = null;
+    let dragStartY = 0;
+    let dragOffset = 0;
+    const clearSheetDrag = () => {
+      dragPointerId = null;
+      dragStartY = 0;
+      dragOffset = 0;
+      menu.style.removeProperty('--sheet-drag-offset');
+      menu.style.removeProperty('transition');
+    };
 
     card.addEventListener('click', async (event) => {
       event.preventDefault();
@@ -2269,6 +2417,36 @@
     overlay.addEventListener('click', (event) => {
       if (event.target === overlay) close();
     });
+    if (head && 'PointerEvent' in window) {
+      head.addEventListener('pointerdown', (event) => {
+        if (!analysisState.detailOpen || !isMobileSheet()) return;
+        if (event.pointerType === 'mouse') return;
+        dragPointerId = event.pointerId;
+        dragStartY = event.clientY;
+        dragOffset = 0;
+        menu.style.transition = 'none';
+        if (typeof head.setPointerCapture === 'function') {
+          head.setPointerCapture(event.pointerId);
+        }
+      });
+      head.addEventListener('pointermove', (event) => {
+        if (dragPointerId == null || event.pointerId !== dragPointerId) return;
+        dragOffset = Math.max(0, event.clientY - dragStartY);
+        menu.style.setProperty('--sheet-drag-offset', `${dragOffset}px`);
+        if (event.cancelable) event.preventDefault();
+      });
+      const finishSheetDrag = (event) => {
+        if (dragPointerId == null || event.pointerId !== dragPointerId) return;
+        const shouldClose = dragOffset > 96;
+        if (typeof head.releasePointerCapture === 'function') {
+          try { head.releasePointerCapture(event.pointerId); } catch (_) { /* noop */ }
+        }
+        clearSheetDrag();
+        if (shouldClose) close();
+      };
+      head.addEventListener('pointerup', finishSheetDrag);
+      head.addEventListener('pointercancel', finishSheetDrag);
+    }
     menu.addEventListener('keydown', (event) => {
       trapFocusKeydown(event, menu);
     });
@@ -2276,6 +2454,9 @@
       if (analysisState.detailOpen && event.key === 'Escape') {
         close();
       }
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) clearSheetDrag();
     });
   }
 
@@ -2430,6 +2611,7 @@
       setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
       if (debtCard) debtCard.hidden = !hasDebt;
       renderAnalysisGrowthSpark([]);
+      updateAnalysisCardsVisibility();
       return model;
     }
 
@@ -2471,6 +2653,7 @@
     );
     setDataSourceBadge(selectors.analysisOutflowSource, Number.isFinite(monthlyCashflow) ? DATA_SOURCE.live : DATA_SOURCE.pending);
     setDataSourceBadge(selectors.analysisRecurringSource, hasDebt ? DATA_SOURCE.live : DATA_SOURCE.pending);
+    updateAnalysisCardsVisibility();
     return model;
   }
 
@@ -2702,6 +2885,7 @@
     if (analysisState.detailOpen) {
       renderAnalysisDetail(null);
     }
+    updateAnalysisCardsVisibility();
   }
 
   function rerenderBalanceSnapshot() {
@@ -2989,7 +3173,13 @@
       list.classList.add('is-empty');
       dashboardDataState.hasAccounts = false;
       setUiState(list, 'empty');
-      list.innerHTML = renderEmptyState(`${t('no_accounts')} ${t('empty_accounts_hint')}`);
+      list.innerHTML = renderEmptyState(
+        `${t('no_accounts')} ${t('empty_accounts_hint')}`,
+        t('cta_add_account'),
+        'open-add-account',
+        t('get_started_import'),
+        'open-import-history'
+      );
       updateGetStartedSection();
       return;
     }
@@ -3123,9 +3313,19 @@
       list.classList.add('is-empty');
       dashboardDataState.hasTransactions = false;
       setUiState(list, 'empty');
+      const hasAccounts = dashboardDataState.hasAccounts;
+      const emptyHint = hasAccounts ? t('empty_transactions_hint') : t('transaction_no_accounts');
+      const actionLabel = hasAccounts ? t('cta_add_transaction') : t('cta_add_account');
+      const action = hasAccounts ? 'open-add-transaction' : 'open-add-account';
       list.innerHTML = `
         <div class="table-empty-row">
-          <div class="muted">${escapeHtml(t('transactions_empty'))}</div>
+          <div class="table-empty-copy">
+            <div class="muted">${escapeHtml(t('transactions_empty'))} ${escapeHtml(emptyHint)}</div>
+            <div class="empty-state-actions">
+              <button type="button" class="ghost inline-cta inline-cta-primary" data-action="${escapeHtml(action)}">${escapeHtml(actionLabel)}</button>
+              <button type="button" class="ghost inline-cta inline-cta-secondary" data-action="open-import-history">${escapeHtml(t('get_started_import'))}</button>
+            </div>
+          </div>
         </div>
       `;
       if (lastReportSummary) {
@@ -4201,17 +4401,29 @@
     setPanelFeedback(selectors.walletsFeedback, '');
     dashboardDataState.walletsLoaded = true;
     if (!Array.isArray(wallets) || wallets.length === 0) {
+      walletListExpanded = false;
       list.classList.add('is-empty');
       dashboardDataState.hasWallets = false;
       setUiState(list, 'empty');
-      list.innerHTML = renderEmptyState(`${t('wallets_empty')} ${t('empty_wallets_hint')}`);
+      list.innerHTML = renderEmptyState(
+        `${t('wallets_empty')} ${t('empty_wallets_hint')}`,
+        t('cta_add_wallet'),
+        'open-add-wallet',
+        t('get_started_import'),
+        'open-import-history'
+      );
       updateGetStartedSection();
       return;
     }
+    if (!walletListExpanded || wallets.length <= 5) {
+      walletListExpanded = false;
+    }
+    const walletsToRender = walletListExpanded ? wallets : wallets.slice(0, 5);
+    const hiddenCount = Math.max(0, wallets.length - walletsToRender.length);
     list.classList.remove('is-empty');
     dashboardDataState.hasWallets = true;
     setUiState(list, 'ready');
-    list.innerHTML = wallets.map((wallet) => {
+    const walletRows = walletsToRender.map((wallet) => {
       const network = (wallet && wallet.network ? String(wallet.network) : '').toUpperCase();
       const networkLabel = walletNetworkLabel(network);
       const label = wallet && wallet.label ? escapeHtml(String(wallet.label)) : '';
@@ -4241,11 +4453,21 @@
               <small class="muted">${formatAssetAmount(balance, walletNativeAsset(network))}</small>
             </div>
             <span class="wallet-chevron" aria-hidden="true">›</span>
-            <button type="button" class="ghost wallet-remove menu-trigger" data-wallet-id="${safeWalletId}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">⋯</button>
+          <button type="button" class="ghost wallet-remove menu-trigger" data-wallet-id="${safeWalletId}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">⋯</button>
           </div>
         </div>
       `;
     }).join('');
+    const expandRow = wallets.length > 5
+      ? `
+        <div class="table-row wallets-expand-row">
+          <button type="button" class="ghost wallets-expand-toggle" data-action="toggle-wallets-expand">
+            ${escapeHtml(walletListExpanded ? t('wallets_show_less') : t('wallets_show_all', { value: hiddenCount }))}
+          </button>
+        </div>
+      `
+      : '';
+    list.innerHTML = `${walletRows}${expandRow}`;
 
     list.querySelectorAll('.wallet-open[data-wallet-id]').forEach((row) => {
       const activateWalletFromRow = () => {
@@ -4294,6 +4516,13 @@
         await loadWallets();
       });
     });
+    const expandBtn = list.querySelector('.wallets-expand-toggle');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', () => {
+        walletListExpanded = !walletListExpanded;
+        renderWallets(wallets);
+      });
+    }
     updateGetStartedSection();
   }
 
@@ -4796,10 +5025,12 @@
     try {
       Theme.apply();
       applyLanguage(currentLang);
+      bindTopNavState();
       bindLangToggle();
       initMotionController();
       initScrollReveal();
       bindActionCtas();
+      updateActionPriority();
       bindAnalysisQuickCard();
       bindTxPeriodButtons();
       bindAddAccountMenu();
@@ -4814,6 +5045,7 @@
       }
       renderProfile(res.data || {});
       bindLogout();
+      bindRefresh();
       bindBaseCurrencyMenu();
 
       await loadBalance();
