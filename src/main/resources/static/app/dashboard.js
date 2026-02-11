@@ -389,7 +389,7 @@
       analysis_detail_outflow_30d: 'Отток (30д)',
       analysis_detail_wallet_missing: 'Подключите кошелёк, чтобы открыть полный анализ.',
       analysis_detail_metrics_title: 'Ключевые метрики',
-      analysis_detail_series_title: 'Динамика портфеля',
+      analysis_detail_series_title: 'Аналитика портфеля',
       analysis_detail_series_live: 'Ряд данных ({value})',
       analysis_detail_series_estimated: 'Оценочный ряд ({value})',
       analysis_detail_allocation_title: 'Структура портфеля',
@@ -651,7 +651,7 @@
       analysis_detail_outflow_30d: 'Outflow (30d)',
       analysis_detail_wallet_missing: 'Connect a wallet to open full analysis.',
       analysis_detail_metrics_title: 'Key metrics',
-      analysis_detail_series_title: 'Portfolio series',
+      analysis_detail_series_title: 'Portfolio analytics',
       analysis_detail_series_live: 'Live series ({value})',
       analysis_detail_series_estimated: 'Estimated series ({value})',
       analysis_detail_allocation_title: 'Portfolio allocation',
@@ -2005,23 +2005,45 @@
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
-
-    const variance = seriesVarianceRatio(values);
-    const normalizedWindow = localizedWindowLabel(windowLabel || '30d');
-    const delta = values[values.length - 1] - values[0];
+    const width = Math.max(620, chart.clientWidth || 860);
+    const height = 296;
+    const padX = 12;
+    const padY = 34;
     const max = Math.max(...values);
     const min = Math.min(...values);
-    const sparkWidth = Math.max(180, Math.min(380, (chart.clientWidth || 320) - 12));
-    const spark = buildCompactSparkline(values, sparkWidth, 42, delta >= 0 ? '#4f86ff' : '#f17f85');
-    const note = variance < DETAIL_CHART_VARIANCE_THRESHOLD
-      ? t('no_meaningful_change_window', { value: normalizedWindow })
-      : `${sourceLabel || ''} · ${t('min')}: ${formatMoney(min, base)} · ${t('max')}: ${formatMoney(max, base)}`;
+    const span = max - min || Math.max(Math.abs(max), 1);
+    const minY = padY;
+    const maxY = height - padY;
+    const coords = values.map((value, idx) => {
+      const x = padX + ((width - (padX * 2)) * idx) / Math.max(values.length - 1, 1);
+      const yRaw = height - padY - ((value - min) / span) * (height - (padY * 2));
+      const y = Math.max(minY, Math.min(maxY, yRaw));
+      return { x, y };
+    });
+    const line = coords.map((point) => `${point.x},${point.y}`).join(' ');
+    const area = [
+      `${padX},${height - padY}`,
+      ...coords.map((point) => `${point.x},${point.y}`),
+      `${width - padX},${height - padY}`
+    ].join(' ');
+    const rising = values[values.length - 1] >= values[0];
+    const stroke = rising ? '#6ea7ff' : '#ff9f78';
+    const fillId = `analysisSeriesFill${Math.round(values.length * 17)}`;
 
-    chart.classList.add('is-compact-chart');
+    chart.classList.remove('is-compact-chart');
     chart.innerHTML = `
-      <div class="compact-chart-state compact-chart-state-tight">
-        ${spark}
-        <div class="muted compact-chart-note">${escapeHtml(note)}</div>
+      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" class="analysis-detail-series-svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="${stroke}" stop-opacity="0.22" />
+            <stop offset="100%" stop-color="${stroke}" stop-opacity="0.02" />
+          </linearGradient>
+        </defs>
+        <polygon points="${area}" fill="url(#${fillId})"></polygon>
+        <polyline points="${line}" fill="none" stroke="${stroke}" stroke-width="2.2"></polyline>
+      </svg>
+      <div class="analysis-detail-series-axis">
+        <span>${escapeHtml(t('min'))}: ${escapeHtml(formatMoney(min, base))} · ${escapeHtml(t('max'))}: ${escapeHtml(formatMoney(max, base))}</span>
       </div>
     `;
   }
