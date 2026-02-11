@@ -12,11 +12,14 @@ import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.MoneyConversionService;
+import com.myname.finguard.dashboard.events.UserDataChangedEvent;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +31,8 @@ public class AccountService {
     private final CurrencyService currencyService;
     private final AccountBalanceService accountBalanceService;
     private final MoneyConversionService moneyConversionService;
+    @Autowired(required = false)
+    private ApplicationEventPublisher eventPublisher;
 
     public AccountService(
             AccountRepository accountRepository,
@@ -116,6 +121,7 @@ public class AccountService {
         account.setArchived(false);
 
         Account saved = accountRepository.save(account);
+        publishUserDataChanged(userId);
         return toAccountBalance(saved);
     }
 
@@ -161,6 +167,7 @@ public class AccountService {
         Account updated = initialBalanceChanged && accountBalanceService != null
                 ? accountBalanceService.recalculateAndPersist(userId, accountId)
                 : account;
+        publishUserDataChanged(userId);
         return toAccountDto(updated);
     }
 
@@ -178,6 +185,7 @@ public class AccountService {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "Account has transactions and cannot be deleted", HttpStatus.BAD_REQUEST);
         }
         accountRepository.delete(account);
+        publishUserDataChanged(userId);
     }
 
     private UserBalanceResponse.AccountBalance toAccountBalance(Account account) {
@@ -207,5 +215,12 @@ public class AccountService {
 
     private ApiException unauthorized() {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
+    }
+
+    private void publishUserDataChanged(Long userId) {
+        if (eventPublisher == null || userId == null) {
+            return;
+        }
+        eventPublisher.publishEvent(new UserDataChangedEvent(userId));
     }
 }

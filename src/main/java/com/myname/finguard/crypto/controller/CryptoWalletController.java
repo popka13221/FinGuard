@@ -142,7 +142,7 @@ public class CryptoWalletController {
 
     @GetMapping("/{id}/analysis/series")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Wallet analysis series", description = "Returns portfolio time-series points for 7d/30d/90d ranges.")
+    @Operation(summary = "Wallet analysis series", description = "Returns portfolio time-series points for 7d/30d/90d/1y ranges.")
     @ApiResponse(responseCode = "200", description = "Analysis series returned")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<CryptoWalletAnalysisSeriesResponse> analysisSeries(

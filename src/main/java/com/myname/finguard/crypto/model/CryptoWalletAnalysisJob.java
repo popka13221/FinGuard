@@ -43,6 +43,10 @@ public class CryptoWalletAnalysisJob {
     @Column(nullable = false, length = 32)
     private CryptoWalletAnalysisStage stage;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "last_successful_stage", length = 32)
+    private CryptoWalletAnalysisStage lastSuccessfulStage;
+
     @Column(name = "progress_pct", nullable = false)
     private int progressPct;
 
@@ -113,6 +117,14 @@ public class CryptoWalletAnalysisJob {
 
     public void setStage(CryptoWalletAnalysisStage stage) {
         this.stage = stage;
+    }
+
+    public CryptoWalletAnalysisStage getLastSuccessfulStage() {
+        return lastSuccessfulStage;
+    }
+
+    public void setLastSuccessfulStage(CryptoWalletAnalysisStage lastSuccessfulStage) {
+        this.lastSuccessfulStage = lastSuccessfulStage;
     }
 
     public int getProgressPct() {

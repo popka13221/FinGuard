@@ -9,6 +9,8 @@ public record CryptoWalletAnalysisStatusResponse(
         Instant startedAt,
         Instant updatedAt,
         Instant finishedAt,
-        boolean partialReady
+        boolean partialReady,
+        Integer etaSeconds,
+        String lastSuccessfulStage
 ) {
 }

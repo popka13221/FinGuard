@@ -7,6 +7,7 @@ import com.myname.finguard.common.exception.ApiException;
 import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.CryptoRatesProvider;
 import com.myname.finguard.common.service.CryptoRatesService;
+import com.myname.finguard.dashboard.events.UserDataChangedEvent;
 import com.myname.finguard.crypto.dto.CreateCryptoWalletRequest;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
 import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
@@ -23,6 +24,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -45,6 +48,8 @@ public class CryptoWalletService {
     private final ArbitrumWalletPortfolioService arbitrumWalletPortfolioService;
     private final CryptoWalletAnalysisService cryptoWalletAnalysisService;
     private final int maxWalletsPerUser;
+    @Autowired(required = false)
+    private ApplicationEventPublisher eventPublisher;
 
     public CryptoWalletService(
             CryptoWalletRepository cryptoWalletRepository,
@@ -112,6 +117,7 @@ public class CryptoWalletService {
             } catch (Exception ex) {
                 log.debug("Failed to enqueue wallet analysis for walletId={}: {}", saved.getId(), ex.getMessage());
             }
+            publishUserDataChanged(userId);
             return new CryptoWalletDto(saved.getId(), saved.getNetwork().name(), saved.getLabel(), saved.getAddress(), null, null, user.getBaseCurrency(), null);
         } catch (DataIntegrityViolationException ex) {
             throw new ApiException(ErrorCodes.VALIDATION_GENERIC, "Wallet already exists", HttpStatus.BAD_REQUEST);
@@ -174,6 +180,7 @@ public class CryptoWalletService {
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST));
         cryptoWalletRepository.delete(wallet);
+        publishUserDataChanged(userId);
     }
 
     private CryptoWalletDto toDto(CryptoWallet wallet, String baseCurrency, Map<String, BigDecimal> prices) {
@@ -397,5 +404,12 @@ public class CryptoWalletService {
 
     private ApiException unauthorized() {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
+    }
+
+    private void publishUserDataChanged(Long userId) {
+        if (eventPublisher == null || userId == null) {
+            return;
+        }
+        eventPublisher.publishEvent(new UserDataChangedEvent(userId));
     }
 }

@@ -222,6 +222,8 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(payload.get("progressPct").asInt()).isBetween(0, 100);
         assertThat(payload.get("stage").asText()).isNotBlank();
         assertThat(payload.has("partialReady")).isTrue();
+        assertThat(payload.has("etaSeconds")).isTrue();
+        assertThat(payload.has("lastSuccessfulStage")).isTrue();
     }
 
     @Test
@@ -262,6 +264,7 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(finalPayload.get("status").asText()).isEqualTo("DONE");
         assertThat(finalPayload.get("progressPct").asInt()).isEqualTo(100);
         assertThat(finalPayload.get("partialReady").asBoolean()).isTrue();
+        assertThat(finalPayload.get("lastSuccessfulStage").asText()).isEqualTo("BUILD_INSIGHTS");
     }
 
     @Test
@@ -412,6 +415,16 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode payload7 = objectMapper.readTree(series7Response);
         assertThat(payload7.get("window").asText()).isEqualTo("7d");
         assertThat(payload7.get("points").size()).isEqualTo(7);
+
+        String series1yResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series?window=1y", walletId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode payload1y = objectMapper.readTree(series1yResponse);
+        assertThat(payload1y.get("window").asText()).isEqualTo("1y");
+        assertThat(payload1y.get("points").size()).isEqualTo(365);
     }
 
     @Test

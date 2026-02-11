@@ -15,6 +15,7 @@ import com.myname.finguard.transactions.dto.UpdateTransactionRequest;
 import com.myname.finguard.transactions.model.Transaction;
 import com.myname.finguard.transactions.model.TransactionType;
 import com.myname.finguard.transactions.repository.TransactionRepository;
+import com.myname.finguard.dashboard.events.UserDataChangedEvent;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +24,8 @@ import java.util.Objects;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 
 @Service
 public class TransactionService {
@@ -34,6 +37,8 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final CategoryService categoryService;
     private final AccountBalanceService accountBalanceService;
+    @Autowired(required = false)
+    private ApplicationEventPublisher eventPublisher;
 
     public TransactionService(
             TransactionRepository transactionRepository,
@@ -123,6 +128,7 @@ public class TransactionService {
 
         Transaction saved = transactionRepository.save(tx);
         recalcAccount(userId, account.getId());
+        publishUserDataChanged(userId);
         return toDto(saved);
     }
 
@@ -176,6 +182,7 @@ public class TransactionService {
         if (oldAccountId != null && !Objects.equals(oldAccountId, nextAccountId)) {
             recalcAccount(userId, oldAccountId);
         }
+        publishUserDataChanged(userId);
 
         return toDto(saved);
     }
@@ -192,6 +199,7 @@ public class TransactionService {
         Long accountId = tx.getAccount() == null ? null : tx.getAccount().getId();
         transactionRepository.delete(tx);
         recalcAccount(userId, accountId);
+        publishUserDataChanged(userId);
     }
 
     private Account requireActiveAccount(Long userId, Long accountId) {
@@ -262,5 +270,12 @@ public class TransactionService {
 
     private ApiException unauthorized() {
         return new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User is not authenticated", HttpStatus.UNAUTHORIZED);
+    }
+
+    private void publishUserDataChanged(Long userId) {
+        if (eventPublisher == null || userId == null) {
+            return;
+        }
+        eventPublisher.publishEvent(new UserDataChangedEvent(userId));
     }
 }

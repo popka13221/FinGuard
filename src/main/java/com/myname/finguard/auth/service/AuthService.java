@@ -24,12 +24,15 @@ import com.myname.finguard.common.service.CurrencyService;
 import com.myname.finguard.common.service.MailService;
 import com.myname.finguard.common.service.PwnedPasswordChecker;
 import com.myname.finguard.common.exception.ApiException;
+import com.myname.finguard.dashboard.events.UserDataChangedEvent;
 import com.myname.finguard.security.JwtTokenProvider;
 import com.myname.finguard.security.LoginAttemptService;
 import com.myname.finguard.security.RateLimiterService;
 import com.myname.finguard.security.TokenBlacklistService;
 import com.myname.finguard.security.OtpService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -82,6 +85,8 @@ public class AuthService {
     private final long registerIpWindowMs;
     private final int registerEmailLimit;
     private final long registerEmailWindowMs;
+    @Autowired(required = false)
+    private ApplicationEventPublisher eventPublisher;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -277,6 +282,9 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ErrorCodes.AUTH_INVALID_CREDENTIALS, "User not found", HttpStatus.UNAUTHORIZED));
         user.setBaseCurrency(normalizedCurrency);
         User saved = userRepository.save(user);
+        if (eventPublisher != null && saved.getId() != null) {
+            eventPublisher.publishEvent(new UserDataChangedEvent(saved.getId()));
+        }
         return new UserProfileResponse(
                 saved.getId(),
                 saved.getEmail(),
