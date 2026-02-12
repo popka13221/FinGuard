@@ -216,6 +216,8 @@
       no_data: 'Нет данных',
       updated: 'Обновлено',
       updated_at: 'Обновлено {value}',
+      overview_stale: 'Данные могут быть устаревшими',
+      overview_unavailable: 'Не удалось обновить обзор',
       source_pending: 'Ожидаем данные',
       source_live: 'Онлайн',
       source_demo: 'Оценка',
@@ -492,6 +494,8 @@
       no_data: 'No data',
       updated: 'Updated',
       updated_at: 'Updated {value}',
+      overview_stale: 'Data may be stale',
+      overview_unavailable: 'Failed to refresh overview',
       source_pending: 'Waiting for data',
       source_live: 'Live',
       source_demo: 'Estimated',
@@ -864,6 +868,12 @@
   let reportSummaryConfirmed = false;
   const txListLimit = 20;
   let dashboardOverview = null;
+  const heroStatsState = {
+    snapshot: null,
+    lastSuccessAt: '',
+    stale: false,
+    error: false
+  };
   let lastDashboardUpcoming = [];
   let balanceTrendWindow = '30d';
   let balanceTrendMetric = 'net';
@@ -1922,33 +1932,139 @@
     return currentLang === 'ru' ? `ETA ~${mins}м` : `ETA ~${mins}m`;
   }
 
-  function applyOverviewToHeroAndStats(overview) {
-    if (!overview) return;
+  function isOverviewSourceReliable(overview) {
+    return isReliableMetricsSource(overview && overview.dataFreshness);
+  }
+
+  function heroUpdatedText(overview, stale, error) {
+    const hero = overview && overview.hero ? overview.hero : {};
+    const updated = formatFxUpdated(hero.updatedAt || (overview && overview.asOf) || heroStatsState.lastSuccessAt);
+    if (!updated) {
+      return error ? t('overview_unavailable') : t('source_pending');
+    }
+    const parts = [t('updated_at', { value: updated })];
+    if (stale) {
+      parts.push(t('overview_stale'));
+    }
+    return parts.join(' · ');
+  }
+
+  function setHeroStatMoney(selector, value, currency, mode) {
+    const el = q(selector);
+    if (!el) return;
+    const numeric = toNumber(value);
+    if (!Number.isFinite(numeric)) {
+      el.textContent = '—';
+      setAnalysisValueState(selector, NaN);
+      return;
+    }
+    const formattedValue = mode === 'negative-absolute' ? -Math.abs(numeric) : numeric;
+    el.textContent = formatMoney(formattedValue, currency);
+    setAnalysisValueState(selector, formattedValue);
+  }
+
+  function setHeroStatsFromOverview(overview, options) {
+    if (!overview || typeof overview !== 'object') {
+      renderHeroStatsUnavailable();
+      return;
+    }
+    const opts = options && typeof options === 'object' ? options : {};
+    const stale = Boolean(opts.stale);
+    const error = Boolean(opts.error);
+    if (opts.persistSnapshot !== false) {
+      heroStatsState.snapshot = overview;
+      heroStatsState.lastSuccessAt = String(overview.asOf || (overview.hero && overview.hero.updatedAt) || '');
+    }
+    heroStatsState.stale = stale;
+    heroStatsState.error = error;
+
     const hero = overview.hero || {};
     const stats = overview.stats || {};
+    const reliable = isOverviewSourceReliable(overview);
+    const source = reliable ? DATA_SOURCE.live : DATA_SOURCE.pending;
+
     if (hero.baseCurrency) {
       baseCurrency = hero.baseCurrency;
       updateCurrencyLabels();
     }
-    const totalBalanceEl = q(selectors.totalBalance);
-    if (totalBalanceEl) {
-      const showNetWorth = hasMeaningfulNumber(hero.netWorth) || Boolean(hero.hasMeaningfulData);
-      totalBalanceEl.textContent = showNetWorth ? formatMoney(hero.netWorth, baseCurrency) : '—';
+    const currency = normalizeCurrency(hero.baseCurrency || baseCurrency) || 'USD';
+    const netWorth = reliable ? toNumber(hero.netWorth) : NaN;
+    const delta7d = reliable ? toNumber(hero.delta7dPct) : NaN;
+    const income = reliable ? toNumber(stats.income30d) : NaN;
+    const spend = reliable ? toNumber(stats.spend30d) : NaN;
+    const cashflow = reliable ? toNumber(stats.cashflow30d) : NaN;
+    const debt = reliable ? toNumber(stats.debt) : NaN;
+
+    setText(selectors.totalBalance, Number.isFinite(netWorth) ? formatMoney(netWorth, currency) : '—');
+    setHeroChangeValue(Number.isFinite(delta7d) ? delta7d : NaN);
+    setHeroStatMoney(selectors.analysisIncomeValue, income, currency, 'raw');
+    setHeroStatMoney(selectors.analysisExpenseValue, spend, currency, 'negative-absolute');
+    setHeroStatMoney(selectors.analysisOutflowValue, cashflow, currency, 'raw');
+    setHeroStatMoney(selectors.analysisRecurringValue, debt, currency, 'raw');
+
+    const debtEl = q(selectors.analysisRecurringValue);
+    const debtCard = q('#analysisCardRecurring');
+    const hasDebt = Number.isFinite(debt) && Math.abs(debt) > 0.000001;
+    if (debtEl) {
+      debtEl.classList.toggle('amount-negative', hasDebt);
     }
-    setHeroChangeValue(hasMeaningfulNumber(hero.delta7dPct) ? hero.delta7dPct : NaN);
-    const updated = formatFxUpdated(hero.updatedAt || overview.asOf);
-    setText(selectors.analysisUpdatedAt, updated ? t('updated_at', { value: updated }) : t('source_pending'));
+    if (debtCard) {
+      debtCard.hidden = !hasDebt;
+    }
+
+    setText(selectors.analysisUpdatedAt, heroUpdatedText(overview, stale, error));
+    setDataSourceBadge(selectors.analysisPortfolioSource, source);
+    setDataSourceBadge(selectors.analysisGrowthSource, source);
+    setDataSourceBadge(selectors.analysisOutflowSource, source);
+    setDataSourceBadge(selectors.analysisRecurringSource, hasDebt && reliable ? DATA_SOURCE.live : DATA_SOURCE.pending);
+
+    setAnalysisCardState('#analysisCardIncome', Number.isFinite(income) ? 'ready' : 'loading');
+    setAnalysisCardState('#analysisCardSpend', Number.isFinite(spend) ? 'ready' : 'loading');
+    setAnalysisCardState('#analysisCardOutflow', Number.isFinite(cashflow) ? 'ready' : 'loading');
+    setAnalysisCardState('#analysisCardRecurring', hasDebt ? 'ready' : 'loading');
 
     reportSummaryLoaded = true;
-    reportSummaryConfirmed = overview.dataFreshness === 'LIVE' || overview.dataFreshness === 'PARTIAL';
+    reportSummaryConfirmed = reliable;
     lastReportSummary = {
-      baseCurrency,
-      income: stats.income30d,
-      expense: stats.spend30d,
-      net: stats.cashflow30d,
-      synthetic: !reportSummaryConfirmed
+      baseCurrency: currency,
+      income: Number.isFinite(income) ? income : null,
+      expense: Number.isFinite(spend) ? spend : null,
+      net: Number.isFinite(cashflow) ? cashflow : null,
+      synthetic: !reliable
     };
     renderIncomeExpenseSummary(lastReportSummary);
+    updateAnalysisCardsVisibility();
+  }
+
+  function renderHeroStatsUnavailable() {
+    heroStatsState.stale = false;
+    heroStatsState.error = true;
+    setText(selectors.totalBalance, '—');
+    setHeroChangeValue(NaN);
+    setText(selectors.analysisIncomeValue, '—');
+    setText(selectors.analysisExpenseValue, '—');
+    setText(selectors.analysisOutflowValue, '—');
+    setText(selectors.analysisRecurringValue, '—');
+    setText(selectors.analysisUpdatedAt, t('overview_unavailable'));
+    setDataSourceBadge(selectors.analysisPortfolioSource, DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
+    setAnalysisCardState('#analysisCardIncome', 'loading');
+    setAnalysisCardState('#analysisCardSpend', 'loading');
+    setAnalysisCardState('#analysisCardOutflow', 'loading');
+    setAnalysisCardState('#analysisCardRecurring', 'loading');
+    const debtCard = q('#analysisCardRecurring');
+    if (debtCard) debtCard.hidden = true;
+    reportSummaryLoaded = false;
+    reportSummaryConfirmed = false;
+    lastReportSummary = null;
+    renderIncomeExpenseSummary(null);
+    updateAnalysisCardsVisibility();
+  }
+
+  function applyOverviewToHeroAndStats(overview) {
+    setHeroStatsFromOverview(overview, { stale: false, error: false, persistSnapshot: true });
   }
 
   function renderUpcomingPayments(items) {
@@ -2011,6 +2127,14 @@
   async function loadDashboardOverview() {
     const res = await Api.call('/api/dashboard/overview', 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (heroStatsState.snapshot) {
+        dashboardOverview = heroStatsState.snapshot;
+        setHeroStatsFromOverview(heroStatsState.snapshot, { stale: true, error: true, persistSnapshot: false });
+      } else {
+        dashboardOverview = null;
+        renderHeroStatsUnavailable();
+      }
+      refreshAnalysisPanel();
       return null;
     }
     const parsed = normalizeOverview(res.data);
@@ -3146,88 +3270,27 @@
 
   function renderAnalysisCards() {
     const model = buildAnalysisInsightsModel();
-    const hasProfileData = Boolean(dashboardDataState.hasAccounts || dashboardDataState.hasWallets || dashboardDataState.hasTransactions);
-    const updatedValue = formatFxUpdated(
-      (dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.updatedAt)
-      || (analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt))
-    );
-    const monthlyIncomeRaw = toNumber(lastReportSummary && lastReportSummary.income);
-    const monthlyExpenseRaw = toNumber(lastReportSummary && lastReportSummary.expense);
-    const monthlyCashflowRaw = toNumber(lastReportSummary && lastReportSummary.net);
-    const monthlyIncome = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyIncomeRaw : NaN;
-    const monthlyExpense = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyExpenseRaw : NaN;
-    const monthlyCashflow = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyCashflowRaw : NaN;
-    const debtValue = computeDebtInBase();
+    const snapshot = heroStatsState.snapshot;
+    const reliable = isOverviewSourceReliable(snapshot);
+    const stats = snapshot && snapshot.stats ? snapshot.stats : {};
+    const monthlyIncome = reliable ? toNumber(stats.income30d) : NaN;
+    const monthlyExpense = reliable ? toNumber(stats.spend30d) : NaN;
+    const monthlyCashflow = reliable ? toNumber(stats.cashflow30d) : NaN;
+    const debtValue = reliable ? toNumber(stats.debt) : NaN;
     const hasDebt = Number.isFinite(debtValue) && debtValue > 0.000001;
     const debtCard = q(selectors.analysisCardRecurring);
-
-    if (!hasProfileData) {
-      setAnalysisCardState(selectors.analysisCardPortfolio, 'loading');
-      setAnalysisCardState(selectors.analysisCardGrowth, 'loading');
-      setAnalysisCardState(selectors.analysisCardOutflow, 'loading');
-      setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
-      setHeroChangeValue(NaN);
-      setText(selectors.analysisPortfolioValue, '—');
-      setText(selectors.analysisGrowthValue, '—');
-      setText(selectors.analysisIncomeValue, '—');
-      setText(selectors.analysisExpenseValue, '—');
-      setText(selectors.analysisOutflowValue, '—');
-      setText(selectors.analysisRecurringValue, hasDebt ? formatMoney(debtValue, model.base) : '—');
-      setText(selectors.analysisPortfolioMeta, '');
-      setText(selectors.analysisGrowthMeta, '');
-      setText(selectors.analysisOutflowMeta, '');
-      setText(selectors.analysisRecurringMeta, '');
-      setDataSourceBadge(selectors.analysisPortfolioSource, DATA_SOURCE.pending);
-      setDataSourceBadge(selectors.analysisGrowthSource, DATA_SOURCE.pending);
-      setDataSourceBadge(selectors.analysisOutflowSource, DATA_SOURCE.pending);
-      setDataSourceBadge(selectors.analysisRecurringSource, DATA_SOURCE.pending);
-      if (debtCard) debtCard.hidden = !hasDebt;
-      renderAnalysisGrowthSpark([]);
-      updateAnalysisCardsVisibility();
-      return model;
-    }
 
     setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(monthlyIncome) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardGrowth, Number.isFinite(monthlyExpense) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(monthlyCashflow) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
-    setHeroChangeValue(model.growth);
-
-    animateMetricValue(selectors.analysisIncomeValue, monthlyIncome, (value) => formatMoney(value, model.base));
-    animateMetricValue(selectors.analysisExpenseValue, Number.isFinite(monthlyExpense) ? -Math.abs(monthlyExpense) : NaN, (value) => formatMoney(value, model.base));
-    animateMetricValue(selectors.analysisOutflowValue, monthlyCashflow, (value) => formatMoney(value, model.base));
-    if (hasDebt) {
-      animateMetricValue(selectors.analysisRecurringValue, debtValue, (value) => formatMoney(value, model.base));
-    } else {
-      setText(selectors.analysisRecurringValue, '—');
-    }
-
-    setAnalysisValueState(selectors.analysisIncomeValue, monthlyIncome);
-    setAnalysisValueState(selectors.analysisExpenseValue, Number.isFinite(monthlyExpense) ? -Math.abs(monthlyExpense) : NaN);
-    setAnalysisValueState(selectors.analysisOutflowValue, monthlyCashflow);
-    setAnalysisValueState(selectors.analysisRecurringValue, hasDebt ? -Math.abs(debtValue) : NaN);
     if (debtCard) debtCard.hidden = !hasDebt;
 
-    setText(selectors.analysisPortfolioMeta, '');
-    setText(selectors.analysisGrowthMeta, '');
-    setText(selectors.analysisOutflowMeta, '');
-    setText(selectors.analysisRecurringMeta, '');
-
     renderAnalysisGrowthSpark(model.growthSeries);
-
-    setDataSourceBadge(
-      selectors.analysisPortfolioSource,
-      Number.isFinite(monthlyIncome) ? DATA_SOURCE.live : DATA_SOURCE.pending
-    );
-    setDataSourceBadge(
-      selectors.analysisGrowthSource,
-      Number.isFinite(monthlyExpense) ? DATA_SOURCE.live : DATA_SOURCE.pending
-    );
+    setDataSourceBadge(selectors.analysisPortfolioSource, Number.isFinite(monthlyIncome) ? DATA_SOURCE.live : DATA_SOURCE.pending);
+    setDataSourceBadge(selectors.analysisGrowthSource, Number.isFinite(monthlyExpense) ? DATA_SOURCE.live : DATA_SOURCE.pending);
     setDataSourceBadge(selectors.analysisOutflowSource, Number.isFinite(monthlyCashflow) ? DATA_SOURCE.live : DATA_SOURCE.pending);
     setDataSourceBadge(selectors.analysisRecurringSource, hasDebt ? DATA_SOURCE.live : DATA_SOURCE.pending);
-    if (updatedValue) {
-      setText(selectors.analysisUpdatedAt, t('updated_at', { value: updatedValue }));
-    }
     updateAnalysisCardsVisibility();
     return model;
   }
@@ -3242,7 +3305,6 @@
     const progressTextEl = q(selectors.analysisProgressText);
     const progressBar = q(selectors.analysisProgressBar);
     const progressFill = q(selectors.analysisProgressFill);
-    const updatedEl = q(selectors.analysisUpdatedAt);
     const cta = q(selectors.analysisEmptyCta);
     if (!panel || !title || !subtitle || !stageEl || !progressTextEl || !progressFill) return;
 
@@ -3258,7 +3320,6 @@
       if (progressWrap) progressWrap.hidden = true;
       if (progressBar) progressBar.setAttribute('aria-valuenow', '0');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
-      if (updatedEl) updatedEl.textContent = t('source_pending');
       if (cta) cta.hidden = false;
       return;
     }
@@ -3313,11 +3374,6 @@
       progressWrap.hidden = !showProgress;
     }
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(progressPct));
-    if (updatedEl) {
-      const updatedText = updatedValue ? t('updated_at', { value: updatedValue }) : t('source_pending');
-      const parts = [updatedText, etaHint, lastSuccessfulStage].filter(Boolean);
-      updatedEl.textContent = parts.join(' · ');
-    }
   }
 
   function refreshAnalysisPanel() {
@@ -3376,7 +3432,6 @@
   function renderBalance(summary, conversion, cryptoTotalInBase) {
     const totals = Array.isArray(summary.totalsByCurrency) ? summary.totalsByCurrency : [];
     const accounts = Array.isArray(summary.accounts) ? summary.accounts : [];
-    const totalBalanceEl = document.querySelector(selectors.totalBalance);
     const creditEl = document.querySelector(selectors.creditValue);
     const totalsLineEl = document.querySelector(selectors.totalsByCurrency);
     const base = normalizeCurrency(baseCurrency) || 'USD';
@@ -3390,26 +3445,6 @@
       }
       return acc + value;
     }, 0);
-
-    const cryptoValue = toNumber(cryptoTotalInBase);
-    const cryptoOk = Number.isFinite(cryptoValue);
-    if (totalBalanceEl && !dashboardOverview) {
-      if (!totals.length) {
-        totalBalanceEl.textContent = formatMoney(cryptoOk ? cryptoValue : 0, base);
-      } else if (totalOk) {
-        totalBalanceEl.textContent = formatMoney(totalInBase + (cryptoOk ? cryptoValue : 0), base);
-      } else {
-        const baseItem = totals.find((item) => normalizeCurrency(item?.currency) === base);
-        const fallback = baseItem || totals[0];
-        const fallbackCurrency = normalizeCurrency(fallback?.currency) || base;
-        const fallbackAmount = toNumber(fallback?.total);
-        const canAddCrypto = cryptoOk && normalizeCurrency(fallbackCurrency) === base;
-        totalBalanceEl.textContent = formatMoney(
-          (Number.isFinite(fallbackAmount) ? fallbackAmount : 0) + (canAddCrypto ? cryptoValue : 0),
-          fallbackCurrency
-        );
-      }
-    }
 
     let creditOk = true;
     const creditInBase = accounts.reduce((acc, account) => {
@@ -3461,20 +3496,13 @@
   function renderIncomeExpenseSummary(summary) {
     const netEl = document.querySelector(selectors.incomeExpenseNet);
     const detailsEl = document.querySelector(selectors.incomeExpenseDetails);
-    const incomeEl = document.querySelector(selectors.analysisIncomeValue);
-    const expenseEl = document.querySelector(selectors.analysisExpenseValue);
-    const cashflowEl = document.querySelector(selectors.analysisOutflowValue);
-    const debtEl = document.querySelector(selectors.analysisRecurringValue);
-    const debtCard = document.querySelector(selectors.analysisCardRecurring);
-    if (!netEl && !detailsEl && !incomeEl && !expenseEl && !cashflowEl && !debtEl) return;
+    if (!netEl && !detailsEl) return;
 
     const base = normalizeCurrency(summary && summary.baseCurrency ? summary.baseCurrency : baseCurrency) || 'USD';
     const income = toNumber(summary && summary.income);
     const expense = toNumber(summary && summary.expense);
     const net = toNumber(summary && summary.net);
     const confirmedMetrics = hasConfirmedTransactionMetrics(summary);
-    const debt = computeDebtInBase();
-    const hasDebt = Number.isFinite(debt) && debt > 0.000001;
 
     if (netEl) {
       netEl.textContent = Number.isFinite(net) ? formatMoney(net, base) : '—';
@@ -3483,27 +3511,6 @@
       detailsEl.textContent = confirmedMetrics && Number.isFinite(income) && Number.isFinite(expense)
         ? `${t('income_label')}: ${formatMoney(income, base)} · ${t('expense_label')}: ${formatMoney(expense, base)}`
         : t('income_expense_details');
-    }
-    if (incomeEl) {
-      incomeEl.textContent = confirmedMetrics && Number.isFinite(income) ? formatMoney(income, base) : '—';
-    }
-    if (expenseEl) {
-      expenseEl.textContent = confirmedMetrics && Number.isFinite(expense) ? formatMoney(-Math.abs(expense), base) : '—';
-      expenseEl.classList.toggle('amount-negative', confirmedMetrics && Number.isFinite(expense));
-    }
-    if (cashflowEl) {
-      cashflowEl.textContent = confirmedMetrics && Number.isFinite(net) ? formatMoney(net, base) : '—';
-      cashflowEl.classList.remove('amount-positive', 'amount-negative');
-      if (confirmedMetrics && Number.isFinite(net)) {
-        cashflowEl.classList.add(net >= 0 ? 'amount-positive' : 'amount-negative');
-      }
-    }
-    if (debtEl) {
-      debtEl.textContent = hasDebt ? formatMoney(debt, base) : '—';
-      debtEl.classList.toggle('amount-negative', hasDebt);
-    }
-    if (debtCard) {
-      debtCard.hidden = !hasDebt;
     }
     updateAnalysisMiniCard(null);
     if (analysisState.detailOpen) {
@@ -4741,10 +4748,6 @@
       setUiState(list, 'loading');
       list.innerHTML = renderSkeletonList(3);
     }
-    const totalBalanceEl = document.querySelector(selectors.totalBalance);
-    if (totalBalanceEl && !dashboardOverview) {
-      totalBalanceEl.textContent = t('loading');
-    }
     showBalanceError('');
     setPanelFeedback(selectors.accountsFeedback, '');
 
@@ -4783,9 +4786,6 @@
     lastBalanceConversion = conversion;
     renderAccountsList(accounts, conversion);
     rerenderBalanceSnapshot();
-    if (!dashboardOverview) {
-      pulseElement(selectors.totalBalance);
-    }
   }
 
   async function loadFxRates() {

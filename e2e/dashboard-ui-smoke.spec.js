@@ -1,6 +1,47 @@
 const { test, expect } = require('@playwright/test');
 const { uniqueEmail, registerAndLogin } = require('./helpers');
 
+function overviewFixture(overrides = {}) {
+  return {
+    asOf: '2026-02-12T15:40:00Z',
+    dataFreshness: 'LIVE',
+    hero: {
+      netWorth: 3210.45,
+      baseCurrency: 'USD',
+      delta7dPct: 1.23,
+      updatedAt: '2026-02-12T15:40:00Z',
+      hasMeaningfulData: true
+    },
+    stats: {
+      income30d: 1200.1,
+      spend30d: 410.2,
+      cashflow30d: 789.9,
+      debt: 99.5,
+      hasMeaningfulData: true
+    },
+    getStarted: {
+      visible: false,
+      connectAccount: false,
+      addTransaction: false,
+      importHistory: false
+    },
+    transactionsPreview: [],
+    walletsPreview: [],
+    upcomingPaymentsPreview: [],
+    walletIntelligence: {
+      activeWalletId: null,
+      status: 'DONE',
+      progressPct: 100,
+      partialReady: true,
+      updatedAt: '2026-02-12T15:40:00Z',
+      source: 'LIVE',
+      etaSeconds: 0,
+      lastSuccessfulStage: 'DONE'
+    },
+    ...overrides
+  };
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('finguard:lang', 'en');
@@ -61,6 +102,132 @@ test('overview endpoint is authoritative for hero/stats on initial load', async 
   await expect(page.getByTestId('hero')).toBeVisible();
   await expect.poll(() => overviewHits, { timeout: 15000 }).toBeGreaterThan(0);
   expect(reportSummaryHits).toBe(0);
+});
+
+test('hero/stats keep last snapshot and show stale marker when overview refresh fails', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-overview-stale');
+  let overviewHits = 0;
+  const payload = overviewFixture();
+  await page.route('**/api/dashboard/overview**', async (route) => {
+    overviewHits += 1;
+    if (overviewHits === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(payload)
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: '500000', message: 'boom' })
+    });
+  });
+
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+  await expect(page.getByTestId('hero')).toBeVisible();
+  await expect.poll(() => overviewHits, { timeout: 15000 }).toBeGreaterThan(0);
+
+  const before = {
+    balance: ((await page.locator('#totalBalance').textContent()) || '').trim(),
+    change: ((await page.locator('#analysisHeroChange').textContent()) || '').trim(),
+    income: ((await page.locator('#analysisIncomeValue').textContent()) || '').trim(),
+    spend: ((await page.locator('#analysisExpenseValue').textContent()) || '').trim(),
+    cashflow: ((await page.locator('#analysisOutflowValue').textContent()) || '').trim()
+  };
+
+  await page.click('#btn-refresh');
+  await expect.poll(() => overviewHits, { timeout: 15000 }).toBeGreaterThan(1);
+
+  await expect(page.locator('#totalBalance')).toHaveText(before.balance);
+  await expect(page.locator('#analysisHeroChange')).toHaveText(before.change);
+  await expect(page.locator('#analysisIncomeValue')).toHaveText(before.income);
+  await expect(page.locator('#analysisExpenseValue')).toHaveText(before.spend);
+  await expect(page.locator('#analysisOutflowValue')).toHaveText(before.cashflow);
+  await expect(page.locator('#analysisUpdatedAt')).toContainText('Data may be stale');
+});
+
+test('secondary endpoints do not overwrite hero/stats snapshot values', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-overview-no-overwrite');
+  const payload = overviewFixture({
+    hero: {
+      netWorth: 8888.88,
+      baseCurrency: 'USD',
+      delta7dPct: -0.75,
+      updatedAt: '2026-02-12T16:02:00Z',
+      hasMeaningfulData: true
+    },
+    stats: {
+      income30d: 7000,
+      spend30d: 1400,
+      cashflow30d: 5600,
+      debt: 0,
+      hasMeaningfulData: true
+    }
+  });
+  let overviewHits = 0;
+  let balanceHits = 0;
+  let cashFlowHits = 0;
+  let transactionsHits = 0;
+
+  await page.route('**/api/dashboard/overview**', async (route) => {
+    overviewHits += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(payload)
+    });
+  });
+  page.on('request', (request) => {
+    const url = request.url();
+    if (url.includes('/api/accounts/balance')) balanceHits += 1;
+    if (url.includes('/api/reports/cash-flow')) cashFlowHits += 1;
+    if (url.includes('/api/transactions?')) transactionsHits += 1;
+  });
+
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+  await expect(page.getByTestId('hero')).toBeVisible();
+  await expect.poll(() => overviewHits, { timeout: 15000 }).toBeGreaterThan(0);
+
+  const before = {
+    balance: ((await page.locator('#totalBalance').textContent()) || '').trim(),
+    change: ((await page.locator('#analysisHeroChange').textContent()) || '').trim(),
+    income: ((await page.locator('#analysisIncomeValue').textContent()) || '').trim(),
+    spend: ((await page.locator('#analysisExpenseValue').textContent()) || '').trim(),
+    cashflow: ((await page.locator('#analysisOutflowValue').textContent()) || '').trim()
+  };
+
+  await expect.poll(() => balanceHits, { timeout: 15000 }).toBeGreaterThan(0);
+  await expect.poll(() => cashFlowHits, { timeout: 15000 }).toBeGreaterThan(0);
+  await expect.poll(() => transactionsHits, { timeout: 15000 }).toBeGreaterThan(0);
+  await page.waitForTimeout(300);
+
+  await expect(page.locator('#totalBalance')).toHaveText(before.balance);
+  await expect(page.locator('#analysisHeroChange')).toHaveText(before.change);
+  await expect(page.locator('#analysisIncomeValue')).toHaveText(before.income);
+  await expect(page.locator('#analysisExpenseValue')).toHaveText(before.spend);
+  await expect(page.locator('#analysisOutflowValue')).toHaveText(before.cashflow);
+});
+
+test('empty first-fail overview shows unavailable placeholders without fallback numbers', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-overview-empty-fail');
+  await page.route('**/api/dashboard/overview**', async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: '500000', message: 'boom' })
+    });
+  });
+
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+  await expect(page.getByTestId('hero')).toBeVisible();
+  await expect(page.locator('#totalBalance')).toHaveText('—');
+  await expect(page.locator('#analysisHeroChange')).toHaveText('—');
+  await expect(page.locator('#analysisIncomeValue')).toHaveText('—');
+  await expect(page.locator('#analysisExpenseValue')).toHaveText('—');
+  await expect(page.locator('#analysisOutflowValue')).toHaveText('—');
+  await expect(page.locator('#analysisUpdatedAt')).toContainText('Failed to refresh overview');
 });
 
 test('top nav remains visible while scrolling', async ({ page }) => {
