@@ -26,10 +26,6 @@ import com.myname.finguard.crypto.repository.WalletDailySnapshotRepository;
 import com.myname.finguard.crypto.repository.WalletInsightRepository;
 import com.myname.finguard.crypto.repository.WalletTxEnrichedRepository;
 import com.myname.finguard.crypto.repository.WalletTxRawRepository;
-import com.myname.finguard.reports.dto.ReportPeriod;
-import com.myname.finguard.reports.dto.ReportSummaryResponse;
-import com.myname.finguard.reports.dto.ReportsByCategoryResponse;
-import com.myname.finguard.reports.service.ReportsService;
 import com.myname.finguard.transactions.model.Transaction;
 import com.myname.finguard.transactions.model.TransactionType;
 import com.myname.finguard.transactions.repository.TransactionRepository;
@@ -73,7 +69,6 @@ public class CryptoWalletAnalysisService {
     private final CryptoWalletRepository cryptoWalletRepository;
     private final CryptoWalletAnalysisJobRepository jobRepository;
     private final CryptoWalletService cryptoWalletService;
-    private final ReportsService reportsService;
     private final TransactionRepository transactionRepository;
     private final WalletTxRawRepository walletTxRawRepository;
     private final WalletTxEnrichedRepository walletTxEnrichedRepository;
@@ -85,12 +80,12 @@ public class CryptoWalletAnalysisService {
     private final long simulatedDelayMs;
     private final int backfillDays;
     private final long stalledJobAfterMs;
+    private final boolean transactionFallbackEnabled;
 
     public CryptoWalletAnalysisService(
             CryptoWalletRepository cryptoWalletRepository,
             CryptoWalletAnalysisJobRepository jobRepository,
             @Lazy CryptoWalletService cryptoWalletService,
-            ReportsService reportsService,
             TransactionRepository transactionRepository,
             WalletTxRawRepository walletTxRawRepository,
             WalletTxEnrichedRepository walletTxEnrichedRepository,
@@ -101,12 +96,12 @@ public class CryptoWalletAnalysisService {
             ObjectProvider<MeterRegistry> meterRegistry,
             @Value("${app.crypto.analysis.simulated-delay-ms:300}") long simulatedDelayMs,
             @Value("${app.crypto.analysis.backfill-days:" + DEFAULT_BACKFILL_DAYS + "}") int backfillDays,
-            @Value("${app.crypto.analysis.stalled-after-ms:120000}") long stalledJobAfterMs
+            @Value("${app.crypto.analysis.stalled-after-ms:120000}") long stalledJobAfterMs,
+            @Value("${app.crypto.analysis.transaction-fallback-enabled:false}") boolean transactionFallbackEnabled
     ) {
         this.cryptoWalletRepository = cryptoWalletRepository;
         this.jobRepository = jobRepository;
         this.cryptoWalletService = cryptoWalletService;
-        this.reportsService = reportsService;
         this.transactionRepository = transactionRepository;
         this.walletTxRawRepository = walletTxRawRepository;
         this.walletTxEnrichedRepository = walletTxEnrichedRepository;
@@ -118,6 +113,7 @@ public class CryptoWalletAnalysisService {
         this.simulatedDelayMs = Math.max(0, simulatedDelayMs);
         this.backfillDays = Math.max(30, backfillDays);
         this.stalledJobAfterMs = Math.max(30_000, stalledJobAfterMs);
+        this.transactionFallbackEnabled = transactionFallbackEnabled;
     }
 
     public void enqueueInitialAnalysis(CryptoWallet wallet) {
@@ -315,7 +311,10 @@ public class CryptoWalletAnalysisService {
 
             failedAt = CryptoWalletAnalysisStage.FETCH_TX;
             updateJob(jobId, CryptoWalletAnalysisJobStatus.RUNNING, CryptoWalletAnalysisStage.FETCH_TX, 8, null, true, false, job.getLastSuccessfulStage());
-            int rawCount = ingestRawTransactions(userId, wallet, baseCurrency, now);
+            int rawCount = ingestRawWalletEvents(wallet, baseCurrency, now);
+            if (rawCount == 0 && transactionFallbackEnabled) {
+                rawCount += ingestRawTransactionsFallback(userId, wallet, baseCurrency, now);
+            }
             sleepStep();
 
             failedAt = CryptoWalletAnalysisStage.ENRICH_TX;
@@ -420,7 +419,13 @@ public class CryptoWalletAnalysisService {
         jobRepository.save(job);
     }
 
-    private int ingestRawTransactions(Long userId, CryptoWallet wallet, String baseCurrency, Instant now) {
+    private int ingestRawWalletEvents(CryptoWallet wallet, String baseCurrency, Instant now) {
+        // Live wallet events provider is not wired yet in this iteration.
+        // Returning 0 keeps pipeline deterministic; optional transaction fallback remains emergency-only.
+        return 0;
+    }
+
+    private int ingestRawTransactionsFallback(Long userId, CryptoWallet wallet, String baseCurrency, Instant now) {
         Instant from = now.minus(backfillDays, ChronoUnit.DAYS);
         List<Transaction> rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, from, now);
         if (rows.isEmpty()) {
@@ -498,6 +503,7 @@ public class CryptoWalletAnalysisService {
         Instant from = now.minus(backfillDays, ChronoUnit.DAYS);
         List<WalletTxEnriched> enrichedRows = walletTxEnrichedRepository.findByWalletIdAndTxAtBetweenOrderByTxAtAsc(walletId, from, now);
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId).orElseThrow(this::walletNotFound);
+        String snapshotSource = resolveSnapshotSource(enrichedRows);
 
         Map<LocalDate, BigDecimal> inflowUsdByDay = new HashMap<>();
         Map<LocalDate, BigDecimal> outflowUsdByDay = new HashMap<>();
@@ -539,7 +545,7 @@ public class CryptoWalletAnalysisService {
             snapshot.setNetFlowUsd(net);
             snapshot.setPnlUsd(net);
             snapshot.setPnlPct(BigDecimal.ZERO.setScale(6, RoundingMode.HALF_UP));
-            snapshot.setSource(enrichedRows.isEmpty() ? "ESTIMATED" : "PARTIAL");
+            snapshot.setSource(snapshotSource);
             snapshots.put(day, snapshot);
 
             running = running.subtract(net);
@@ -549,6 +555,32 @@ public class CryptoWalletAnalysisService {
             walletDailySnapshotRepository.save(snapshot);
         }
         return snapshots.size();
+    }
+
+    private String resolveSnapshotSource(List<WalletTxEnriched> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return "ESTIMATED";
+        }
+        boolean hasFallback = false;
+        boolean hasReliable = false;
+        for (WalletTxEnriched row : rows) {
+            String source = normalizeInsightSource(row == null ? null : row.getSource());
+            if ("ESTIMATED".equals(source)) {
+                return "ESTIMATED";
+            }
+            if ("TRANSACTION_FALLBACK".equals(source)) {
+                hasFallback = true;
+                continue;
+            }
+            hasReliable = true;
+        }
+        if (hasFallback && !hasReliable) {
+            return "TRANSACTION_FALLBACK";
+        }
+        if (hasReliable) {
+            return "PARTIAL";
+        }
+        return "ESTIMATED";
     }
 
     private int persistInsights(Long userId, Long walletId, String baseCurrency, RecurringCandidate recurring, Instant now) {
@@ -575,61 +607,61 @@ public class CryptoWalletAnalysisService {
             topOutflow.setLabel(firstNonBlank(maxOut.getCounterpartyNormalized(), "Outflow"));
             topOutflow.setConfidence(BigDecimal.valueOf(0.88).setScale(4, RoundingMode.HALF_UP));
             topOutflow.setSynthetic(false);
-            topOutflow.setSource("PARTIAL");
-        } else {
-            topOutflow.setValue(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-            topOutflow.setUnit("BASE_CURRENCY");
-            topOutflow.setCurrency(baseCurrency);
-            topOutflow.setConfidence(BigDecimal.valueOf(0.35).setScale(4, RoundingMode.HALF_UP));
-            topOutflow.setSynthetic(true);
-            topOutflow.setSource("ESTIMATED");
+            topOutflow.setSource(normalizeInsightSource(maxOut.getSource()));
+            topOutflow.setAsOf(now);
+            items.add(topOutflow);
         }
-        topOutflow.setAsOf(now);
-        items.add(topOutflow);
 
-        WalletInsight recurringInsight = new WalletInsight();
-        recurringInsight.setInsightType("RECURRING_SPEND");
-        recurringInsight.setTitle("Recurring spend");
-        recurringInsight.setValue(scaleAmount(recurring.amount(), 2));
-        recurringInsight.setUnit("BASE_CURRENCY");
-        recurringInsight.setCurrency(baseCurrency);
-        recurringInsight.setLabel(recurring.label());
-        recurringInsight.setAvgAmount(scaleAmount(recurring.avgAmount(), 2));
-        recurringInsight.setNextEstimatedChargeAt(recurring.nextEstimatedChargeAt());
-        recurringInsight.setConfidence(scaleAmount(recurring.confidence(), 4));
-        recurringInsight.setSynthetic(recurring.synthetic());
-        recurringInsight.setSource(recurring.synthetic() ? "ESTIMATED" : "PARTIAL");
-        recurringInsight.setAsOf(now);
-        items.add(recurringInsight);
+        if (recurring != null
+                && recurring.amount() != null
+                && recurring.amount().signum() > 0
+                && recurring.confidence() != null
+                && recurring.confidence().compareTo(BigDecimal.ZERO) > 0) {
+            WalletInsight recurringInsight = new WalletInsight();
+            recurringInsight.setInsightType("RECURRING_SPEND");
+            recurringInsight.setTitle("Recurring spend");
+            recurringInsight.setValue(scaleAmount(recurring.amount(), 2));
+            recurringInsight.setUnit("BASE_CURRENCY");
+            recurringInsight.setCurrency(baseCurrency);
+            recurringInsight.setLabel(recurring.label());
+            recurringInsight.setAvgAmount(scaleAmount(recurring.avgAmount(), 2));
+            recurringInsight.setNextEstimatedChargeAt(recurring.nextEstimatedChargeAt());
+            recurringInsight.setConfidence(scaleAmount(recurring.confidence(), 4));
+            recurringInsight.setSynthetic(false);
+            recurringInsight.setSource(normalizeInsightSource(recurring.source()));
+            recurringInsight.setAsOf(now);
+            items.add(recurringInsight);
+        }
 
         BigDecimal trend = computeWalletTrend30dPct(walletId, baseCurrency);
-        WalletInsight trendInsight = new WalletInsight();
-        trendInsight.setInsightType("PORTFOLIO_30D_CHANGE");
-        trendInsight.setTitle("30d portfolio trend");
-        trendInsight.setValue(scaleAmount(trend, 2));
-        trendInsight.setUnit("PERCENT");
-        trendInsight.setCurrency(null);
-        trendInsight.setConfidence(BigDecimal.valueOf(0.72).setScale(4, RoundingMode.HALF_UP));
-        trendInsight.setSynthetic(trend == null);
-        trendInsight.setSource(trend == null ? "ESTIMATED" : "PARTIAL");
-        trendInsight.setAsOf(now);
-        if (trendInsight.getValue() == null) {
-            trendInsight.setValue(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        if (trend != null) {
+            WalletInsight trendInsight = new WalletInsight();
+            trendInsight.setInsightType("PORTFOLIO_30D_CHANGE");
+            trendInsight.setTitle("30d portfolio trend");
+            trendInsight.setValue(scaleAmount(trend, 2));
+            trendInsight.setUnit("PERCENT");
+            trendInsight.setCurrency(null);
+            trendInsight.setConfidence(BigDecimal.valueOf(0.72).setScale(4, RoundingMode.HALF_UP));
+            trendInsight.setSynthetic(false);
+            trendInsight.setSource(normalizeInsightSource(resolveSummaryMetricsSource(walletId, now)));
+            trendInsight.setAsOf(now);
+            items.add(trendInsight);
         }
-        items.add(trendInsight);
 
         AnomalyResult anomalies = detectAnomaliesFromEnriched(walletId);
-        WalletInsight anomaliesInsight = new WalletInsight();
-        anomaliesInsight.setInsightType("ANOMALOUS_OUTFLOWS");
-        anomaliesInsight.setTitle("Anomalous outflows");
-        anomaliesInsight.setValue(scaleAmount(anomalies.count(), 0));
-        anomaliesInsight.setUnit("COUNT");
-        anomaliesInsight.setCurrency(null);
-        anomaliesInsight.setConfidence(scaleAmount(anomalies.confidence(), 4));
-        anomaliesInsight.setSynthetic(anomalies.synthetic());
-        anomaliesInsight.setSource(anomalies.synthetic() ? "ESTIMATED" : "PARTIAL");
-        anomaliesInsight.setAsOf(now);
-        items.add(anomaliesInsight);
+        if (anomalies != null && anomalies.count() != null && anomalies.count().signum() > 0) {
+            WalletInsight anomaliesInsight = new WalletInsight();
+            anomaliesInsight.setInsightType("ANOMALOUS_OUTFLOWS");
+            anomaliesInsight.setTitle("Anomalous outflows");
+            anomaliesInsight.setValue(scaleAmount(anomalies.count(), 0));
+            anomaliesInsight.setUnit("COUNT");
+            anomaliesInsight.setCurrency(null);
+            anomaliesInsight.setConfidence(scaleAmount(anomalies.confidence(), 4));
+            anomaliesInsight.setSynthetic(false);
+            anomaliesInsight.setSource(normalizeInsightSource(anomalies.source()));
+            anomaliesInsight.setAsOf(now);
+            items.add(anomaliesInsight);
+        }
 
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId).orElseThrow(this::walletNotFound);
         for (WalletInsight item : items) {
@@ -678,7 +710,10 @@ public class CryptoWalletAnalysisService {
         }
         Map<String, WalletInsight> latestByType = new LinkedHashMap<>();
         for (WalletInsight item : persisted) {
-            if (item == null || item.getInsightType() == null || latestByType.containsKey(item.getInsightType())) {
+            if (item == null
+                    || item.getInsightType() == null
+                    || item.isSynthetic()
+                    || latestByType.containsKey(item.getInsightType())) {
                 continue;
             }
             latestByType.put(item.getInsightType(), item);
@@ -703,90 +738,6 @@ public class CryptoWalletAnalysisService {
         return result;
     }
 
-    private List<CryptoWalletAnalysisInsightItem> buildFallbackInsights(Long userId, Long walletId, String baseCurrency, Instant now) {
-        List<CryptoWalletAnalysisInsightItem> insights = new ArrayList<>();
-
-        ReportsByCategoryResponse byCategory = reportsService.byCategory(userId, ReportPeriod.MONTH, null, null, 1);
-        if (byCategory != null && byCategory.expenses() != null && !byCategory.expenses().isEmpty()) {
-            ReportsByCategoryResponse.CategoryTotal top = byCategory.expenses().get(0);
-            insights.add(new CryptoWalletAnalysisInsightItem(
-                    "TOP_OUTFLOW",
-                    "Top outflow",
-                    safe(top.total()),
-                    "BASE_CURRENCY",
-                    baseCurrency,
-                    top.categoryName(),
-                    null,
-                    null,
-                    BigDecimal.valueOf(0.92),
-                    now,
-                    false
-            ));
-        } else {
-            insights.add(new CryptoWalletAnalysisInsightItem(
-                    "TOP_OUTFLOW",
-                    "Top outflow",
-                    BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                    "BASE_CURRENCY",
-                    baseCurrency,
-                    null,
-                    null,
-                    null,
-                    BigDecimal.valueOf(0.35),
-                    now,
-                    true
-            ));
-        }
-
-        RecurringCandidate recurring = detectRecurring(userId, baseCurrency, now);
-        insights.add(new CryptoWalletAnalysisInsightItem(
-                "RECURRING_SPEND",
-                "Recurring spend",
-                recurring.amount(),
-                "BASE_CURRENCY",
-                baseCurrency,
-                recurring.label(),
-                recurring.avgAmount(),
-                recurring.nextEstimatedChargeAt(),
-                recurring.confidence(),
-                now,
-                recurring.synthetic()
-        ));
-
-        BigDecimal trendPct = computeWalletTrend30dPct(walletId, baseCurrency);
-        boolean trendSynthetic = trendPct == null;
-        insights.add(new CryptoWalletAnalysisInsightItem(
-                "PORTFOLIO_30D_CHANGE",
-                "30d portfolio trend",
-                trendSynthetic ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP) : scalePct(trendPct),
-                "PERCENT",
-                null,
-                null,
-                null,
-                null,
-                trendSynthetic ? BigDecimal.valueOf(0.40) : BigDecimal.valueOf(0.72),
-                now,
-                trendSynthetic
-        ));
-
-        AnomalyResult anomaly = detectAnomaliesFromEnriched(walletId);
-        insights.add(new CryptoWalletAnalysisInsightItem(
-                "ANOMALOUS_OUTFLOWS",
-                "Anomalous outflows",
-                anomaly.count(),
-                "COUNT",
-                null,
-                null,
-                null,
-                null,
-                anomaly.confidence(),
-                now,
-                anomaly.synthetic()
-        ));
-
-        return insights;
-    }
-
     private RecurringCandidate detectRecurringFromEnriched(Long walletId, String baseCurrency, Instant now) {
         Instant from = now.minus(120, ChronoUnit.DAYS);
         List<WalletTxEnriched> rows = walletTxEnrichedRepository.findByWalletIdAndTxAtBetweenOrderByTxAtAsc(walletId, from, now);
@@ -798,14 +749,7 @@ public class CryptoWalletAnalysisService {
                         && tx.getAmountUsd().signum() > 0)
                 .toList();
         if (expenses.size() < 3) {
-            return new RecurringCandidate(
-                    BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                    BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                    null,
-                    BigDecimal.valueOf(0.34),
-                    now.plus(14, ChronoUnit.DAYS),
-                    true
-            );
+            return null;
         }
 
         Map<String, List<WalletTxEnriched>> groups = new HashMap<>();
@@ -866,6 +810,7 @@ public class CryptoWalletAnalysisService {
                             + (spread.compareTo(BigDecimal.valueOf(0.10)) <= 0 ? 0.08 : 0))
                     .min(BigDecimal.valueOf(0.98))
                     .setScale(2, RoundingMode.HALF_UP);
+            String source = resolveRecurringSource(group);
 
             RecurringCandidate candidate = new RecurringCandidate(
                     monthlyBase,
@@ -873,24 +818,29 @@ public class CryptoWalletAnalysisService {
                     prettifyRecurringLabel(entry.getKey()),
                     confidence,
                     nextEstimatedChargeAt,
-                    false
+                    source
             );
             if (best == null || candidate.amount().compareTo(best.amount()) > 0) {
                 best = candidate;
             }
         }
 
-        if (best != null) {
-            return best;
+        return best;
+    }
+
+    private String resolveRecurringSource(List<WalletTxEnriched> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return "ESTIMATED";
         }
-        return new RecurringCandidate(
-                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                null,
-                BigDecimal.valueOf(0.34),
-                now.plus(14, ChronoUnit.DAYS),
-                true
-        );
+        boolean allFallback = true;
+        for (WalletTxEnriched row : rows) {
+            String source = normalizeInsightSource(row == null ? null : row.getSource());
+            if (!"TRANSACTION_FALLBACK".equals(source)) {
+                allFallback = false;
+                break;
+            }
+        }
+        return allFallback ? "TRANSACTION_FALLBACK" : "PARTIAL";
     }
 
     private AnomalyResult detectAnomaliesFromEnriched(Long walletId) {
@@ -904,14 +854,15 @@ public class CryptoWalletAnalysisService {
                 .filter(value -> value.signum() > 0)
                 .toList();
         if (outflows.isEmpty()) {
-            return new AnomalyResult(BigDecimal.ZERO.setScale(0, RoundingMode.HALF_UP), BigDecimal.valueOf(0.30), true);
+            return null;
         }
 
         BigDecimal avg = average(outflows);
         BigDecimal threshold = avg.multiply(BigDecimal.valueOf(2.2)).max(BigDecimal.valueOf(50));
         long count = outflows.stream().filter(v -> v.compareTo(threshold) > 0).count();
         BigDecimal confidence = BigDecimal.valueOf(Math.min(0.95, 0.55 + count * 0.12)).setScale(2, RoundingMode.HALF_UP);
-        return new AnomalyResult(BigDecimal.valueOf(count).setScale(0, RoundingMode.HALF_UP), confidence, false);
+        String source = resolveRecurringSource(rows);
+        return new AnomalyResult(BigDecimal.valueOf(count).setScale(0, RoundingMode.HALF_UP), confidence, source);
     }
 
     private BigDecimal computeWalletTrend30dPct(Long walletId, String baseCurrency) {
@@ -919,6 +870,12 @@ public class CryptoWalletAnalysisService {
         WalletDailySnapshot current = walletDailySnapshotRepository.findTopByWalletIdAndDayBeforeOrderByDayDesc(walletId, today.plusDays(1)).orElse(null);
         WalletDailySnapshot previous = walletDailySnapshotRepository.findTopByWalletIdAndDayBeforeOrderByDayDesc(walletId, today.minusDays(29)).orElse(null);
         if (current == null || previous == null || current.getPortfolioUsd() == null || previous.getPortfolioUsd() == null) {
+            return null;
+        }
+        if ("ESTIMATED".equalsIgnoreCase(current.getSource())
+                || "ESTIMATED".equalsIgnoreCase(previous.getSource())
+                || "TRANSACTION_FALLBACK".equalsIgnoreCase(current.getSource())
+                || "TRANSACTION_FALLBACK".equalsIgnoreCase(previous.getSource())) {
             return null;
         }
 
@@ -979,17 +936,27 @@ public class CryptoWalletAnalysisService {
         if (rows.isEmpty()) {
             return "ESTIMATED";
         }
+        boolean hasLive = false;
         boolean hasPartial = false;
         for (WalletDailySnapshot row : rows) {
-            String source = row == null ? "" : String.valueOf(row.getSource()).toUpperCase(Locale.ROOT);
-            if (source.isBlank() || "ESTIMATED".equals(source) || "TRANSACTION_FALLBACK".equals(source)) {
+            String source = normalizeInsightSource(row == null ? null : row.getSource());
+            if ("ESTIMATED".equals(source) || "TRANSACTION_FALLBACK".equals(source)) {
                 return "ESTIMATED";
             }
             if ("PARTIAL".equals(source)) {
                 hasPartial = true;
+                continue;
             }
+            if ("LIVE".equals(source)) {
+                hasLive = true;
+                continue;
+            }
+            return "ESTIMATED";
         }
-        return hasPartial ? "PARTIAL" : "LIVE";
+        if (hasPartial) {
+            return "PARTIAL";
+        }
+        return hasLive ? "LIVE" : "ESTIMATED";
     }
 
     private BigDecimal currentWalletUsd(Long userId, Long walletId, String baseCurrency) {
@@ -1091,125 +1058,6 @@ public class CryptoWalletAnalysisService {
         return stage.ordinal() >= pivot.ordinal();
     }
 
-    private BigDecimal computeDeltaPct(Long userId, Instant from, Instant to, BigDecimal totalValue) {
-        ReportSummaryResponse summary = reportsService.summary(userId, null, from, to);
-        BigDecimal net = safe(summary == null ? null : summary.net());
-        BigDecimal denominator = totalValue.signum() > 0 ? totalValue : absOrOne(net);
-        if (denominator.signum() == 0) {
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        }
-        return net.multiply(BigDecimal.valueOf(100)).divide(denominator, 2, RoundingMode.HALF_UP);
-    }
-
-    private RecurringCandidate detectRecurring(Long userId, String baseCurrency, Instant now) {
-        Instant from = now.minus(120, ChronoUnit.DAYS);
-        List<Transaction> rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, from, now);
-        if (rows.isEmpty()) {
-            return syntheticRecurring(userId, baseCurrency, now);
-        }
-
-        List<Transaction> expenses = rows.stream()
-                .filter(tx -> tx != null
-                        && tx.getType() == TransactionType.EXPENSE
-                        && tx.getTransactionDate() != null
-                        && tx.getAmount() != null
-                        && tx.getAmount().signum() > 0)
-                .toList();
-        if (expenses.size() < 3) {
-            return syntheticRecurring(userId, baseCurrency, now);
-        }
-
-        ConversionContext conversion = conversionContext(baseCurrency, expenses.stream().map(Transaction::getCurrency).toList());
-        Map<String, List<Transaction>> groups = new HashMap<>();
-        for (Transaction tx : expenses) {
-            String key = normalizeRecurringKey(tx.getDescription());
-            groups.computeIfAbsent(key, ignored -> new ArrayList<>()).add(tx);
-        }
-
-        RecurringCandidate best = null;
-        for (Map.Entry<String, List<Transaction>> entry : groups.entrySet()) {
-            List<Transaction> group = entry.getValue();
-            if (group.size() < 3) {
-                continue;
-            }
-            group.sort(Comparator.comparing(Transaction::getTransactionDate));
-
-            int cadenceHits = 0;
-            long cadenceDaysSum = 0;
-            int cadenceSamples = 0;
-            for (int i = 1; i < group.size(); i += 1) {
-                long days = Duration.between(group.get(i - 1).getTransactionDate(), group.get(i).getTransactionDate()).toDays();
-                if (days >= 26 && days <= 33) {
-                    cadenceHits += 1;
-                    cadenceDaysSum += days;
-                    cadenceSamples += 1;
-                } else if (days >= 6 && days <= 8) {
-                    cadenceHits += 1;
-                    cadenceDaysSum += days;
-                    cadenceSamples += 1;
-                }
-            }
-            if (cadenceHits < 2) {
-                continue;
-            }
-
-            List<BigDecimal> amounts = group.stream()
-                    .map(tx -> convertToBase(tx.getAmount(), tx.getCurrency(), conversion))
-                    .toList();
-            BigDecimal avg = average(amounts);
-            if (avg.signum() <= 0) {
-                continue;
-            }
-            BigDecimal max = amounts.stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-            BigDecimal min = amounts.stream().min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
-            BigDecimal spread = max.subtract(min).divide(avg, 4, RoundingMode.HALF_UP);
-            if (spread.compareTo(BigDecimal.valueOf(0.20)) > 0) {
-                continue;
-            }
-
-            long cadenceDays = cadenceSamples <= 0 ? 30 : Math.max(1, Math.round((double) cadenceDaysSum / cadenceSamples));
-            BigDecimal monthlyMultiplier = BigDecimal.valueOf(30.0 / cadenceDays);
-            BigDecimal monthlyAmount = avg.multiply(monthlyMultiplier).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal avgAmount = avg.setScale(2, RoundingMode.HALF_UP);
-            Instant lastCharge = group.get(group.size() - 1).getTransactionDate();
-            Instant nextEstimatedChargeAt = lastCharge == null ? now.plus(14, ChronoUnit.DAYS) : lastCharge.plus(cadenceDays, ChronoUnit.DAYS);
-            BigDecimal confidence = BigDecimal.valueOf(0.62
-                            + Math.min(group.size(), 6) * 0.03
-                            + Math.min(cadenceHits, 3) * 0.05
-                            + (spread.compareTo(BigDecimal.valueOf(0.10)) <= 0 ? 0.08 : 0))
-                    .min(BigDecimal.valueOf(0.98))
-                    .setScale(2, RoundingMode.HALF_UP);
-
-            RecurringCandidate candidate = new RecurringCandidate(
-                    monthlyAmount,
-                    avgAmount,
-                    prettifyRecurringLabel(entry.getKey()),
-                    confidence,
-                    nextEstimatedChargeAt,
-                    false
-            );
-            if (best == null || candidate.amount().compareTo(best.amount()) > 0) {
-                best = candidate;
-            }
-        }
-
-        return best == null ? syntheticRecurring(userId, baseCurrency, now) : best;
-    }
-
-    private RecurringCandidate syntheticRecurring(Long userId, String baseCurrency, Instant now) {
-        ReportSummaryResponse month = reportsService.summary(userId, ReportPeriod.MONTH, null, null);
-        BigDecimal expense = safe(month == null ? null : month.expense());
-        BigDecimal estimate = expense.multiply(BigDecimal.valueOf(0.26)).setScale(2, RoundingMode.HALF_UP);
-        return new RecurringCandidate(
-                estimate,
-                estimate,
-                null,
-                BigDecimal.valueOf(0.34),
-                now.plus(14, ChronoUnit.DAYS),
-                true
-        );
-    }
-
     private int parseWindowDays(String window) {
         String normalized = window == null ? "" : window.trim().toLowerCase(Locale.ROOT);
         return switch (normalized) {
@@ -1236,51 +1084,6 @@ public class CryptoWalletAnalysisService {
             return "1y";
         }
         return "30d";
-    }
-
-    private CryptoWalletAnalysisSeriesResponse buildSyntheticSeries(
-            String baseCurrency,
-            int windowDays,
-            BigDecimal total,
-            Instant now,
-            Long walletId
-    ) {
-        int scale = scaleFor(baseCurrency);
-        long seed = Math.abs((walletId == null ? 0L : walletId) * 1103515245L + 12345L);
-        BigDecimal safeTotal = safe(total).max(BigDecimal.ZERO);
-        BigDecimal anchor = safeTotal.signum() > 0 ? safeTotal : BigDecimal.valueOf(100).setScale(scale, RoundingMode.HALF_UP);
-        BigDecimal floor = anchor.multiply(BigDecimal.valueOf(0.88)).setScale(scale, RoundingMode.HALF_UP);
-        BigDecimal ceiling = anchor.multiply(BigDecimal.valueOf(1.14)).setScale(scale, RoundingMode.HALF_UP);
-
-        LocalDate endDay = LocalDate.ofInstant(now, ZoneOffset.UTC);
-        LocalDate startDay = endDay.minusDays(windowDays - 1L);
-        List<CryptoWalletAnalysisSeriesResponse.SeriesPoint> points = new ArrayList<>(windowDays);
-        for (int i = 0; i < windowDays; i += 1) {
-            LocalDate day = startDay.plusDays(i);
-            seed = (seed * 1664525L + 1013904223L) & 0x7fffffff;
-            double noise = ((seed % 1000L) / 1000.0) - 0.5;
-            double wave = Math.sin((i / Math.max(1.0, windowDays - 1)) * Math.PI * 2.0) * 0.035;
-            BigDecimal drift = anchor.multiply(BigDecimal.valueOf(wave + noise * 0.02));
-            BigDecimal trend = anchor.multiply(BigDecimal.valueOf(i * 0.0016));
-            BigDecimal value = anchor.add(trend).add(drift);
-            if (value.compareTo(floor) < 0) {
-                value = floor;
-            }
-            if (value.compareTo(ceiling) > 0) {
-                value = ceiling;
-            }
-            points.add(new CryptoWalletAnalysisSeriesResponse.SeriesPoint(
-                    day.atStartOfDay().toInstant(ZoneOffset.UTC),
-                    value.setScale(scale, RoundingMode.HALF_UP)
-            ));
-        }
-        if (!points.isEmpty()) {
-            points.set(points.size() - 1, new CryptoWalletAnalysisSeriesResponse.SeriesPoint(
-                    endDay.atStartOfDay().toInstant(ZoneOffset.UTC),
-                    safeTotal.setScale(scale, RoundingMode.HALF_UP)
-            ));
-        }
-        return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizeWindow(windowDays), points, now, true);
     }
 
     private CryptoWallet requireWallet(Long userId, Long walletId) {
@@ -1487,6 +1290,20 @@ public class CryptoWalletAnalysisService {
         return code.trim().toUpperCase(Locale.ROOT);
     }
 
+    private String normalizeInsightSource(String source) {
+        String normalized = source == null ? "" : source.trim().toUpperCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return "ESTIMATED";
+        }
+        if ("LIVE".equals(normalized)
+                || "PARTIAL".equals(normalized)
+                || "ESTIMATED".equals(normalized)
+                || "TRANSACTION_FALLBACK".equals(normalized)) {
+            return normalized;
+        }
+        return "ESTIMATED";
+    }
+
     private String firstNonBlank(String... values) {
         if (values == null) {
             return null;
@@ -1524,11 +1341,11 @@ public class CryptoWalletAnalysisService {
             String label,
             BigDecimal confidence,
             Instant nextEstimatedChargeAt,
-            boolean synthetic
+            String source
     ) {
     }
 
-    private record AnomalyResult(BigDecimal count, BigDecimal confidence, boolean synthetic) {
+    private record AnomalyResult(BigDecimal count, BigDecimal confidence, String source) {
     }
 
     private record ConversionContext(

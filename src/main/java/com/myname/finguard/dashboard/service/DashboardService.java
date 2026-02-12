@@ -116,7 +116,7 @@ public class DashboardService {
                 continue;
             }
             String title = firstNonBlank(insight.getLabel(), insight.getTitle(), "Recurring");
-            String source = insight.isSynthetic() ? "ESTIMATED" : "LIVE";
+            String source = normalizeInsightSource(insight.getSource(), insight.isSynthetic());
             items.add(new UpcomingPaymentDto(
                     "insight-" + insight.getId(),
                     title,
@@ -355,6 +355,17 @@ public class DashboardService {
             }
         }
         return "";
+    }
+
+    private String normalizeInsightSource(String source, boolean synthetic) {
+        String normalized = source == null ? "" : source.trim().toUpperCase(Locale.ROOT);
+        if (synthetic) {
+            return "ESTIMATED";
+        }
+        if ("LIVE".equals(normalized) || "PARTIAL".equals(normalized) || "TRANSACTION_FALLBACK".equals(normalized)) {
+            return normalized;
+        }
+        return "ESTIMATED";
     }
 
     private record CachedOverview(DashboardOverviewResponse response, long cachedAtMs) {

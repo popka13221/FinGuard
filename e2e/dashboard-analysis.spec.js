@@ -137,6 +137,12 @@ test('wallet analysis strip resets after wallet deletion', async ({ page }) => {
   await expect(wallet).toBeVisible();
 
   await wallet.locator('button.wallet-remove').click();
+  await expect(page.getByTestId('wallet-actions-menu')).toBeVisible();
+  page.once('dialog', (dialog) => {
+    expect(dialog.type()).toBe('confirm');
+    dialog.accept();
+  });
+  await page.getByTestId('wallet-action-delete').click();
   await expect(page.locator('#walletsList')).toContainText('No wallets added yet.');
   await expect(page.locator('#getStartedSection')).toBeVisible();
 });

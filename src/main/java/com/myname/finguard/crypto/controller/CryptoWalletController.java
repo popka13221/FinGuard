@@ -11,6 +11,7 @@ import com.myname.finguard.crypto.dto.CryptoWalletAnalysisStatusResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletAnalysisSummaryResponse;
 import com.myname.finguard.crypto.dto.CryptoWalletDto;
 import com.myname.finguard.crypto.dto.CryptoWalletSummaryResponse;
+import com.myname.finguard.crypto.dto.UpdateCryptoWalletRequest;
 import com.myname.finguard.crypto.service.CryptoWalletAnalysisService;
 import com.myname.finguard.crypto.service.CryptoWalletService;
 import com.myname.finguard.security.RateLimiterService;
@@ -29,6 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -188,6 +190,26 @@ public class CryptoWalletController {
         enforceRateLimit("wallets:delete:user:" + userId, walletsDeleteLimit, walletsDeleteWindowMs);
         cryptoWalletService.deleteWallet(userId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update wallet", description = "Updates a watch-only wallet metadata for the current user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Wallet updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<CryptoWalletDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCryptoWalletRequest request,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        enforceRateLimit("wallets:create:user:" + userId, walletsCreateLimit, walletsCreateWindowMs);
+        CryptoWalletDto updated = cryptoWalletService.updateWalletLabel(userId, id, request == null ? null : request.label());
+        return ResponseEntity.ok(updated);
     }
 
     private void enforceRateLimit(String key, int limit, long windowMs) {

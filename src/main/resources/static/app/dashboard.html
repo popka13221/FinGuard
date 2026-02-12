@@ -472,6 +472,32 @@
     </div>
   </div>
 
+  <div
+    id="wallet-actions-menu"
+    class="wallet-actions-menu"
+    role="menu"
+    aria-hidden="true"
+    hidden
+    data-testid="wallet-actions-menu"
+  >
+    <button
+      type="button"
+      class="wallet-actions-item"
+      data-wallet-menu-action="rename"
+      role="menuitem"
+      data-testid="wallet-action-rename"
+      data-i18n="wallet_rename"
+    >Переименовать</button>
+    <button
+      type="button"
+      class="wallet-actions-item wallet-actions-item-danger"
+      data-wallet-menu-action="delete"
+      role="menuitem"
+      data-testid="wallet-action-delete"
+      data-i18n="wallet_remove"
+    >Удалить</button>
+  </div>
+
   <script src="/app/theme.js"></script>
   <script src="/app/api.js"></script>
   <script src="/app/dashboard.js"></script>

@@ -8464,6 +8464,56 @@ body.dashboard[data-ui-version="v6"] .wallet-item .wallet-remove {
   z-index: 3 !important;
 }
 
+body.dashboard[data-ui-version="v6"] .wallet-actions-menu {
+  position: fixed !important;
+  min-width: 180px !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(133, 166, 220, 0.28) !important;
+  background: rgba(12, 24, 44, 0.96) !important;
+  box-shadow: 0 18px 42px rgba(2, 8, 18, 0.44) !important;
+  backdrop-filter: blur(14px) saturate(128%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(128%) !important;
+  z-index: 340 !important;
+}
+
+body.dashboard[data-ui-version="v6"] .wallet-actions-menu[hidden] {
+  display: none !important;
+}
+
+body.dashboard[data-ui-version="v6"] .wallet-actions-item {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: rgba(224, 236, 255, 0.9) !important;
+  text-align: left !important;
+  font-size: 0.88rem !important;
+  font-weight: 510 !important;
+  line-height: 1.25 !important;
+  cursor: pointer !important;
+  transition: background 0.18s ease, color 0.18s ease !important;
+}
+
+body.dashboard[data-ui-version="v6"] .wallet-actions-item:hover,
+body.dashboard[data-ui-version="v6"] .wallet-actions-item:focus-visible {
+  background: rgba(130, 164, 224, 0.14) !important;
+  color: rgba(240, 246, 255, 0.98) !important;
+  outline: none !important;
+}
+
+body.dashboard[data-ui-version="v6"] .wallet-actions-item-danger {
+  color: rgba(255, 186, 186, 0.92) !important;
+}
+
+body.dashboard[data-ui-version="v6"] .wallet-actions-item-danger:hover,
+body.dashboard[data-ui-version="v6"] .wallet-actions-item-danger:focus-visible {
+  background: rgba(255, 92, 92, 0.14) !important;
+  color: rgba(255, 214, 214, 0.98) !important;
+}
+
 body.dashboard[data-ui-version="v6"] .markets-link[hidden] {
   display: none !important;
 }

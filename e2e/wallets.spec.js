@@ -30,6 +30,25 @@ test('add and remove crypto wallet (watch-only)', async ({ page }) => {
   await expect(wallet).toContainText('USD');
 
   await wallet.locator('button.wallet-remove').click();
+  const actionsMenu = page.getByTestId('wallet-actions-menu');
+  await expect(actionsMenu).toBeVisible();
+
+  page.once('dialog', (dialog) => {
+    expect(dialog.type()).toBe('prompt');
+    dialog.accept('Ledger Prime');
+  });
+  await page.getByTestId('wallet-action-rename').click();
+
+  const renamedWallet = page.locator('#walletsList .wallet-item', { hasText: 'Ledger Prime' });
+  await expect(renamedWallet).toBeVisible();
+
+  await renamedWallet.locator('button.wallet-remove').click();
+  await expect(actionsMenu).toBeVisible();
+  page.once('dialog', (dialog) => {
+    expect(dialog.type()).toBe('confirm');
+    dialog.accept();
+  });
+  await page.getByTestId('wallet-action-delete').click();
 
   await expect(page.locator('#walletsList')).toContainText('No wallets added yet.');
 

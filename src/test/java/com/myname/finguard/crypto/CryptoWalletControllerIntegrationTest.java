@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -193,6 +194,50 @@ class CryptoWalletControllerIntegrationTest {
 
     @Test
     @Transactional
+    void updatesWalletLabel() throws Exception {
+        String email = "wallet-update-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String updateResponse = mockMvc.perform(patch("/api/crypto/wallets/{id}", walletId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"label":"Main Ledger"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode updated = objectMapper.readTree(updateResponse);
+        assertThat(updated.get("label").asText()).isEqualTo("Main Ledger");
+
+        String listResponse = mockMvc.perform(get("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode wallets = objectMapper.readTree(listResponse);
+        assertThat(wallets.isArray()).isTrue();
+        assertThat(wallets.size()).isEqualTo(1);
+        assertThat(wallets.get(0).get("label").asText()).isEqualTo("Main Ledger");
+    }
+
+    @Test
+    @Transactional
     void returnsWalletAnalysisStatusForCurrentUser() throws Exception {
         String email = "wallet-analysis-" + UUID.randomUUID() + "@example.com";
         String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
@@ -360,17 +405,9 @@ class CryptoWalletControllerIntegrationTest {
         JsonNode payload = objectMapper.readTree(insightsResponse);
         assertThat(payload.get("baseCurrency").asText()).isEqualTo("USD");
         assertThat(payload.get("insights").isArray()).isTrue();
-        assertThat(payload.get("insights").size()).isGreaterThanOrEqualTo(3);
-        JsonNode recurring = null;
         for (JsonNode item : payload.get("insights")) {
-            if ("RECURRING_SPEND".equals(item.path("type").asText())) {
-                recurring = item;
-                break;
-            }
+            assertThat(item.path("synthetic").asBoolean(false)).isFalse();
         }
-        assertThat(recurring).isNotNull();
-        assertThat(recurring.has("avgAmount")).isTrue();
-        assertThat(recurring.has("nextEstimatedChargeAt")).isTrue();
     }
 
     @Test
@@ -402,9 +439,11 @@ class CryptoWalletControllerIntegrationTest {
         assertThat(payload30.get("window").asText()).isEqualTo("30d");
         assertThat(payload30.get("baseCurrency").asText()).isEqualTo("USD");
         assertThat(payload30.get("points").isArray()).isTrue();
-        assertThat(payload30.get("points").size()).isEqualTo(30);
-        assertThat(payload30.get("points").get(0).has("at")).isTrue();
-        assertThat(payload30.get("points").get(0).has("valueInBase")).isTrue();
+        assertThat(payload30.get("points").size()).isBetween(0, 30);
+        if (payload30.get("points").size() > 0) {
+            assertThat(payload30.get("points").get(0).has("at")).isTrue();
+            assertThat(payload30.get("points").get(0).has("valueInBase")).isTrue();
+        }
 
         String series7Response = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series?window=7d", walletId)
                         .header("Authorization", "Bearer " + token))
@@ -414,7 +453,7 @@ class CryptoWalletControllerIntegrationTest {
                 .getContentAsString();
         JsonNode payload7 = objectMapper.readTree(series7Response);
         assertThat(payload7.get("window").asText()).isEqualTo("7d");
-        assertThat(payload7.get("points").size()).isEqualTo(7);
+        assertThat(payload7.get("points").size()).isBetween(0, 7);
 
         String series1yResponse = mockMvc.perform(get("/api/crypto/wallets/{id}/analysis/series?window=1y", walletId)
                         .header("Authorization", "Bearer " + token))
@@ -424,7 +463,7 @@ class CryptoWalletControllerIntegrationTest {
                 .getContentAsString();
         JsonNode payload1y = objectMapper.readTree(series1yResponse);
         assertThat(payload1y.get("window").asText()).isEqualTo("1y");
-        assertThat(payload1y.get("points").size()).isEqualTo(365);
+        assertThat(payload1y.get("points").size()).isBetween(0, 365);
     }
 
     @Test

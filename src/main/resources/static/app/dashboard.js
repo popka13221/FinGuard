@@ -70,6 +70,7 @@
     addTransactionError: '#addTransactionError',
     walletsList: '#walletsList',
     walletsFeedback: '#walletsFeedback',
+    walletActionsMenu: '#wallet-actions-menu',
     addWalletBtn: '#btn-add-wallet',
     addWalletOverlay: '#add-wallet-overlay',
     addWalletMenu: '#add-wallet-menu',
@@ -312,6 +313,11 @@
       copy: 'Копировать',
       open_explorer: 'Эксплорер',
       back_to_dashboard: 'Назад',
+      wallet_actions: 'Действия',
+      wallet_rename: 'Переименовать',
+      wallet_rename_prompt: 'Новое название кошелька',
+      wallet_rename_empty: 'Введите название кошелька.',
+      wallet_rename_failed: 'Не удалось обновить название кошелька.',
       wallet_remove: 'Удалить',
       wallet_delete_confirm: 'Удалить кошелёк “{name}”?',
       wallet_delete_failed: 'Не удалось удалить кошелёк.',
@@ -576,6 +582,11 @@
       copy: 'Copy',
       open_explorer: 'Explorer',
       back_to_dashboard: 'Back',
+      wallet_actions: 'Actions',
+      wallet_rename: 'Rename',
+      wallet_rename_prompt: 'New wallet name',
+      wallet_rename_empty: 'Enter wallet name.',
+      wallet_rename_failed: 'Failed to update wallet name.',
       wallet_remove: 'Remove',
       wallet_delete_confirm: 'Delete wallet “{name}”?',
       wallet_delete_failed: 'Failed to delete wallet.',
@@ -892,6 +903,10 @@
     hasTransactions: false
   };
   let walletListExpanded = false;
+  const walletActionsState = {
+    wallet: null,
+    trigger: null
+  };
 
   function q(selector) {
     return document.querySelector(selector);
@@ -1125,6 +1140,172 @@
         loadReports();
       }
     });
+  }
+
+  function getWalletActionsMenu() {
+    return q(selectors.walletActionsMenu);
+  }
+
+  function closeWalletActionsMenu(restoreFocus = false) {
+    const menu = getWalletActionsMenu();
+    if (!menu) return;
+    const trigger = walletActionsState.trigger;
+    menu.hidden = true;
+    menu.setAttribute('aria-hidden', 'true');
+    menu.style.left = '';
+    menu.style.top = '';
+    walletActionsState.wallet = null;
+    walletActionsState.trigger = null;
+    if (restoreFocus && trigger && typeof trigger.focus === 'function') {
+      trigger.focus();
+    }
+  }
+
+  function positionWalletActionsMenu(trigger, menu) {
+    if (!trigger || !menu) return;
+    const triggerRect = trigger.getBoundingClientRect();
+    const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
+    const spacing = 8;
+    const menuW = menu.offsetWidth || 180;
+    const menuH = menu.offsetHeight || 96;
+    let left = triggerRect.right - menuW;
+    if (left < spacing) left = spacing;
+    if (left + menuW > viewportW - spacing) {
+      left = Math.max(spacing, viewportW - menuW - spacing);
+    }
+    let top = triggerRect.bottom + spacing;
+    if (top + menuH > viewportH - spacing) {
+      top = Math.max(spacing, triggerRect.top - menuH - spacing);
+    }
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+  }
+
+  function openWalletActionsMenu(trigger, wallet) {
+    const menu = getWalletActionsMenu();
+    if (!menu || !trigger || !wallet) return;
+    const sameTarget = !menu.hidden
+      && walletActionsState.wallet
+      && walletActionsState.trigger === trigger
+      && String(walletActionsState.wallet.id || '') === String(wallet.id || '');
+    if (sameTarget) {
+      closeWalletActionsMenu(true);
+      return;
+    }
+    walletActionsState.wallet = wallet;
+    walletActionsState.trigger = trigger;
+    menu.hidden = false;
+    menu.setAttribute('aria-hidden', 'false');
+    positionWalletActionsMenu(trigger, menu);
+    const firstItem = menu.querySelector('[data-wallet-menu-action]');
+    if (firstItem instanceof HTMLElement) {
+      firstItem.focus();
+    }
+  }
+
+  async function renameWallet(wallet) {
+    if (!wallet || wallet.id == null) return;
+    const current = wallet.label ? String(wallet.label) : '';
+    const nextRaw = window.prompt(t('wallet_rename_prompt'), current);
+    if (nextRaw == null) return;
+    const next = String(nextRaw).trim();
+    if (!next) {
+      setPanelFeedback(selectors.walletsFeedback, t('wallet_rename_empty'), true);
+      return;
+    }
+    const res = await Api.call(
+      `/api/crypto/wallets/${encodeURIComponent(String(wallet.id))}`,
+      'PATCH',
+      { label: next },
+      true
+    );
+    if (!res.ok) {
+      const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
+      setPanelFeedback(selectors.walletsFeedback, message || t('wallet_rename_failed'), true);
+      return;
+    }
+    setPanelFeedback(selectors.walletsFeedback, '');
+    await loadDashboardOverview();
+    await Promise.all([
+      loadWallets(),
+      loadUpcomingPayments()
+    ]);
+  }
+
+  async function deleteWallet(wallet) {
+    if (!wallet || wallet.id == null) return;
+    const walletName = wallet.label || walletNetworkLabel(wallet.network || '') || '';
+    const ok = window.confirm(t('wallet_delete_confirm', { name: walletName }));
+    if (!ok) return;
+    const res = await Api.call(`/api/crypto/wallets/${encodeURIComponent(String(wallet.id))}`, 'DELETE', null, true);
+    if (!res.ok) {
+      const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
+      setPanelFeedback(selectors.walletsFeedback, message || t('wallet_delete_failed'), true);
+      return;
+    }
+    setPanelFeedback(selectors.walletsFeedback, '');
+    await loadDashboardOverview();
+    await Promise.all([
+      loadWallets(),
+      loadUpcomingPayments()
+    ]);
+  }
+
+  function bindWalletActionsMenu() {
+    const menu = getWalletActionsMenu();
+    if (!menu || menu.dataset.bound === '1') return;
+    menu.dataset.bound = '1';
+
+    menu.addEventListener('click', async (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest('[data-wallet-menu-action]') : null;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.dataset.walletMenuAction;
+      const wallet = walletActionsState.wallet;
+      closeWalletActionsMenu(true);
+      if (!wallet) return;
+      if (action === 'rename') {
+        await renameWallet(wallet);
+      } else if (action === 'delete') {
+        await deleteWallet(wallet);
+      }
+    });
+
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeWalletActionsMenu(true);
+        return;
+      }
+      trapFocusKeydown(event, menu);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (menu.hidden) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (!target) return;
+      if (target.closest(selectors.walletActionsMenu)) return;
+      if (target.closest('button.wallet-remove[data-wallet-id]')) return;
+      closeWalletActionsMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (menu.hidden) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeWalletActionsMenu(true);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (menu.hidden || !walletActionsState.trigger) return;
+      positionWalletActionsMenu(walletActionsState.trigger, menu);
+    });
+
+    window.addEventListener('scroll', () => {
+      if (menu.hidden || !walletActionsState.trigger) return;
+      positionWalletActionsMenu(walletActionsState.trigger, menu);
+    }, true);
   }
 
   function initMotionController() {
@@ -1700,7 +1881,10 @@
 
   function isEstimatedSource(source) {
     const normalized = String(source || '').toUpperCase();
-    return normalized === 'ESTIMATED' || normalized === 'DEMO' || normalized === 'SYNTHETIC';
+    return normalized === 'ESTIMATED'
+      || normalized === 'DEMO'
+      || normalized === 'SYNTHETIC'
+      || normalized === 'TRANSACTION_FALLBACK';
   }
 
   function isReliableMetricsSource(source) {
@@ -3022,7 +3206,7 @@
 
     const cryptoValue = toNumber(cryptoTotalInBase);
     const cryptoOk = Number.isFinite(cryptoValue);
-    if (totalBalanceEl) {
+    if (totalBalanceEl && !dashboardOverview) {
       if (!totals.length) {
         totalBalanceEl.textContent = formatMoney(cryptoOk ? cryptoValue : 0, base);
       } else if (totalOk) {
@@ -4256,7 +4440,9 @@
       list.innerHTML = renderSkeletonList(3);
     }
     const totalBalanceEl = document.querySelector(selectors.totalBalance);
-    if (totalBalanceEl) totalBalanceEl.textContent = t('loading');
+    if (totalBalanceEl && !dashboardOverview) {
+      totalBalanceEl.textContent = t('loading');
+    }
     showBalanceError('');
     setPanelFeedback(selectors.accountsFeedback, '');
 
@@ -4295,7 +4481,9 @@
     lastBalanceConversion = conversion;
     renderAccountsList(accounts, conversion);
     rerenderBalanceSnapshot();
-    pulseElement(selectors.totalBalance);
+    if (!dashboardOverview) {
+      pulseElement(selectors.totalBalance);
+    }
   }
 
   async function loadFxRates() {
@@ -4715,6 +4903,7 @@
   function renderWallets(wallets) {
     const list = document.querySelector(selectors.walletsList);
     if (!list) return;
+    closeWalletActionsMenu();
     setPanelFeedback(selectors.walletsFeedback, '');
     dashboardDataState.walletsLoaded = true;
     if (!Array.isArray(wallets) || wallets.length === 0) {
@@ -4737,6 +4926,7 @@
     }
     const walletsToRender = walletListExpanded ? wallets : wallets.slice(0, 5);
     const hiddenCount = Math.max(0, wallets.length - walletsToRender.length);
+    const walletById = new Map(wallets.map((wallet) => [String(wallet && wallet.id != null ? wallet.id : ''), wallet]));
     list.classList.remove('is-empty');
     dashboardDataState.hasWallets = true;
     setUiState(list, 'ready');
@@ -4770,7 +4960,7 @@
               <small class="muted">${formatAssetAmount(balance, walletNativeAsset(network))}</small>
             </div>
             <span class="wallet-chevron" aria-hidden="true">›</span>
-          <button type="button" class="ghost wallet-remove menu-trigger" data-wallet-id="${safeWalletId}" title="${t('wallet_remove')}" aria-label="${t('wallet_remove')}">⋯</button>
+          <button type="button" class="ghost wallet-remove menu-trigger" data-wallet-id="${safeWalletId}" title="${t('wallet_actions')}" aria-label="${t('wallet_actions')}">⋯</button>
           </div>
         </div>
       `;
@@ -4820,21 +5010,14 @@
     });
 
     list.querySelectorAll('button.wallet-remove[data-wallet-id]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         const id = btn.dataset.walletId;
         if (!id) return;
-        const res = await Api.call(`/api/crypto/wallets/${encodeURIComponent(id)}`, 'DELETE', null, true);
-        if (!res.ok) {
-          const message = res.data && typeof res.data === 'object' ? (res.data.message || '') : '';
-          setPanelFeedback(selectors.walletsFeedback, message || t('wallet_delete_failed'), true);
-          return;
-        }
-        setPanelFeedback(selectors.walletsFeedback, '');
-        await loadDashboardOverview();
-        await Promise.all([
-          loadWallets(),
-          loadUpcomingPayments()
-        ]);
+        const wallet = walletById.get(String(id));
+        if (!wallet) return;
+        openWalletActionsMenu(btn, wallet);
       });
     });
     const expandBtn = list.querySelector('.wallets-expand-toggle');
@@ -5332,6 +5515,7 @@
   bindAddWalletMenu();
   bindAddTransactionMenu();
   bindBaseCurrencyMenu();
+  bindWalletActionsMenu();
   bindTxPeriodButtons();
   window.addEventListener('beforeunload', stopAnalysisPolling);
 
@@ -5348,6 +5532,7 @@
       bindActionCtas();
       updateActionPriority();
       bindAnalysisQuickCard();
+      bindWalletActionsMenu();
       bindTxPeriodButtons();
       bindBalanceTrendControls();
       bindAddAccountMenu();

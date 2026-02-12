@@ -183,6 +183,25 @@ public class CryptoWalletService {
         publishUserDataChanged(userId);
     }
 
+    public CryptoWalletDto updateWalletLabel(Long userId, Long walletId, String label) {
+        if (userId == null) {
+            throw unauthorized();
+        }
+        if (walletId == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "Wallet id is required", HttpStatus.BAD_REQUEST);
+        }
+        CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId)
+                .orElseThrow(() -> new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST));
+        wallet.setLabel(normalizeOptionalLabel(label));
+        CryptoWallet saved = cryptoWalletRepository.save(wallet);
+        publishUserDataChanged(userId);
+
+        User user = userRepository.findById(userId).orElseThrow(this::unauthorized);
+        String baseCurrency = normalizeCurrency(user.getBaseCurrency());
+        Map<String, BigDecimal> prices = fetchPrices(baseCurrency);
+        return toDto(saved, baseCurrency, prices);
+    }
+
     private CryptoWalletDto toDto(CryptoWallet wallet, String baseCurrency, Map<String, BigDecimal> prices) {
         CryptoWalletBalanceProvider.WalletBalance balance = null;
         try {
