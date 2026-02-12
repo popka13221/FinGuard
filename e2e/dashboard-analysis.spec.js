@@ -50,10 +50,12 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   await expect(page.url()).toBe(startUrl);
   const detailHeader = page.getByTestId('wallet-intelligence-header');
   const detailBody = page.getByTestId('wallet-intelligence-body');
+  const detailPanel = page.getByTestId('wallet-intelligence-page');
   await expect(detailHeader).toBeVisible();
   await expect(detailBody).toBeVisible();
+  await expect(detailPanel).toBeVisible();
   const headerBeforeScroll = await detailHeader.boundingBox();
-  await detailBody.evaluate((el) => { el.scrollTop = 280; });
+  await detailPanel.evaluate((el) => { el.scrollTop = 280; });
   await page.waitForTimeout(120);
   const headerAfterScroll = await detailHeader.boundingBox();
   if (!headerBeforeScroll || !headerAfterScroll) {
@@ -69,7 +71,7 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   }
   await page.locator('#analysisDetailWindowTabs button[data-window="1y"]').click();
   await expect.poll(() => requested1y, { timeout: 15000 }).toBeTruthy();
-  await detailBody.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await detailPanel.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const insightsList = page.locator('#analysisDetailInsightsList');
   await expect(insightsList).toHaveCount(1);
   await expect.poll(async () => ((await insightsList.textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);

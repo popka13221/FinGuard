@@ -8272,20 +8272,21 @@ body.dashboard[data-ui-version="v6"] .analysis-detail-overlay::before {
 body.dashboard[data-ui-version="v6"] .analysis-detail-menu {
   position: relative !important;
   z-index: 1 !important;
+  height: min(86vh, 860px) !important;
   max-height: min(86vh, 860px) !important;
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   display: flex !important;
   flex-direction: column !important;
+  scrollbar-gutter: stable both-edges;
 }
 
 body.dashboard[data-ui-version="v6"] .analysis-detail-body {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  flex: 0 0 auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
   overscroll-behavior: contain !important;
   padding-bottom: 12px !important;
-  scrollbar-gutter: stable both-edges;
 }
 
 body.dashboard[data-ui-version="v6"] .analysis-detail-head {
@@ -8377,6 +8378,61 @@ body.dashboard[data-ui-version="v6"] .analysis-empty-guide .empty-state-actions 
   margin-top: 2px !important;
 }
 
+body.dashboard[data-ui-version="v6"] .analysis-detail-identity {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-detail-address-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-detail-address {
+  flex: 0 1 auto !important;
+  max-width: min(560px, 52vw) !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-inline-action,
+body.dashboard[data-ui-version="v6"] .analysis-inline-action.ghost,
+body.dashboard[data-ui-version="v6"] .analysis-inline-action.link-btn {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(190, 213, 247, 0.82) !important;
+  font-size: 0.79rem !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-copy-action {
+  font-weight: 520 !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-arrow-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  padding-top: 1px !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-inline-action:hover,
+body.dashboard[data-ui-version="v6"] .analysis-inline-action:focus-visible {
+  color: rgba(231, 241, 255, 0.97) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
+
 body.dashboard[data-ui-version="v6"] #analysisDetailAllocationList,
 body.dashboard[data-ui-version="v6"] #analysisDetailInsightsList {
   max-height: none !important;
@@ -8388,11 +8444,11 @@ body.dashboard[data-ui-version="v6"] #analysisDetailAllocationList .analysis-det
   min-width: 100% !important;
 }
 
-body.dashboard[data-ui-version="v6"] .analysis-detail-body::-webkit-scrollbar {
+body.dashboard[data-ui-version="v6"] .analysis-detail-menu::-webkit-scrollbar {
   width: 8px;
 }
 
-body.dashboard[data-ui-version="v6"] .analysis-detail-body::-webkit-scrollbar-thumb {
+body.dashboard[data-ui-version="v6"] .analysis-detail-menu::-webkit-scrollbar-thumb {
   background: rgba(142, 172, 220, 0.38);
   border-radius: 999px;
 }
@@ -8423,6 +8479,7 @@ body.dashboard[data-ui-version="v6"] .markets-link[hidden] {
   }
 
   body.dashboard[data-ui-version="v6"] .analysis-detail-menu {
+    height: 92vh !important;
     max-height: 92vh !important;
   }
 
