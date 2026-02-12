@@ -74,8 +74,10 @@ public class DashboardService {
         long nowMs = System.currentTimeMillis();
         CachedOverview cached = overviewCache.get(userId);
         if (cached != null && overviewCacheTtlMs > 0 && nowMs - cached.cachedAtMs() <= overviewCacheTtlMs) {
+            recordOverviewCacheMetric("hit");
             return cached.response();
         }
+        recordOverviewCacheMetric("miss");
 
         Timer.Sample sample = meterRegistry == null ? null : Timer.start(meterRegistry);
         DashboardOverviewResponse response = buildOverview(userId);
@@ -366,6 +368,16 @@ public class DashboardService {
             return normalized;
         }
         return "ESTIMATED";
+    }
+
+    private void recordOverviewCacheMetric(String result) {
+        if (meterRegistry == null) {
+            return;
+        }
+        Counter.builder("dashboard_overview_cache")
+                .tag("result", firstNonBlank(result, "unknown").toLowerCase(Locale.ROOT))
+                .register(meterRegistry)
+                .increment();
     }
 
     private record CachedOverview(DashboardOverviewResponse response, long cachedAtMs) {

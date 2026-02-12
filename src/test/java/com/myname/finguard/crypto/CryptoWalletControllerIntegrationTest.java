@@ -238,6 +238,67 @@ class CryptoWalletControllerIntegrationTest {
 
     @Test
     @Transactional
+    void rejectsBlankWalletLabelUpdate() throws Exception {
+        String email = "wallet-update-blank-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        String btcAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"%s","label":"Ledger"}
+                                """.formatted(btcAddress)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(patch("/api/crypto/wallets/{id}", walletId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"label":"   "}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Transactional
+    void cannotUpdateOtherUsersWalletLabel() throws Exception {
+        String ownerToken = registerVerifyAndLogin("owner-update-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+        String otherToken = registerVerifyAndLogin("other-update-" + UUID.randomUUID() + "@example.com", "StrongPass1!", "USD");
+
+        String createResponse = mockMvc.perform(post("/api/crypto/wallets")
+                        .header("Authorization", "Bearer " + ownerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"network":"BTC","address":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh","label":"Owner"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long walletId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        String response = mockMvc.perform(patch("/api/crypto/wallets/{id}", walletId)
+                        .header("Authorization", "Bearer " + otherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"label":"Hijack"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode error = objectMapper.readTree(response);
+        assertThat(error.get("code").asText()).isEqualTo(ErrorCodes.BAD_REQUEST);
+    }
+
+    @Test
+    @Transactional
     void returnsWalletAnalysisStatusForCurrentUser() throws Exception {
         String email = "wallet-analysis-" + UUID.randomUUID() + "@example.com";
         String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");

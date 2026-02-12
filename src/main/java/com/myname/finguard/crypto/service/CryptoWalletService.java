@@ -179,6 +179,7 @@ public class CryptoWalletService {
         }
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST));
+        log.info("Wallet deleted: userId={}, walletId={}, network={}", userId, walletId, wallet.getNetwork());
         cryptoWalletRepository.delete(wallet);
         publishUserDataChanged(userId);
     }
@@ -192,8 +193,17 @@ public class CryptoWalletService {
         }
         CryptoWallet wallet = cryptoWalletRepository.findByIdAndUserId(walletId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCodes.BAD_REQUEST, "Wallet not found", HttpStatus.BAD_REQUEST));
-        wallet.setLabel(normalizeOptionalLabel(label));
+        String previousLabel = wallet.getLabel();
+        String normalizedLabel = normalizeOptionalLabel(label);
+        wallet.setLabel(normalizedLabel);
         CryptoWallet saved = cryptoWalletRepository.save(wallet);
+        log.info(
+                "Wallet label updated: userId={}, walletId={}, hadLabel={}, hasLabel={}",
+                userId,
+                walletId,
+                previousLabel != null && !previousLabel.isBlank(),
+                normalizedLabel != null && !normalizedLabel.isBlank()
+        );
         publishUserDataChanged(userId);
 
         User user = userRepository.findById(userId).orElseThrow(this::unauthorized);

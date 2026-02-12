@@ -30,5 +30,19 @@ public interface RateLimitBucketRepository extends JpaRepository<RateLimitBucket
     @Transactional
     int deleteExpiredBatchSkipLocked(@Param("nowMs") long nowMs, @Param("batchSize") int batchSize);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            delete from rate_limit_buckets
+            where bucket_key in (
+                select bucket_key
+                from rate_limit_buckets
+                where expires_at_ms < :nowMs
+                order by expires_at_ms asc
+                limit :batchSize
+            )
+            """, nativeQuery = true)
+    @Transactional
+    int deleteExpiredBatchPortable(@Param("nowMs") long nowMs, @Param("batchSize") int batchSize);
+
     List<RateLimitBucket> findTop100ByOrderByUpdatedAtAsc();
 }

@@ -53,6 +53,8 @@ public class CryptoWalletController {
     private final long walletsCreateWindowMs;
     private final int walletsDeleteLimit;
     private final long walletsDeleteWindowMs;
+    private final int walletsUpdateLimit;
+    private final long walletsUpdateWindowMs;
 
     public CryptoWalletController(
             CryptoWalletService cryptoWalletService,
@@ -64,7 +66,9 @@ public class CryptoWalletController {
             @Value("${app.security.rate-limit.wallets.create.limit:30}") int walletsCreateLimit,
             @Value("${app.security.rate-limit.wallets.create.window-ms:60000}") long walletsCreateWindowMs,
             @Value("${app.security.rate-limit.wallets.delete.limit:60}") int walletsDeleteLimit,
-            @Value("${app.security.rate-limit.wallets.delete.window-ms:60000}") long walletsDeleteWindowMs
+            @Value("${app.security.rate-limit.wallets.delete.window-ms:60000}") long walletsDeleteWindowMs,
+            @Value("${app.security.rate-limit.wallets.update.limit:60}") int walletsUpdateLimit,
+            @Value("${app.security.rate-limit.wallets.update.window-ms:60000}") long walletsUpdateWindowMs
     ) {
         this.cryptoWalletService = cryptoWalletService;
         this.cryptoWalletAnalysisService = cryptoWalletAnalysisService;
@@ -76,6 +80,8 @@ public class CryptoWalletController {
         this.walletsCreateWindowMs = walletsCreateWindowMs;
         this.walletsDeleteLimit = walletsDeleteLimit;
         this.walletsDeleteWindowMs = walletsDeleteWindowMs;
+        this.walletsUpdateLimit = walletsUpdateLimit;
+        this.walletsUpdateWindowMs = walletsUpdateWindowMs;
     }
 
     @GetMapping
@@ -207,8 +213,8 @@ public class CryptoWalletController {
             Authentication authentication
     ) {
         Long userId = resolveUserId(authentication);
-        enforceRateLimit("wallets:create:user:" + userId, walletsCreateLimit, walletsCreateWindowMs);
-        CryptoWalletDto updated = cryptoWalletService.updateWalletLabel(userId, id, request == null ? null : request.label());
+        enforceRateLimit("wallets:update:user:" + userId, walletsUpdateLimit, walletsUpdateWindowMs);
+        CryptoWalletDto updated = cryptoWalletService.updateWalletLabel(userId, id, request.label());
         return ResponseEntity.ok(updated);
     }
 

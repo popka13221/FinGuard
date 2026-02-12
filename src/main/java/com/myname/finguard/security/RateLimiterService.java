@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class RateLimiterService {
     private final LongSupplier nowMs;
     private final AtomicBoolean cleanupInProgress;
     private final AtomicLong lastDbCleanupMs;
+    private final AtomicBoolean skipLockedCleanupSupported;
     private static final int DB_CLEANUP_BATCH_LIMIT = 200;
     private static final int DB_CLEANUP_BATCH_ROUNDS = 3;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RateLimiterService.class);
@@ -42,9 +44,13 @@ public class RateLimiterService {
             @Value("${app.security.rate-limit.auth.limit:30}") int limit,
             @Value("${app.security.rate-limit.auth.window-ms:60000}") long windowMs,
             @Value("${app.security.rate-limit.max-entries:10000}") int maxEntries,
-            @Value("${app.security.rate-limit.cleanup-interval-ms:15000}") long cleanupIntervalMs
+            @Value("${app.security.rate-limit.cleanup-interval-ms:15000}") long cleanupIntervalMs,
+            @Value("${spring.datasource.url:}") String datasourceUrl
     ) {
         this(rateLimitBucketRepository, limit, windowMs, maxEntries, cleanupIntervalMs, System::currentTimeMillis);
+        if (isH2Datasource(datasourceUrl) && this.skipLockedCleanupSupported != null) {
+            this.skipLockedCleanupSupported.set(false);
+        }
     }
 
     // For unit tests without Spring context
@@ -81,6 +87,7 @@ public class RateLimiterService {
         this.nowMs = nowMs == null ? System::currentTimeMillis : nowMs;
         this.cleanupInProgress = rateLimitBucketRepository == null ? null : new AtomicBoolean(false);
         this.lastDbCleanupMs = rateLimitBucketRepository == null ? null : new AtomicLong(0);
+        this.skipLockedCleanupSupported = rateLimitBucketRepository == null ? null : new AtomicBoolean(true);
     }
 
     public boolean allow(String key) {
@@ -173,13 +180,34 @@ public class RateLimiterService {
         } else {
             int batchSize = Math.max(1, Math.min(DB_CLEANUP_BATCH_LIMIT, maxEntries));
             for (int round = 0; round < DB_CLEANUP_BATCH_ROUNDS; round += 1) {
-                int deleted = rateLimitBucketRepository.deleteExpiredBatchSkipLocked(nowMs, batchSize);
+                int deleted = deleteExpiredBatch(nowMs, batchSize);
                 if (deleted <= 0) {
                     break;
                 }
             }
             pruneLocks();
         }
+    }
+
+    private int deleteExpiredBatch(long nowMs, int batchSize) {
+        if (rateLimitBucketRepository == null) {
+            return 0;
+        }
+        if (skipLockedCleanupSupported != null && skipLockedCleanupSupported.get()) {
+            try {
+                return rateLimitBucketRepository.deleteExpiredBatchSkipLocked(nowMs, batchSize);
+            } catch (InvalidDataAccessResourceUsageException ex) {
+                // H2 and some SQL dialects do not support Postgres-specific ctid/SKIP LOCKED path.
+                skipLockedCleanupSupported.set(false);
+                log.debug("Rate limiter cleanup switched to portable mode: {}", ex.getClass().getSimpleName());
+            }
+        }
+        return rateLimitBucketRepository.deleteExpiredBatchPortable(nowMs, batchSize);
+    }
+
+    private boolean isH2Datasource(String datasourceUrl) {
+        String value = datasourceUrl == null ? "" : datasourceUrl.trim().toLowerCase();
+        return value.contains(":h2:");
     }
 
     private void evictIfNeeded() {

@@ -47,6 +47,22 @@ test('dashboard empty states expose action CTAs', async ({ page }) => {
   expect(hasTruncation).toBeFalsy();
 });
 
+test('overview endpoint is authoritative for hero/stats on initial load', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-overview-authoritative');
+  let overviewHits = 0;
+  let reportSummaryHits = 0;
+  page.on('request', (request) => {
+    const url = request.url();
+    if (url.includes('/api/dashboard/overview')) overviewHits += 1;
+    if (url.includes('/api/reports/summary')) reportSummaryHits += 1;
+  });
+
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+  await expect(page.getByTestId('hero')).toBeVisible();
+  await expect.poll(() => overviewHits, { timeout: 15000 }).toBeGreaterThan(0);
+  expect(reportSummaryHits).toBe(0);
+});
+
 test('top nav remains visible while scrolling', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-sticky-nav');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });

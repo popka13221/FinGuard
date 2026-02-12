@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 
 class RateLimiterServiceTest {
 
@@ -130,6 +132,7 @@ class RateLimiterServiceTest {
         when(repo.findByBucketKey(anyString())).thenReturn(Optional.empty());
         when(repo.save(any(RateLimitBucket.class))).thenAnswer(inv -> inv.getArgument(0));
         when(repo.deleteExpiredBatchSkipLocked(anyLong(), anyInt())).thenReturn(0);
+        when(repo.deleteExpiredBatchPortable(anyLong(), anyInt())).thenReturn(0);
         when(repo.count()).thenReturn(1001L);
         RateLimitBucket stale = new RateLimitBucket();
         stale.setBucketKey("rl:expired");
@@ -143,5 +146,26 @@ class RateLimiterServiceTest {
 
         assertThat(result.allowed()).isTrue();
         assertThat(result.retryAfterMs()).isZero();
+    }
+
+    @Test
+    void fallsBackToPortableCleanupWhenSkipLockedQueryIsUnsupported() {
+        RateLimitBucketRepository repo = mock(RateLimitBucketRepository.class);
+        when(repo.findByBucketKey(anyString())).thenReturn(Optional.empty());
+        when(repo.save(any(RateLimitBucket.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repo.count()).thenReturn(0L);
+        when(repo.deleteExpiredBatchSkipLocked(anyLong(), anyInt()))
+                .thenThrow(new InvalidDataAccessResourceUsageException("skip locked unsupported"));
+        when(repo.deleteExpiredBatchPortable(anyLong(), anyInt())).thenReturn(0);
+
+        AtomicLong now = new AtomicLong(1_000);
+        RateLimiterService limiter = new RateLimiterService(repo, 5, 60_000, 1000, now::get);
+
+        assertThat(limiter.check("cleanup-portable-1", 5, 60_000).allowed()).isTrue();
+        now.addAndGet(5);
+        assertThat(limiter.check("cleanup-portable-2", 5, 60_000).allowed()).isTrue();
+
+        verify(repo, times(1)).deleteExpiredBatchSkipLocked(anyLong(), anyInt());
+        verify(repo, times(2)).deleteExpiredBatchPortable(anyLong(), anyInt());
     }
 }

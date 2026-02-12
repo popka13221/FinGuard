@@ -144,6 +144,54 @@ class DashboardControllerIntegrationTest {
         assertThat(first.get("amount").decimalValue()).isEqualByComparingTo("-42.50");
     }
 
+    @Test
+    @Transactional
+    void normalizesUnknownUpcomingInsightSourceToEstimated() throws Exception {
+        String email = "upcoming-source-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+        User user = userRepository.findByEmail(email).orElseThrow();
+
+        CryptoWallet wallet = new CryptoWallet();
+        wallet.setUser(user);
+        wallet.setNetwork(CryptoNetwork.BTC);
+        wallet.setAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        wallet.setAddressNormalized("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        wallet.setLabel("Ledger");
+        wallet.setArchived(false);
+        wallet = cryptoWalletRepository.save(wallet);
+
+        WalletInsight recurring = new WalletInsight();
+        recurring.setUser(user);
+        recurring.setWallet(wallet);
+        recurring.setInsightType("RECURRING_SPEND");
+        recurring.setTitle("Recurring spend");
+        recurring.setValue(new BigDecimal("19.99"));
+        recurring.setUnit("BASE_CURRENCY");
+        recurring.setCurrency("USD");
+        recurring.setLabel("Subscription");
+        recurring.setNextEstimatedChargeAt(Instant.now().plusSeconds(5 * 24 * 3600));
+        recurring.setConfidence(new BigDecimal("0.77"));
+        recurring.setSynthetic(false);
+        recurring.setSource("UNKNOWN_SOURCE");
+        recurring.setAsOf(Instant.now());
+        walletInsightRepository.save(recurring);
+
+        String response = mockMvc.perform(get("/api/dashboard/upcoming-payments?limit=5")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode items = objectMapper.readTree(response);
+        assertThat(items.isArray()).isTrue();
+        assertThat(items.size()).isGreaterThanOrEqualTo(1);
+        JsonNode first = items.get(0);
+        assertThat(first.get("title").asText()).isEqualTo("Subscription");
+        assertThat(first.get("source").asText()).isEqualTo("ESTIMATED");
+        assertThat(first.get("amount").decimalValue()).isEqualByComparingTo("-19.99");
+    }
+
     private String registerVerifyAndLogin(String email, String password, String baseCurrency) throws Exception {
         String registerPayload = """
                 {

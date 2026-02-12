@@ -3380,6 +3380,16 @@
   }
 
   async function loadReportSummary() {
+    // Overview is the authoritative source for hero/stats. Keep secondary report call as fallback-only.
+    if (dashboardOverview) {
+      reportSummaryLoaded = true;
+      reportSummaryConfirmed = dashboardOverview.dataFreshness === 'LIVE' || dashboardOverview.dataFreshness === 'PARTIAL';
+      if (lastReportSummary) {
+        renderIncomeExpenseSummary(lastReportSummary);
+      }
+      return lastReportSummary;
+    }
+
     const netEl = document.querySelector(selectors.incomeExpenseNet);
     if (netEl) netEl.textContent = t('loading');
     reportSummaryLoaded = false;
