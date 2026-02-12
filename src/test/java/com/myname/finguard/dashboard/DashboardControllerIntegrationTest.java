@@ -36,7 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "app.dashboard.overview.cache-ttl-ms=0"
+        "app.dashboard.overview.cache-ttl-ms=0",
+        "app.dashboard.account-intelligence.cache-ttl-ms=0"
 })
 class DashboardControllerIntegrationTest {
 
@@ -190,6 +191,52 @@ class DashboardControllerIntegrationTest {
         assertThat(first.get("title").asText()).isEqualTo("Subscription");
         assertThat(first.get("source").asText()).isEqualTo("ESTIMATED");
         assertThat(first.get("amount").decimalValue()).isEqualByComparingTo("-19.99");
+    }
+
+    @Test
+    @Transactional
+    void returnsAccountIntelligenceSnapshotWithWindowAndMetric() throws Exception {
+        String email = "account-intelligence-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+
+        String response = mockMvc.perform(get("/api/dashboard/account-intelligence?window=1y&metric=net")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode payload = objectMapper.readTree(response);
+        assertThat(payload.has("asOf")).isTrue();
+        assertThat(payload.has("source")).isTrue();
+        assertThat(payload.has("summary")).isTrue();
+        assertThat(payload.has("series")).isTrue();
+        assertThat(payload.has("walletsAllocation")).isTrue();
+        assertThat(payload.has("insights")).isTrue();
+        assertThat(payload.has("status")).isTrue();
+        assertThat(payload.has("hasMeaningfulData")).isTrue();
+
+        JsonNode series = payload.get("series");
+        assertThat(series.get("window").asText()).isEqualTo("1y");
+        assertThat(series.get("metric").asText()).isEqualTo("net");
+        assertThat(series.has("compact")).isTrue();
+        assertThat(series.has("hasMeaningfulData")).isTrue();
+        assertThat(series.get("points").isArray()).isTrue();
+    }
+
+    @Test
+    @Transactional
+    void rejectsUnsupportedAccountIntelligenceParams() throws Exception {
+        String email = "ai-inv-" + UUID.randomUUID() + "@example.com";
+        String token = registerVerifyAndLogin(email, "StrongPass1!", "USD");
+
+        mockMvc.perform(get("/api/dashboard/account-intelligence?window=2y&metric=net")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/dashboard/account-intelligence?window=30d&metric=growth")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
     }
 
     private String registerVerifyAndLogin(String email, String password, String baseCurrency) throws Exception {

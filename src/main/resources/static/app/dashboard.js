@@ -907,7 +907,10 @@
     detailOpen: false,
     detailBusy: false,
     lastDataFetchAt: 0,
-    profileSeriesCache: {}
+    profileSeriesCache: {},
+    accountIntelligenceCache: {},
+    accountIntelligence: null,
+    accountIntelligenceKey: ''
   };
   let recentTransactionsCache = [];
   const dashboardDataState = {
@@ -2026,16 +2029,23 @@
 
     if (Number.isFinite(parsed.walletIntelligence.activeWalletId) && parsed.walletIntelligence.activeWalletId > 0) {
       analysisState.activeWalletId = parsed.walletIntelligence.activeWalletId;
-      analysisState.status = normalizeAnalysisStatus({
-        status: parsed.walletIntelligence.status || 'QUEUED',
-        progressPct: parsed.walletIntelligence.progressPct,
-        stage: parsed.walletIntelligence.lastSuccessfulStage || 'FETCH_TX',
-        partialReady: parsed.walletIntelligence.partialReady,
-        updatedAt: parsed.walletIntelligence.updatedAt,
-        etaSeconds: parsed.walletIntelligence.etaSeconds,
-        lastSuccessfulStage: parsed.walletIntelligence.lastSuccessfulStage
-      });
     }
+    analysisState.status = normalizeAnalysisStatus({
+      status: parsed.walletIntelligence.status || 'QUEUED',
+      progressPct: parsed.walletIntelligence.progressPct,
+      stage: parsed.walletIntelligence.lastSuccessfulStage || 'FETCH_TX',
+      partialReady: parsed.walletIntelligence.partialReady,
+      updatedAt: parsed.walletIntelligence.updatedAt,
+      etaSeconds: parsed.walletIntelligence.etaSeconds,
+      lastSuccessfulStage: parsed.walletIntelligence.lastSuccessfulStage
+    });
+    fetchAccountIntelligence(
+      analysisState.detailWindow || analysisState.seriesWindow || '30d',
+      analysisState.detailMetric || 'net',
+      false
+    ).catch(() => {
+      // keep overview rendering resilient even if account intelligence endpoint is temporarily unavailable
+    });
     updateGetStartedSection();
     refreshAnalysisPanel();
     return parsed;
@@ -2058,8 +2068,134 @@
     return '30d';
   }
 
+  function normalizeAnalysisMetric(metricValue) {
+    const value = String(metricValue || '').toLowerCase();
+    if (value === 'inflow') return 'inflow';
+    if (value === 'outflow') return 'outflow';
+    return 'net';
+  }
+
   function apiSeriesWindow(windowValue) {
     return normalizeSeriesWindow(windowValue);
+  }
+
+  function accountIntelligenceCacheKey(windowValue, metricValue) {
+    return `${normalizeSeriesWindow(windowValue)}|${normalizeAnalysisMetric(metricValue)}`;
+  }
+
+  function normalizeAccountIntelligence(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const summary = payload.summary && typeof payload.summary === 'object' ? payload.summary : {};
+    const series = payload.series && typeof payload.series === 'object' ? payload.series : {};
+    const status = payload.status && typeof payload.status === 'object' ? payload.status : {};
+    const points = Array.isArray(series.points) ? series.points : [];
+    const allocation = Array.isArray(payload.walletsAllocation) ? payload.walletsAllocation : [];
+    const insights = Array.isArray(payload.insights) ? payload.insights : [];
+    return {
+      asOf: payload.asOf ? String(payload.asOf) : '',
+      source: String(payload.source || 'PENDING').toUpperCase(),
+      hasMeaningfulData: Boolean(payload.hasMeaningfulData),
+      summary: {
+        netWorth: toNumber(summary.netWorth),
+        baseCurrency: normalizeCurrency(summary.baseCurrency || baseCurrency) || 'USD',
+        delta7dPct: toNumber(summary.delta7dPct),
+        income30d: toNumber(summary.income30d),
+        spend30d: toNumber(summary.spend30d),
+        cashflow30d: toNumber(summary.cashflow30d),
+        debt: toNumber(summary.debt),
+        hasMeaningfulData: Boolean(summary.hasMeaningfulData)
+      },
+      series: {
+        window: normalizeSeriesWindow(series.window || '30d'),
+        metric: normalizeAnalysisMetric(series.metric || 'net'),
+        compact: Boolean(series.compact),
+        hasMeaningfulData: Boolean(series.hasMeaningfulData),
+        points: points.map((item) => ({
+          at: item && item.at ? String(item.at) : '',
+          valueInBase: toNumber(item && item.valueInBase)
+        })).filter((item) => item.at && Number.isFinite(item.valueInBase))
+      },
+      walletsAllocation: allocation.map((item) => ({
+        walletId: toNumber(item && item.walletId),
+        label: String(item && item.label ? item.label : ''),
+        network: String(item && item.network ? item.network : ''),
+        address: String(item && item.address ? item.address : ''),
+        amount: toNumber(item && item.amount),
+        asset: String(item && item.asset ? item.asset : ''),
+        valueInBase: toNumber(item && item.valueInBase),
+        sharePct: toNumber(item && item.sharePct),
+        hasMeaningfulData: Boolean(item && item.hasMeaningfulData)
+      })),
+      insights: insights.map((item) => ({
+        type: String(item && item.type ? item.type : ''),
+        title: String(item && item.title ? item.title : ''),
+        value: toNumber(item && item.value),
+        unit: String(item && item.unit ? item.unit : ''),
+        meta: String(item && item.meta ? item.meta : ''),
+        confidence: toNumber(item && item.confidence),
+        isActionable: Boolean(item && item.isActionable)
+      })),
+      status: normalizeAnalysisStatus({
+        status: status.status || 'PENDING',
+        progressPct: status.progressPct,
+        stage: status.lastSuccessfulStage || status.status || 'FETCH_TX',
+        partialReady: status.partialReady,
+        updatedAt: status.updatedAt || payload.asOf,
+        etaSeconds: status.etaSeconds,
+        lastSuccessfulStage: status.lastSuccessfulStage
+      })
+    };
+  }
+
+  function getAccountIntelligence(windowValue, metricValue) {
+    const key = accountIntelligenceCacheKey(windowValue, metricValue);
+    const cached = analysisState.accountIntelligenceCache[key];
+    return cached && cached.payload ? cached.payload : null;
+  }
+
+  async function fetchAccountIntelligence(windowValue, metricValue, force) {
+    const window = normalizeSeriesWindow(windowValue || analysisState.detailWindow || analysisState.seriesWindow || '30d');
+    const metric = normalizeAnalysisMetric(metricValue || analysisState.detailMetric || 'net');
+    const key = accountIntelligenceCacheKey(window, metric);
+    const cached = analysisState.accountIntelligenceCache[key];
+    if (!force && cached && (Date.now() - Number(cached.fetchedAt || 0)) < 15000) {
+      analysisState.accountIntelligence = cached.payload;
+      analysisState.accountIntelligenceKey = key;
+      if (cached.payload && cached.payload.status) {
+        analysisState.status = cached.payload.status;
+      }
+      return cached.payload;
+    }
+
+    const params = new URLSearchParams();
+    params.set('window', window);
+    params.set('metric', metric);
+    const res = await Api.call(`/api/dashboard/account-intelligence?${params}`, 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      if (cached && cached.payload) {
+        analysisState.accountIntelligence = cached.payload;
+        analysisState.accountIntelligenceKey = key;
+        if (cached.payload.status) {
+          analysisState.status = cached.payload.status;
+        }
+        return cached.payload;
+      }
+      return null;
+    }
+    const parsed = normalizeAccountIntelligence(res.data);
+    if (!parsed) return null;
+    analysisState.accountIntelligenceCache[key] = {
+      payload: parsed,
+      fetchedAt: Date.now()
+    };
+    analysisState.accountIntelligence = parsed;
+    analysisState.accountIntelligenceKey = key;
+    analysisState.summaryBase = normalizeCurrency(parsed.summary && parsed.summary.baseCurrency ? parsed.summary.baseCurrency : baseCurrency) || 'USD';
+    analysisState.summaryTotal = toNumber(parsed.summary && parsed.summary.netWorth);
+    if (parsed.status) {
+      analysisState.status = parsed.status;
+    }
+    return parsed;
   }
 
   async function fetchAnalysisData(walletId) {
@@ -2352,8 +2488,15 @@
     const value = toNumber(item && item.value);
     if (!Number.isFinite(value)) return '—';
     if (unit === 'PERCENT') return formatSignedPct(value);
-    if (unit === 'BASE_CURRENCY') {
-      const currency = normalizeCurrency(item && item.currency ? item.currency : base) || base || 'USD';
+    if (unit === 'BASE_CURRENCY' || unit.startsWith('BASE_CURRENCY:')) {
+      const currencyFromUnit = unit.startsWith('BASE_CURRENCY:')
+        ? unit.split(':').slice(1).join(':')
+        : '';
+      const currency = normalizeCurrency(
+        currencyFromUnit
+        || (item && item.currency ? item.currency : '')
+        || base
+      ) || base || 'USD';
       return formatMoney(value, currency);
     }
     if (unit === 'COUNT') {
@@ -2400,7 +2543,7 @@
     return value || t('period_30d_short');
   }
 
-  function renderAnalysisDetailSeries(points, base, sourceLabel, windowLabel) {
+  function renderAnalysisDetailSeries(points, base, sourceLabel, windowLabel, compactHint) {
     const chart = q(selectors.analysisDetailSeriesChart);
     if (!chart) return;
     if (!Array.isArray(points) || points.length < 2) {
@@ -2412,6 +2555,17 @@
     if (values.length < 2) {
       chart.classList.remove('is-compact-chart');
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
+      return;
+    }
+    const compactMode = Boolean(compactHint) || seriesVarianceRatio(values) < DETAIL_CHART_VARIANCE_THRESHOLD;
+    if (compactMode) {
+      chart.classList.add('is-compact-chart');
+      chart.innerHTML = `
+        <div class="compact-chart-state">
+          ${buildCompactSparkline(values, 680, 98, '#73a8ff')}
+          <div class="muted compact-chart-note">${escapeHtml(t('no_meaningful_change_window', { value: windowLabel }))}</div>
+        </div>
+      `;
       return;
     }
     const width = Math.max(300, Math.round(chart.clientWidth || 860));
@@ -2480,6 +2634,11 @@
 
   function buildAnalysisDetailSeries(metric) {
     const normalizedWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d');
+    const normalizedMetric = normalizeAnalysisMetric(metric || analysisState.detailMetric || 'net');
+    const fromAccountPayload = getAccountIntelligence(normalizedWindow, normalizedMetric);
+    if (fromAccountPayload && fromAccountPayload.series && Array.isArray(fromAccountPayload.series.points)) {
+      return fromAccountPayload.series.points;
+    }
     const bundle = analysisState.profileSeriesCache[normalizedWindow];
     return profileSeriesPointsFromMetric(bundle, metric);
   }
@@ -2490,36 +2649,51 @@
     syncAnalysisDetailTabState();
 
     const data = model || buildAnalysisInsightsModel();
+    const currentWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d');
+    const currentMetric = normalizeAnalysisMetric(analysisState.detailMetric || 'net');
+    const intelligence = getAccountIntelligence(currentWindow, currentMetric) || analysisState.accountIntelligence;
     const wallets = Array.isArray(analysisState.wallets) ? analysisState.wallets : [];
+    const summary = intelligence && intelligence.summary ? intelligence.summary : null;
+    const intelligenceSource = String(intelligence && intelligence.source ? intelligence.source : '').toUpperCase();
+    const reliableIntelligence = isReliableMetricsSource(intelligenceSource);
     const hasProfileData = Boolean(
-      dashboardDataState.hasAccounts
+      intelligence && intelligence.hasMeaningfulData
+      || (summary && summary.hasMeaningfulData)
+      || hasMeaningfulNumber(data && data.portfolio)
+      || dashboardDataState.hasAccounts
       || dashboardDataState.hasWallets
       || dashboardDataState.hasTransactions
-      || hasMeaningfulNumber(data && data.portfolio)
     );
-    const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
+    const base = normalizeCurrency(
+      (summary && summary.baseCurrency)
+      || (data && data.base)
+      || baseCurrency
+    ) || 'USD';
     const detailUpdated = q(selectors.analysisDetailUpdated);
 
-    const statusUpdatedAt = analysisState.status && (
-      analysisState.status.finishedAt
-      || analysisState.status.updatedAt
-      || analysisState.status.startedAt
+    const statusPayload = intelligence && intelligence.status ? intelligence.status : analysisState.status;
+    const statusUpdatedAt = statusPayload && (
+      statusPayload.finishedAt
+      || statusPayload.updatedAt
+      || statusPayload.startedAt
     );
     const fallbackUpdated = (dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.updatedAt)
+      || (intelligence && intelligence.asOf)
       || (dashboardOverview && dashboardOverview.asOf)
       || '';
     const updated = formatFxUpdated(statusUpdatedAt || fallbackUpdated);
 
-    const freshness = String((dashboardOverview && dashboardOverview.dataFreshness) || '').toUpperCase();
     const detailSource = !hasProfileData
       ? DATA_SOURCE.pending
-      : (freshness === 'LIVE' ? DATA_SOURCE.live : DATA_SOURCE.hybrid);
+      : (reliableIntelligence || intelligenceSource === 'LIVE'
+          ? DATA_SOURCE.live
+          : DATA_SOURCE.hybrid);
     setDataSourceBadge(selectors.analysisDetailSource, detailSource);
 
     if (detailUpdated) {
-      const etaHint = formatEtaHint(analysisState.status && analysisState.status.etaSeconds);
-      const lastStage = analysisState.status && analysisState.status.lastSuccessfulStage
-        ? analysisStageLabel(analysisState.status.lastSuccessfulStage)
+      const etaHint = formatEtaHint(statusPayload && statusPayload.etaSeconds);
+      const lastStage = statusPayload && statusPayload.lastSuccessfulStage
+        ? analysisStageLabel(statusPayload.lastSuccessfulStage)
         : '';
       if (analysisState.detailBusy) {
         detailUpdated.textContent = t('analysis_quick_refreshing');
@@ -2550,27 +2724,36 @@
       explorer.hidden = true;
     }
 
-    const profileNetWorth = Number.isFinite(toNumber(data && data.portfolio))
-      ? toNumber(data && data.portfolio)
-      : computeCurrentTotalInBase();
-    const walletsTotal = Number.isFinite(toNumber(analysisState.summaryTotal))
-      ? toNumber(analysisState.summaryTotal)
-      : NaN;
-    const profileGrowth = Number.isFinite(toNumber(data && data.growth))
-      ? toNumber(data && data.growth)
-      : NaN;
-    const summaryConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
-    const inflowValueRaw = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.income) : NaN;
-    const outflowValueRaw = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.expense) : NaN;
-    const inflowValue = Number.isFinite(inflowValueRaw) && Math.abs(inflowValueRaw) > 0.000001 ? inflowValueRaw : NaN;
-    const outflowValue = Number.isFinite(outflowValueRaw) && Math.abs(outflowValueRaw) > 0.000001 ? outflowValueRaw : NaN;
+    const summaryNetWorth = toNumber(summary && summary.netWorth);
+    const profileNetWorth = Number.isFinite(summaryNetWorth)
+      ? summaryNetWorth
+      : (Number.isFinite(toNumber(data && data.portfolio))
+          ? toNumber(data && data.portfolio)
+          : computeCurrentTotalInBase());
+
+    const allocationRows = intelligence && Array.isArray(intelligence.walletsAllocation)
+      ? intelligence.walletsAllocation
+      : [];
+    const walletsTotal = allocationRows.reduce((sum, item) => {
+      const value = toNumber(item && item.valueInBase);
+      return Number.isFinite(value) ? sum + value : sum;
+    }, 0);
+    const profileGrowth = Number.isFinite(toNumber(summary && summary.delta7dPct))
+      ? toNumber(summary.delta7dPct)
+      : (Number.isFinite(toNumber(data && data.growth)) ? toNumber(data && data.growth) : NaN);
+
+    const inflowRaw = reliableIntelligence ? toNumber(summary && summary.income30d) : NaN;
+    const outflowRaw = reliableIntelligence ? toNumber(summary && summary.spend30d) : NaN;
+    const inflowValue = Number.isFinite(inflowRaw) ? inflowRaw : NaN;
+    const outflowValue = Number.isFinite(outflowRaw) ? outflowRaw : NaN;
     const inflowCard = q(selectors.analysisDetailMetricInflow);
     const outflowCard = q(selectors.analysisDetailMetricOutflow);
     if (inflowCard) inflowCard.hidden = !Number.isFinite(inflowValue);
     if (outflowCard) outflowCard.hidden = !Number.isFinite(outflowValue);
 
-    setText(selectors.analysisDetailWalletValue, Number.isFinite(walletsTotal) ? formatMoney(walletsTotal, base) : '—');
-    setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletsTotal) ? formatMoney(walletsTotal, base) : '—');
+    const walletsTotalValue = Number.isFinite(walletsTotal) && walletsTotal > 0 ? walletsTotal : NaN;
+    setText(selectors.analysisDetailWalletValue, Number.isFinite(walletsTotalValue) ? formatMoney(walletsTotalValue, base) : '—');
+    setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletsTotalValue) ? formatMoney(walletsTotalValue, base) : '—');
     setText(selectors.analysisDetailPortfolio, Number.isFinite(profileNetWorth) ? formatMoney(profileNetWorth, base) : '—');
     setText(selectors.analysisDetailGrowth, Number.isFinite(profileGrowth) ? formatSignedPct(profileGrowth) : '—');
     setText(selectors.analysisDetailRecurring, Number.isFinite(inflowValue) ? formatMoney(inflowValue, base) : '—');
@@ -2581,26 +2764,27 @@
     setText(selectors.analysisDetailBalance, balanceText);
     setText(selectors.analysisDetailNet, netText);
 
-    const currentMetric = String(analysisState.detailMetric || 'net').toLowerCase();
-    const seriesWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d').toUpperCase();
+    const seriesWindow = currentWindow.toUpperCase();
     const seriesWindowLocalized = localizedWindowLabel(seriesWindow);
     const metricLabel = detailMetricLabel(currentMetric);
     const seriesLabel = updated
       ? t('analysis_detail_series_meta', { metric: metricLabel, value: updated })
       : `${metricLabel} · ${seriesWindowLocalized}`;
     setText(selectors.analysisDetailSeriesMeta, seriesLabel);
-    renderAnalysisDetailSeries(buildAnalysisDetailSeries(currentMetric), base, seriesLabel, seriesWindowLocalized);
+    const activeSeries = buildAnalysisDetailSeries(currentMetric);
+    const compactSeries = Boolean(intelligence && intelligence.series && intelligence.series.compact);
+    renderAnalysisDetailSeries(activeSeries, base, seriesLabel, seriesWindowLocalized, compactSeries);
 
     const allocationEl = q(selectors.analysisDetailAllocationList);
     if (allocationEl) {
-      const rows = wallets
+      const rows = (allocationRows.length ? allocationRows : wallets
         .map((wallet) => ({
           label: String(wallet && wallet.label ? wallet.label : walletNetworkLabel(wallet && wallet.network ? wallet.network : '')),
           network: String(wallet && wallet.network ? wallet.network : ''),
           balance: toNumber(wallet && wallet.balance),
           valueInBase: toNumber(wallet && wallet.valueInBase),
           address: String(wallet && wallet.address ? wallet.address : '')
-        }))
+        })))
         .filter((item) => item.label || item.address || Number.isFinite(item.valueInBase));
       const totalValue = rows.reduce((sum, item) => (
         Number.isFinite(item.valueInBase) ? sum + item.valueInBase : sum
@@ -2646,60 +2830,14 @@
 
     const insightsEl = q(selectors.analysisDetailInsightsList);
     if (insightsEl) {
-      const summary = hasConfirmedTransactionMetrics(lastReportSummary) ? lastReportSummary : null;
-      const accountInsights = [];
-      const income30d = summary ? toNumber(summary.income) : NaN;
-      const spend30d = summary ? toNumber(summary.expense) : NaN;
-      const cashflow30d = summary ? toNumber(summary.net) : NaN;
-      if (Number.isFinite(income30d) && Math.abs(income30d) > 0.000001) {
-        accountInsights.push({
-          title: t('analysis_insight_income_30d'),
-          value: formatMoney(income30d, base),
-          meta: t('period_30d_short')
-        });
-      }
-      if (Number.isFinite(spend30d) && Math.abs(spend30d) > 0.000001) {
-        accountInsights.push({
-          title: t('analysis_insight_spend_30d'),
-          value: formatMoney(-Math.abs(spend30d), base),
-          meta: t('period_30d_short')
-        });
-      }
-      if (Number.isFinite(cashflow30d) && Math.abs(cashflow30d) > 0.000001) {
-        accountInsights.push({
-          title: t('analysis_insight_cashflow_30d'),
-          value: formatMoney(cashflow30d, base),
-          meta: t('period_30d_short')
-        });
-      }
-
-      const categorySpend = new Map();
-      recentTransactionsCache.forEach((tx) => {
-        const type = String(tx && tx.type ? tx.type : '').toUpperCase();
-        if (type !== 'EXPENSE') return;
-        const amount = toNumber(tx && tx.amount);
-        if (!Number.isFinite(amount) || amount <= 0) return;
-        const categoryId = tx && tx.categoryId != null ? Number(tx.categoryId) : NaN;
-        const category = txCategoriesById.get(categoryId);
-        const key = category && category.name ? String(category.name) : t('transaction_category_label');
-        categorySpend.set(key, (categorySpend.get(key) || 0) + amount);
-      });
-      let topCategory = '';
-      let topCategoryValue = NaN;
-      categorySpend.forEach((value, key) => {
-        if (!Number.isFinite(value)) return;
-        if (!Number.isFinite(topCategoryValue) || value > topCategoryValue) {
-          topCategoryValue = value;
-          topCategory = key;
-        }
-      });
-      if (topCategory && Number.isFinite(topCategoryValue)) {
-        accountInsights.push({
-          title: t('analysis_insight_top_category'),
-          value: formatMoney(-Math.abs(topCategoryValue), base),
-          meta: topCategory
-        });
-      }
+      const serverInsights = intelligence && Array.isArray(intelligence.insights) ? intelligence.insights : [];
+      const accountInsights = serverInsights
+        .filter((item) => isMeaningfulInsight(item))
+        .map((item) => ({
+          title: item.title || item.type || t('analysis_detail_insights_title'),
+          value: formatInsightValue(item, base),
+          meta: item.meta || ''
+        }));
 
       if (!accountInsights.length) {
         insightsEl.innerHTML = `
@@ -2765,7 +2903,11 @@
         loadRecentTransactions(),
         loadWallets(),
         loadUpcomingPayments(),
-        fetchProfileSeries(analysisState.detailWindow || '30d', true)
+        fetchAccountIntelligence(
+          analysisState.detailWindow || analysisState.seriesWindow || '30d',
+          analysisState.detailMetric || 'net',
+          true
+        )
       ]);
     } finally {
       analysisState.detailBusy = false;
@@ -2867,9 +3009,14 @@
     }
     if (metricTabs) {
       metricTabs.querySelectorAll('button[data-metric]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          analysisState.detailMetric = String(btn.dataset.metric || 'net').toLowerCase();
+        btn.addEventListener('click', async () => {
+          analysisState.detailMetric = normalizeAnalysisMetric(btn.dataset.metric || 'net');
           syncAnalysisDetailTabState();
+          await fetchAccountIntelligence(
+            analysisState.detailWindow || analysisState.seriesWindow || '30d',
+            analysisState.detailMetric || 'net',
+            true
+          );
           renderAnalysisDetail(null);
         });
       });
@@ -2887,7 +3034,7 @@
           analysisState.lastDataFetchAt = 0;
           syncAnalysisDetailTabState();
           renderAnalysisDetail(null);
-          await fetchProfileSeries(nextWindow, true);
+          await fetchAccountIntelligence(nextWindow, analysisState.detailMetric || 'net', true);
           renderAnalysisDetail(null);
         });
       });
@@ -2940,30 +3087,44 @@
 
   function buildAnalysisInsightsModel() {
     const overviewHero = dashboardOverview && dashboardOverview.hero ? dashboardOverview.hero : {};
+    const accountSnapshot = getAccountIntelligence('30d', 'net') || analysisState.accountIntelligence;
+    const accountSummary = accountSnapshot && accountSnapshot.summary ? accountSnapshot.summary : null;
+    const accountSource = String(accountSnapshot && accountSnapshot.source ? accountSnapshot.source : '').toUpperCase();
+    const accountReliable = isReliableMetricsSource(accountSource);
     const overviewGrowth = toNumber(overviewHero.delta7dPct);
     const overviewNetWorth = toNumber(overviewHero.netWorth);
+    const summaryNetWorth = toNumber(accountSummary && accountSummary.netWorth);
     const profileTotal = Number.isFinite(overviewNetWorth)
       ? overviewNetWorth
-      : computeCurrentTotalInBase();
+      : (Number.isFinite(summaryNetWorth) ? summaryNetWorth : computeCurrentTotalInBase());
     const base = normalizeCurrency(
       (overviewHero && overviewHero.baseCurrency)
+      || (accountSummary && accountSummary.baseCurrency)
       || analysisState.summaryBase
       || (lastReportSummary && lastReportSummary.baseCurrency)
       || baseCurrency
     ) || 'USD';
-    const growthSeriesBundle = analysisState.profileSeriesCache[normalizeSeriesWindow('30d')];
-    const growthSeries = profileSeriesPointsFromMetric(growthSeriesBundle, 'net')
-      .map((point) => toNumber(point && point.valueInBase))
-      .filter((value) => Number.isFinite(value));
+    const growthSeries = accountSnapshot && accountSnapshot.series && Array.isArray(accountSnapshot.series.points)
+      ? accountSnapshot.series.points
+        .map((point) => toNumber(point && point.valueInBase))
+        .filter((value) => Number.isFinite(value))
+      : profileSeriesPointsFromMetric(analysisState.profileSeriesCache[normalizeSeriesWindow('30d')], 'net')
+        .map((point) => toNumber(point && point.valueInBase))
+        .filter((value) => Number.isFinite(value));
     const growthFromSeries = growthSeries.length >= 2
       ? ((growthSeries[growthSeries.length - 1] - growthSeries[0]) / Math.max(Math.abs(growthSeries[0]), 1)) * 100
       : NaN;
     const growth = Number.isFinite(overviewGrowth)
       ? overviewGrowth
-      : (Number.isFinite(growthFromSeries) ? growthFromSeries : NaN);
-    const summaryConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
-    const outflowValue = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.net) : NaN;
-    const debtValue = computeDebtInBase();
+      : (Number.isFinite(toNumber(accountSummary && accountSummary.delta7dPct))
+          ? toNumber(accountSummary && accountSummary.delta7dPct)
+          : (Number.isFinite(growthFromSeries) ? growthFromSeries : NaN));
+    const outflowValue = accountReliable
+      ? toNumber(accountSummary && accountSummary.cashflow30d)
+      : NaN;
+    const debtValue = accountReliable
+      ? toNumber(accountSummary && accountSummary.debt)
+      : computeDebtInBase();
 
     return {
       base,
@@ -3182,9 +3343,16 @@
     analysisState.apiInsights = null;
     analysisState.apiSeries = null;
     analysisState.lastDataFetchAt = 0;
+    analysisState.accountIntelligenceCache = {};
+    analysisState.accountIntelligence = null;
+    analysisState.accountIntelligenceKey = '';
     stopAnalysisPolling();
     refreshAnalysisPanel();
-    fetchProfileSeries(analysisState.detailWindow || '30d', false)
+    fetchAccountIntelligence(
+      analysisState.detailWindow || analysisState.seriesWindow || '30d',
+      analysisState.detailMetric || 'net',
+      false
+    )
       .then(() => {
         if (analysisState.detailOpen) renderAnalysisDetail(null);
       })

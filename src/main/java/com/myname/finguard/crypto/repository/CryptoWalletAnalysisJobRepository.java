@@ -14,6 +14,8 @@ public interface CryptoWalletAnalysisJobRepository extends JpaRepository<CryptoW
 
     Optional<CryptoWalletAnalysisJob> findTopByWalletIdAndUserIdOrderByCreatedAtDesc(Long walletId, Long userId);
 
+    Optional<CryptoWalletAnalysisJob> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+
     List<CryptoWalletAnalysisJob> findTop100ByStatusInAndUpdatedAtBeforeOrderByUpdatedAtAsc(
             Collection<CryptoWalletAnalysisJobStatus> statuses,
             Instant updatedBefore

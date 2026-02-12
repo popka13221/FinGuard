@@ -11,10 +11,19 @@ test('account analysis strip shows progress and compact intelligence card', asyn
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
   const startUrl = page.url();
-  let cashFlowHits = 0;
+  let accountIntelligenceHits = 0;
+  let accountIntelligence1yHits = 0;
+  let walletSpecificAnalysisHits = 0;
   page.on('request', (request) => {
-    if (request.url().includes('/api/reports/cash-flow')) {
-      cashFlowHits += 1;
+    const url = request.url();
+    if (url.includes('/api/dashboard/account-intelligence')) {
+      accountIntelligenceHits += 1;
+      if (url.includes('window=1y')) {
+        accountIntelligence1yHits += 1;
+      }
+    }
+    if (url.includes('/api/crypto/wallets/') && url.includes('/analysis/')) {
+      walletSpecificAnalysisHits += 1;
     }
   });
 
@@ -69,9 +78,11 @@ test('account analysis strip shows progress and compact intelligence card', asyn
   } else {
     expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
   }
-  const cashFlowBefore1y = cashFlowHits;
+  const accountIntelligenceBefore1y = accountIntelligence1yHits;
   await page.locator('#analysisDetailWindowTabs button[data-window="1y"]').click();
-  await expect.poll(() => cashFlowHits > cashFlowBefore1y, { timeout: 15000 }).toBeTruthy();
+  await expect.poll(() => accountIntelligence1yHits > accountIntelligenceBefore1y, { timeout: 15000 }).toBeTruthy();
+  expect(accountIntelligenceHits).toBeGreaterThan(0);
+  expect(walletSpecificAnalysisHits).toBe(0);
   await detailPanel.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const insightsList = page.locator('#analysisDetailInsightsList');
   await expect(insightsList).toHaveCount(1);

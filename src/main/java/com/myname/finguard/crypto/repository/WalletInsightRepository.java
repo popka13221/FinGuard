@@ -15,6 +15,8 @@ public interface WalletInsightRepository extends JpaRepository<WalletInsight, Lo
 
     List<WalletInsight> findTop200ByWalletIdAndInsightTypeOrderByAsOfDescIdDesc(Long walletId, String insightType);
 
+    List<WalletInsight> findTop500ByUserIdOrderByAsOfDescIdDesc(Long userId);
+
     List<WalletInsight> findTop500ByUserIdAndInsightTypeAndNextEstimatedChargeAtAfterOrderByNextEstimatedChargeAtAsc(
             Long userId,
             String insightType,

@@ -4,8 +4,10 @@ import com.myname.finguard.auth.model.User;
 import com.myname.finguard.auth.repository.UserRepository;
 import com.myname.finguard.common.constants.ErrorCodes;
 import com.myname.finguard.common.exception.ApiException;
+import com.myname.finguard.dashboard.dto.AccountIntelligenceResponse;
 import com.myname.finguard.dashboard.dto.DashboardOverviewResponse;
 import com.myname.finguard.dashboard.dto.UpcomingPaymentDto;
+import com.myname.finguard.dashboard.service.AccountIntelligenceService;
 import com.myname.finguard.dashboard.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,10 +30,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final AccountIntelligenceService accountIntelligenceService;
     private final UserRepository userRepository;
 
-    public DashboardController(DashboardService dashboardService, UserRepository userRepository) {
+    public DashboardController(
+            DashboardService dashboardService,
+            AccountIntelligenceService accountIntelligenceService,
+            UserRepository userRepository
+    ) {
         this.dashboardService = dashboardService;
+        this.accountIntelligenceService = accountIntelligenceService;
         this.userRepository = userRepository;
     }
 
@@ -56,6 +64,23 @@ public class DashboardController {
     ) {
         Long userId = resolveUserId(authentication);
         return ResponseEntity.ok(dashboardService.upcomingPayments(userId, limit));
+    }
+
+    @GetMapping("/account-intelligence")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Account intelligence",
+            description = "Returns account-level intelligence for net worth, series, allocation and insights."
+    )
+    @ApiResponse(responseCode = "200", description = "Account intelligence returned")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<AccountIntelligenceResponse> accountIntelligence(
+            @RequestParam(name = "window", required = false, defaultValue = "30d") String window,
+            @RequestParam(name = "metric", required = false, defaultValue = "net") String metric,
+            Authentication authentication
+    ) {
+        Long userId = resolveUserId(authentication);
+        return ResponseEntity.ok(accountIntelligenceService.accountIntelligence(userId, window, metric));
     }
 
     private Long resolveUserId(Authentication authentication) {
