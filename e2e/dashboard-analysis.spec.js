@@ -11,6 +11,12 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
   const startUrl = page.url();
+  let requested1y = false;
+  page.on('request', (request) => {
+    if (request.url().includes('/analysis/series') && request.url().includes('window=1y')) {
+      requested1y = true;
+    }
+  });
 
   const hero = page.getByTestId('hero');
   const intelligenceLink = page.getByTestId('wallet-intelligence-link');
@@ -40,6 +46,7 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   await expect(page.locator('body.dashboard')).toHaveCSS('overflow', 'hidden');
   await expect(page.locator('#analysisDetailWalletName')).toContainText('MetaMask');
   await expect(page.locator('#analysisDetailPortfolio')).toContainText('USD');
+  await expect(page.locator('#analysisDetailSeriesChart')).not.toContainText(/synthetic|demo/i);
   await expect(page.url()).toBe(startUrl);
   const detailHeader = page.getByTestId('wallet-intelligence-header');
   const detailBody = page.getByTestId('wallet-intelligence-body');
@@ -55,7 +62,13 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   expect(Math.abs(headerBeforeScroll.y - headerAfterScroll.y)).toBeLessThanOrEqual(3);
   const hasLargeSeries = await page.locator('#analysisDetailSeriesChart svg').count();
   const hasCompactSeries = await page.locator('#analysisDetailSeriesChart .compact-sparkline').count();
-  expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
+  if ((hasLargeSeries + hasCompactSeries) === 0) {
+    await expect(page.locator('#analysisDetailSeriesChart')).toContainText(/No data|Нет данных/i);
+  } else {
+    expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
+  }
+  await page.locator('#analysisDetailWindowTabs button[data-window="1y"]').click();
+  await expect.poll(() => requested1y, { timeout: 15000 }).toBeTruthy();
   await expect(page.locator('#analysisDetailInsightsList')).toBeVisible();
   await expect.poll(async () => ((await page.locator('#analysisDetailInsightsList').textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);
 

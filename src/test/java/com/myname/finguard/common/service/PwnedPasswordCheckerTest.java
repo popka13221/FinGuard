@@ -1,28 +1,30 @@
 package com.myname.finguard.common.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class PwnedPasswordCheckerTest {
 
     @Test
-    void isPwnedReturnsFalseWhenDisabledOrBlank() {
-        PwnedPasswordChecker checker = new PwnedPasswordChecker(false, "http://localhost:1/range", 100);
+    void isPwnedReturnsFalseWhenDisabledOrBlank() throws Exception {
+        HttpClient client = mock(HttpClient.class);
+        PwnedPasswordChecker checker = PwnedPasswordChecker.createForTest(false, "https://example.test/range", 100, client);
         assertThat(checker.isPwned(null)).isFalse();
         assertThat(checker.isPwned("")).isFalse();
         assertThat(checker.isPwned("password")).isFalse();
+        verify(client, never()).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
     }
 
     @Test
@@ -32,36 +34,40 @@ class PwnedPasswordCheckerTest {
         String prefix = sha1.substring(0, 5);
         String suffix = sha1.substring(5);
 
-        AtomicReference<String> requested = new AtomicReference<>("");
-        try (SimpleHttpServer server = new SimpleHttpServer(200, (path) -> {
-            requested.set(path);
-            return (suffix.toLowerCase() + ":42\nDEADBEEF:1\n");
-        })) {
-            PwnedPasswordChecker checker = new PwnedPasswordChecker(true, "http://127.0.0.1:" + server.port() + "/range", 1000);
-            assertThat(checker.isPwned(password)).isTrue();
-            assertThat(requested.get()).isEqualTo("/range/" + prefix);
-        }
+        HttpClient client = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(suffix.toLowerCase() + ":42\nDEADBEEF:1\n");
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+
+        PwnedPasswordChecker checker = PwnedPasswordChecker.createForTest(true, "https://example.test/range", 1000, client);
+        assertThat(checker.isPwned(password)).isTrue();
+
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(client).send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class));
+        assertThat(requestCaptor.getValue().uri().getPath()).isEqualTo("/range/" + prefix);
     }
 
     @Test
     void isPwnedReturnsFalseWhenSuffixMissingOrNon200() throws Exception {
-        String password = "password";
-        String sha1 = sha1Upper(password);
-        String suffix = sha1.substring(5);
+        HttpClient clientMissing = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> responseMissing = (HttpResponse<String>) mock(HttpResponse.class);
+        when(responseMissing.statusCode()).thenReturn(200);
+        when(responseMissing.body()).thenReturn("DEADBEEF:1\n");
+        when(clientMissing.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseMissing);
+        PwnedPasswordChecker checkerMissing = PwnedPasswordChecker.createForTest(true, "https://example.test/range", 1000, clientMissing);
+        assertThat(checkerMissing.isPwned("password")).isFalse();
 
-        try (SimpleHttpServer serverMissing = new SimpleHttpServer(200, (path) -> "DEADBEEF:1\n")) {
-            PwnedPasswordChecker checker = new PwnedPasswordChecker(true, "http://127.0.0.1:" + serverMissing.port() + "/range", 1000);
-            assertThat(checker.isPwned(password)).isFalse();
-        }
-
-        try (SimpleHttpServer serverNon200 = new SimpleHttpServer(500, (path) -> suffix + ":1\n")) {
-            PwnedPasswordChecker checker = new PwnedPasswordChecker(true, "http://127.0.0.1:" + serverNon200.port() + "/range", 1000);
-            assertThat(checker.isPwned(password)).isFalse();
-        }
-    }
-
-    private interface BodySupplier {
-        String body(String path);
+        HttpClient clientNon200 = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> responseNon200 = (HttpResponse<String>) mock(HttpResponse.class);
+        when(responseNon200.statusCode()).thenReturn(500);
+        when(responseNon200.body()).thenReturn("ANY:1\n");
+        when(clientNon200.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseNon200);
+        PwnedPasswordChecker checkerNon200 = PwnedPasswordChecker.createForTest(true, "https://example.test/range", 1000, clientNon200);
+        assertThat(checkerNon200.isPwned("password")).isFalse();
     }
 
     private String sha1Upper(String input) throws Exception {
@@ -72,77 +78,5 @@ class PwnedPasswordCheckerTest {
             sb.append(String.format("%02X", b));
         }
         return sb.toString();
-    }
-
-    private static final class SimpleHttpServer implements AutoCloseable {
-        private final ServerSocket serverSocket;
-        private final Thread thread;
-        private final CountDownLatch ready = new CountDownLatch(1);
-        private final int status;
-        private final BodySupplier bodySupplier;
-
-        SimpleHttpServer(int status, BodySupplier bodySupplier) throws IOException, InterruptedException {
-            this.status = status;
-            this.bodySupplier = bodySupplier;
-            this.serverSocket = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
-            this.thread = new Thread(this::serveOnce, "pwned-test-server");
-            this.thread.setDaemon(true);
-            this.thread.start();
-            ready.await();
-        }
-
-        int port() {
-            return serverSocket.getLocalPort();
-        }
-
-        private void serveOnce() {
-            ready.countDown();
-            try (Socket socket = serverSocket.accept()) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
-                String requestLine = reader.readLine();
-                String path = "/";
-                if (requestLine != null && !requestLine.isBlank()) {
-                    String[] parts = requestLine.split(" ");
-                    if (parts.length >= 2) {
-                        path = parts[1];
-                    }
-                }
-                // Consume headers.
-                while (true) {
-                    String line = reader.readLine();
-                    if (line == null || line.isEmpty()) {
-                        break;
-                    }
-                }
-
-                byte[] body = bodySupplier.body(path).getBytes(StandardCharsets.UTF_8);
-                String statusText = status == 200 ? "OK" : "ERROR";
-                String headers = "HTTP/1.1 " + status + " " + statusText + "\r\n"
-                        + "Content-Type: text/plain; charset=utf-8\r\n"
-                        + "Content-Length: " + body.length + "\r\n"
-                        + "Connection: close\r\n"
-                        + "\r\n";
-                OutputStream os = socket.getOutputStream();
-                os.write(headers.getBytes(StandardCharsets.US_ASCII));
-                os.write(body);
-                os.flush();
-            } catch (IOException ignored) {
-                // Best-effort server for unit tests.
-            } finally {
-                try {
-                    serverSocket.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
-
-        @Override
-        public void close() throws Exception {
-            try {
-                serverSocket.close();
-            } catch (IOException ignored) {
-            }
-            thread.join(1000);
-        }
     }
 }

@@ -30,17 +30,18 @@ class StaticDashboardIntegrationTest {
 
     @Test
     @WithMockUser(username = "user@example.com")
-    void dashboardHtmlContainsMarketCards() throws Exception {
+    void dashboardHtmlContainsLiveOnlyDashboardSections() throws Exception {
         String html = mockMvc.perform(get("/app/dashboard.html"))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString(StandardCharsets.UTF_8);
 
-        assertThat(html).contains("Курсы монет");
-        assertThat(html).contains("FX Radar");
-        assertThat(html).contains("fxTopVolatile");
-        assertThat(html).contains("fxDetail");
-        assertThat(html).contains("btcSpark");
+        assertThat(html).contains("wallet-intelligence-link");
+        assertThat(html).contains("upcomingSection");
+        assertThat(html).contains("balancePeriodTabs");
+        assertThat(html).contains("balanceMetricSelect");
+        assertThat(html).doesNotContain("FX Radar");
+        assertThat(html).doesNotContain("Курсы монет");
     }
 }

@@ -9,6 +9,10 @@ public record CryptoWalletAnalysisSummaryResponse(
         String baseCurrency,
         BigDecimal delta24hPct,
         BigDecimal delta7dPct,
+        BigDecimal inflow30d,
+        BigDecimal outflow30d,
+        String metricsSource,
+        boolean hasMeaningfulData,
         List<AllocationItem> allocation,
         Instant asOf,
         boolean synthetic

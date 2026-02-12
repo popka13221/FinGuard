@@ -22,6 +22,8 @@ test('dashboard empty states expose action CTAs', async ({ page }) => {
   await expect(page.locator('#transactionsList .inline-cta-secondary')).toBeVisible();
   await expect(page.locator('#accountsList .inline-cta-primary')).toBeVisible();
   await expect(page.locator('#walletsList .inline-cta-primary')).toBeVisible();
+  await expect(page.locator('#upcomingSection')).toBeHidden();
+  await expect(page.locator('#upcomingPaymentsList')).not.toContainText(/Rent|Streaming|Mobile service/);
 
   await page.locator('#transactionsList .inline-cta-primary').click();
   await expect(page.locator('#add-account-overlay')).toBeVisible();
@@ -120,10 +122,11 @@ test('reduced motion mode is applied', async ({ page }) => {
   await expect(page.locator('body.dashboard[data-motion-level="reduced"]')).toBeVisible();
 });
 
-test('markets are collapsed to a compact nav link', async ({ page }) => {
+test('markets nav link is hidden until markets page is implemented', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-source');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
 
   await expect(page.locator('.markets-link')).toHaveCount(1);
+  await expect(page.locator('.markets-link')).toBeHidden();
   await expect(page.locator('.markets-section')).toHaveCount(0);
 });

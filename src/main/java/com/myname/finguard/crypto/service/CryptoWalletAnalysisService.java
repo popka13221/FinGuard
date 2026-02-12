@@ -180,24 +180,30 @@ public class CryptoWalletAnalysisService {
 
         BigDecimal delta24hPct = computeSnapshotDeltaPct(walletId, baseCurrency, 1);
         BigDecimal delta7dPct = computeSnapshotDeltaPct(walletId, baseCurrency, 7);
+        BigDecimal inflow30d = computeSnapshotFlow(walletId, baseCurrency, 30, true);
+        BigDecimal outflow30d = computeSnapshotFlow(walletId, baseCurrency, 30, false);
+        String metricsSource = resolveSummaryMetricsSource(walletId, now);
 
         List<CryptoWalletAnalysisSummaryResponse.AllocationItem> allocation = buildAllocationForWallet(walletDto, wallet);
-        boolean synthetic = walletDto == null || walletDto.valueInBase() == null;
-        if (delta24hPct == null) {
-            delta24hPct = computeDeltaPct(userId, now.minus(24, ChronoUnit.HOURS), now, total);
-            synthetic = true;
-        }
-        if (delta7dPct == null) {
-            delta7dPct = computeDeltaPct(userId, now.minus(7, ChronoUnit.DAYS), now, total);
-            synthetic = true;
-        }
+        boolean synthetic = "ESTIMATED".equalsIgnoreCase(metricsSource);
+        boolean hasMeaningfulData = total.signum() != 0
+                || (inflow30d != null && inflow30d.signum() != 0)
+                || (outflow30d != null && outflow30d.signum() != 0)
+                || delta24hPct != null
+                || delta7dPct != null
+                || !allocation.isEmpty();
 
         recordSynthetic("summary", synthetic);
+        int scale = scaleFor(baseCurrency);
         return new CryptoWalletAnalysisSummaryResponse(
                 total,
                 baseCurrency,
                 scalePct(delta24hPct),
                 scalePct(delta7dPct),
+                inflow30d == null ? null : scaleAmount(inflow30d, scale),
+                outflow30d == null ? null : scaleAmount(outflow30d, scale),
+                metricsSource,
+                hasMeaningfulData,
                 allocation,
                 now,
                 synthetic
@@ -227,10 +233,8 @@ public class CryptoWalletAnalysisService {
         CryptoWalletSummaryResponse walletSummary = cryptoWalletService.walletsSummary(userId);
         String baseCurrency = normalizeCurrency(walletSummary == null ? null : walletSummary.baseCurrency());
 
-        List<CryptoWalletAnalysisInsightItem> fallback = buildFallbackInsights(userId, walletId, baseCurrency, now);
-        boolean synthetic = fallback.stream().allMatch(CryptoWalletAnalysisInsightItem::synthetic);
-        recordSynthetic("insights", synthetic);
-        return new CryptoWalletAnalysisInsightsResponse(baseCurrency, fallback, now);
+        recordSynthetic("insights", true);
+        return new CryptoWalletAnalysisInsightsResponse(baseCurrency, List.of(), now);
     }
 
     public CryptoWalletAnalysisSeriesResponse series(Long userId, Long walletId, String window) {
@@ -249,56 +253,8 @@ public class CryptoWalletAnalysisService {
             return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizedWindow, fromSnapshots, now, synthetic);
         }
 
-        CryptoWalletDto walletDto = findWalletDto(walletSummary, walletId);
-        BigDecimal total = safe(walletDto == null ? null : walletDto.valueInBase());
-
-        Instant from = now.minus(windowDays - 1L, ChronoUnit.DAYS);
-        List<Transaction> rows = transactionRepository.findByUserIdAndTransactionDateBetweenOrderByTransactionDateDesc(userId, from, now);
-        if (rows.isEmpty()) {
-            CryptoWalletAnalysisSeriesResponse synthetic = buildSyntheticSeries(baseCurrency, windowDays, total, now, walletId);
-            recordSynthetic("series", true);
-            return synthetic;
-        }
-
-        List<Transaction> withAmounts = rows.stream()
-                .filter(tx -> tx != null
-                        && tx.getTransactionDate() != null
-                        && tx.getAmount() != null
-                        && tx.getCurrency() != null
-                        && !tx.getCurrency().isBlank())
-                .toList();
-        if (withAmounts.isEmpty()) {
-            CryptoWalletAnalysisSeriesResponse synthetic = buildSyntheticSeries(baseCurrency, windowDays, total, now, walletId);
-            recordSynthetic("series", true);
-            return synthetic;
-        }
-
-        ConversionContext conversion = conversionContext(baseCurrency, withAmounts.stream().map(Transaction::getCurrency).toList());
-        NavigableMap<LocalDate, BigDecimal> netByDay = new TreeMap<>();
-        for (Transaction tx : withAmounts) {
-            LocalDate day = LocalDate.ofInstant(tx.getTransactionDate(), ZoneOffset.UTC);
-            BigDecimal amountInBase = convertToBase(tx.getAmount(), tx.getCurrency(), conversion);
-            BigDecimal signed = tx.getType() == TransactionType.INCOME ? amountInBase : amountInBase.negate();
-            netByDay.merge(day, signed, BigDecimal::add);
-        }
-
-        LocalDate endDay = LocalDate.ofInstant(now, ZoneOffset.UTC);
-        LocalDate startDay = endDay.minusDays(windowDays - 1L);
-        Map<LocalDate, BigDecimal> valueAtDay = new HashMap<>();
-        BigDecimal running = total;
-        int scale = scaleFor(baseCurrency);
-        for (LocalDate day = endDay; !day.isBefore(startDay); day = day.minusDays(1)) {
-            valueAtDay.put(day, running.max(BigDecimal.ZERO).setScale(scale, RoundingMode.HALF_UP));
-            running = running.subtract(safe(netByDay.get(day)));
-        }
-
-        List<CryptoWalletAnalysisSeriesResponse.SeriesPoint> points = new ArrayList<>(windowDays);
-        for (LocalDate day = startDay; !day.isAfter(endDay); day = day.plusDays(1)) {
-            BigDecimal value = valueAtDay.getOrDefault(day, BigDecimal.ZERO.setScale(scale, RoundingMode.HALF_UP));
-            points.add(new CryptoWalletAnalysisSeriesResponse.SeriesPoint(day.atStartOfDay().toInstant(ZoneOffset.UTC), value));
-        }
-        recordSynthetic("series", false);
-        return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizedWindow, points, now, false);
+        recordSynthetic("series", true);
+        return new CryptoWalletAnalysisSeriesResponse(baseCurrency, normalizedWindow, List.of(), now, true);
     }
 
     protected CryptoWalletAnalysisJob latestJob(Long userId, Long walletId) {
@@ -990,6 +946,50 @@ public class CryptoWalletAnalysisService {
         return cur.subtract(prev)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(prev.abs(), 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal computeSnapshotFlow(Long walletId, String baseCurrency, int daysBack, boolean inflow) {
+        LocalDate endDay = LocalDate.now(ZoneOffset.UTC);
+        LocalDate startDay = endDay.minusDays(Math.max(1, daysBack) - 1L);
+        List<WalletDailySnapshot> rows = walletDailySnapshotRepository.findByWalletIdAndDayBetweenOrderByDayAsc(walletId, startDay, endDay);
+        if (rows.isEmpty()) {
+            return null;
+        }
+        BigDecimal totalUsd = BigDecimal.ZERO;
+        for (WalletDailySnapshot row : rows) {
+            if (row == null) {
+                continue;
+            }
+            BigDecimal valueUsd = inflow ? row.getInflowUsd() : row.getOutflowUsd();
+            if (valueUsd == null) {
+                continue;
+            }
+            totalUsd = totalUsd.add(scaleAmount(valueUsd, 8).abs());
+        }
+        if (totalUsd.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return convertUsdToBase(scaleAmount(totalUsd, 8), baseCurrency);
+    }
+
+    private String resolveSummaryMetricsSource(Long walletId, Instant now) {
+        LocalDate endDay = LocalDate.ofInstant(now == null ? Instant.now() : now, ZoneOffset.UTC);
+        LocalDate startDay = endDay.minusDays(29);
+        List<WalletDailySnapshot> rows = walletDailySnapshotRepository.findByWalletIdAndDayBetweenOrderByDayAsc(walletId, startDay, endDay);
+        if (rows.isEmpty()) {
+            return "ESTIMATED";
+        }
+        boolean hasPartial = false;
+        for (WalletDailySnapshot row : rows) {
+            String source = row == null ? "" : String.valueOf(row.getSource()).toUpperCase(Locale.ROOT);
+            if (source.isBlank() || "ESTIMATED".equals(source) || "TRANSACTION_FALLBACK".equals(source)) {
+                return "ESTIMATED";
+            }
+            if ("PARTIAL".equals(source)) {
+                hasPartial = true;
+            }
+        }
+        return hasPartial ? "PARTIAL" : "LIVE";
     }
 
     private BigDecimal currentWalletUsd(Long userId, Long walletId, String baseCurrency) {

@@ -99,8 +99,10 @@ class StaticUiFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(result -> {
                     String html = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-                    assertThat(html).contains("FX Radar");
-                    assertThat(html).contains("Курсы монет");
+                    assertThat(html).contains("wallet-intelligence-link");
+                    assertThat(html).contains("balanceMetricSelect");
+                    assertThat(html).doesNotContain("FX Radar");
+                    assertThat(html).doesNotContain("Курсы монет");
                 });
 
         mockMvc.perform(get("/app/dashboard.js").cookie(new Cookie("FG_AUTH", access)))

@@ -23,6 +23,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -240,7 +241,9 @@ public class DashboardService {
                 latestJob == null ? 0 : latestJob.getProgressPct(),
                 latestJob != null && (latestJob.getStatus() == CryptoWalletAnalysisJobStatus.PARTIAL || latestJob.getStatus() == CryptoWalletAnalysisJobStatus.DONE),
                 latestJob == null ? now : latestJob.getUpdatedAt(),
-                latestJob == null || latestJob.getStatus() == CryptoWalletAnalysisJobStatus.DONE ? "LIVE" : "PARTIAL"
+                latestJob == null || latestJob.getStatus() == CryptoWalletAnalysisJobStatus.DONE ? "LIVE" : "PARTIAL",
+                estimateEtaSeconds(latestJob),
+                latestJob == null || latestJob.getLastSuccessfulStage() == null ? null : latestJob.getLastSuccessfulStage().name()
         );
 
         return new DashboardOverviewResponse(
@@ -277,6 +280,23 @@ public class DashboardService {
             return "LIVE";
         }
         return "ESTIMATED";
+    }
+
+    private Integer estimateEtaSeconds(CryptoWalletAnalysisJob job) {
+        if (job == null || job.getStartedAt() == null) {
+            return null;
+        }
+        int progress = Math.max(0, Math.min(job.getProgressPct(), 100));
+        if (progress >= 100) {
+            return 0;
+        }
+        if (progress == 0) {
+            return null;
+        }
+        long elapsedMs = Math.max(1, Duration.between(job.getStartedAt(), Instant.now()).toMillis());
+        long estimatedTotalMs = Math.max(elapsedMs, Math.round(elapsedMs * (100.0 / progress)));
+        long etaMs = Math.max(0, estimatedTotalMs - elapsedMs);
+        return (int) Math.min(Integer.MAX_VALUE, Math.ceil(etaMs / 1000.0));
     }
 
     private BigDecimal computeDelta7d(Long userId, BigDecimal netWorth) {

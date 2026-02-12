@@ -26,6 +26,8 @@
     transactionsList: '#transactionsList',
     transactionsFeedback: '#transactionsFeedback',
     txPeriodButtons: '.tx-period-btn',
+    balancePeriodButtons: '.balance-period-btn',
+    balanceMetricSelect: '#balanceMetricSelect',
     addTransactionBtn: '#btn-add-transaction',
     balanceError: '#balanceError',
     fxStatus: '#fxStatus',
@@ -89,9 +91,8 @@
     incomeExpenseDetails: '#incomeExpenseDetails',
     analysisIncomeValue: '#analysisIncomeValue',
     analysisExpenseValue: '#analysisExpenseValue',
-    paymentRentAmount: '#paymentRentAmount',
-    paymentSpotifyAmount: '#paymentSpotifyAmount',
-    paymentMobileAmount: '#paymentMobileAmount',
+    upcomingSection: '#upcomingSection',
+    upcomingPaymentsList: '#upcomingPaymentsList',
     walletAnalysisPanel: '#walletAnalysisPanel',
     walletAnalysisBanner: '#walletAnalysisBanner',
     analysisBannerTitle: '#analysisBannerTitle',
@@ -139,6 +140,11 @@
     analysisDetailWalletAddress: '#analysisDetailWalletAddress',
     analysisDetailWalletValue: '#analysisDetailWalletValue',
     analysisDetailWalletBalance: '#analysisDetailWalletBalance',
+    analysisDetailMetricPortfolio: '#analysisDetailMetricPortfolio',
+    analysisDetailMetricBalance: '#analysisDetailMetricBalance',
+    analysisDetailMetricGrowth: '#analysisDetailMetricGrowth',
+    analysisDetailMetricInflow: '#analysisDetailMetricInflow',
+    analysisDetailMetricOutflow: '#analysisDetailMetricOutflow',
     analysisDetailPortfolio: '#analysisDetailPortfolio',
     analysisDetailGrowth: '#analysisDetailGrowth',
     analysisDetailOutflow: '#analysisDetailOutflow',
@@ -184,6 +190,8 @@
       payment_due_jan19: 'Срок: 19 янв',
       payment_mobile: 'Мобильная связь',
       payment_due_jan22: 'Срок: 22 янв',
+      payment_name: 'Платёж',
+      payment_due_prefix: 'Срок',
       net_worth_title: 'Капитал',
       demo: 'Демо',
       balance_trend_title: 'Динамика баланса',
@@ -446,6 +454,8 @@
       payment_due_jan19: 'Due: Jan 19',
       payment_mobile: 'Mobile service',
       payment_due_jan22: 'Due: Jan 22',
+      payment_name: 'Payment',
+      payment_due_prefix: 'Due',
       net_worth_title: 'Net worth',
       demo: 'Demo',
       balance_trend_title: 'Balance trend',
@@ -792,26 +802,10 @@
     });
   }
 
-  const demoData = {
-    balance: [18200, 18750, 19340, 18900, 20200, 20950],
-    expenses: [
-      { labelKey: 'expense_housing', value: 720, color: '#4f8bff' },
-      { labelKey: 'expense_food', value: 540, color: '#10b981' },
-      { labelKey: 'expense_transport', value: 310, color: '#f97316' },
-      { labelKey: 'expense_subscriptions', value: 260, color: '#3cc7c4' },
-      { labelKey: 'expense_other', value: 520, color: '#9aa0aa' }
-    ],
-    crypto: {
-      btc: [61200, 61850, 62500, 61900, 64000, 66200],
-      eth: [3020, 3100, 3150, 3080, 3180, 3120],
-      sol: [128, 134, 140, 137, 143, 145]
-    }
-  };
-
   const cryptoAssets = [
-    { code: 'BTC', name: 'Bitcoin', priceSelector: selectors.btcPrice, sparkSelector: selectors.btcSpark, color: '#f7931a', fallbackSeries: demoData.crypto.btc },
-    { code: 'ETH', name: 'Ethereum', priceSelector: selectors.ethPrice, sparkSelector: selectors.ethSpark, color: '#4f8bff', fallbackSeries: demoData.crypto.eth },
-    { code: 'SOL', name: 'Solana', priceSelector: selectors.solPrice, sparkSelector: selectors.solSpark, color: '#10b981', fallbackSeries: demoData.crypto.sol }
+    { code: 'BTC', name: 'Bitcoin', priceSelector: selectors.btcPrice, sparkSelector: selectors.btcSpark, color: '#f7931a' },
+    { code: 'ETH', name: 'Ethereum', priceSelector: selectors.ethPrice, sparkSelector: selectors.ethSpark, color: '#4f8bff' },
+    { code: 'SOL', name: 'Solana', priceSelector: selectors.solPrice, sparkSelector: selectors.solSpark, color: '#10b981' }
   ];
 
   const fxFallbackCurrencies = [
@@ -844,13 +838,16 @@
   let reportSummaryLoaded = false;
   let reportSummaryConfirmed = false;
   const txListLimit = 20;
+  let dashboardOverview = null;
+  let lastDashboardUpcoming = [];
+  let balanceTrendWindow = '30d';
+  let balanceTrendMetric = 'net';
+  let balanceTrendCache = null;
   let txCategories = [];
   let txCategoriesById = new Map();
   const DATA_SOURCE = {
     pending: 'pending',
     live: 'live',
-    demo: 'demo',
-    synthetic: 'synthetic',
     hybrid: 'hybrid'
   };
   const dataSourceState = {
@@ -1013,8 +1010,6 @@
 
   function sourceLabel(source) {
     if (source === DATA_SOURCE.live) return t('source_live');
-    if (source === DATA_SOURCE.demo) return t('source_demo');
-    if (source === DATA_SOURCE.synthetic) return t('source_synthetic');
     if (source === DATA_SOURCE.hybrid) return t('source_hybrid');
     return t('source_pending');
   }
@@ -1031,18 +1026,10 @@
     const crypto = dataSourceState.crypto;
     const fx = dataSourceState.fx;
     let combined = DATA_SOURCE.pending;
-    if (crypto === DATA_SOURCE.demo && fx === DATA_SOURCE.demo) {
-      combined = DATA_SOURCE.demo;
-    } else if (crypto === DATA_SOURCE.live && fx === DATA_SOURCE.hybrid) {
-      combined = DATA_SOURCE.hybrid;
-    } else if (crypto === DATA_SOURCE.live && fx === DATA_SOURCE.live) {
+    if (crypto === DATA_SOURCE.live && fx === DATA_SOURCE.live) {
       combined = DATA_SOURCE.live;
     } else if (crypto === DATA_SOURCE.live || fx === DATA_SOURCE.live || fx === DATA_SOURCE.hybrid) {
       combined = DATA_SOURCE.hybrid;
-    } else if (crypto === DATA_SOURCE.synthetic || fx === DATA_SOURCE.synthetic) {
-      combined = DATA_SOURCE.synthetic;
-    } else if (crypto === DATA_SOURCE.demo || fx === DATA_SOURCE.demo) {
-      combined = DATA_SOURCE.demo;
     }
     setDataSourceBadge(selectors.marketsDataSource, combined);
   }
@@ -1102,10 +1089,10 @@
       if (!trigger) return;
       if (analysisState.detailOpen) {
         const opener = q(selectors.analysisQuickCard);
-        setAnalysisDetailOpen(false, opener || trigger);
-        window.setTimeout(() => {
-          trigger.click();
-        }, 40);
+        Promise.resolve(setAnalysisDetailOpen(false, opener || trigger))
+          .then(() => {
+            trigger.click();
+          });
         return;
       }
       trigger.click();
@@ -1123,7 +1110,11 @@
       } else if (action === 'open-add-transaction') {
         openActionMenu(selectors.addTransactionBtn);
       } else if (action === 'open-import-history') {
-        openActionMenu(selectors.addAccountBtn);
+        if (dashboardDataState.hasAccounts) {
+          openActionMenu(selectors.addTransactionBtn);
+        } else {
+          openActionMenu(selectors.addAccountBtn);
+        }
       } else if (action === 'retry-balance') {
         loadBalance();
       } else if (action === 'retry-wallets') {
@@ -1339,8 +1330,6 @@
     if (exp) exp.textContent = baseCurrency;
     const baseBtn = document.querySelector(selectors.baseCurrencyBtn);
     if (baseBtn) baseBtn.textContent = t('base_currency_button', { value: baseCurrency });
-    const totalExpense = document.querySelector('#expenseTotal');
-    if (totalExpense) totalExpense.textContent = `${t('total')}: ${formatMoney(2350, baseCurrency)}`;
   }
 
   function renderProfile(profile) {
@@ -1374,11 +1363,13 @@
       if (btn.disabled) return;
       btn.disabled = true;
       try {
+        await loadDashboardOverview();
         await Promise.all([
           loadBalance(),
           loadWallets(),
           loadRecentTransactions(),
-          loadReports()
+          loadReports(),
+          loadUpcomingPayments()
         ]);
         if (analysisState.detailOpen) {
           await refreshAllDataForAnalysisDetail();
@@ -1571,6 +1562,7 @@
   function normalizeAnalysisStatus(payload) {
     const status = String(payload && payload.status ? payload.status : 'QUEUED').toUpperCase();
     const progressRaw = toNumber(payload && payload.progressPct);
+    const etaRaw = toNumber(payload && payload.etaSeconds);
     return {
       status,
       progressPct: Number.isFinite(progressRaw) ? Math.max(0, Math.min(100, Math.round(progressRaw))) : 0,
@@ -1578,7 +1570,9 @@
       startedAt: payload && payload.startedAt ? String(payload.startedAt) : '',
       updatedAt: payload && payload.updatedAt ? String(payload.updatedAt) : '',
       finishedAt: payload && payload.finishedAt ? String(payload.finishedAt) : '',
-      partialReady: Boolean(payload && payload.partialReady)
+      partialReady: Boolean(payload && payload.partialReady),
+      etaSeconds: Number.isFinite(etaRaw) ? Math.max(0, Math.round(etaRaw)) : null,
+      lastSuccessfulStage: String(payload && payload.lastSuccessfulStage ? payload.lastSuccessfulStage : '').toUpperCase()
     };
   }
 
@@ -1595,6 +1589,10 @@
         valueInBase: toNumber(item && item.valueInBase),
         sharePct: toNumber(item && item.sharePct)
       })),
+      inflow30d: toNumber(payload.inflow30d),
+      outflow30d: toNumber(payload.outflow30d),
+      metricsSource: String(payload.metricsSource || (payload.synthetic ? 'ESTIMATED' : 'LIVE')).toUpperCase(),
+      hasMeaningfulData: Boolean(payload.hasMeaningfulData),
       synthetic: Boolean(payload.synthetic),
       asOf: payload.asOf ? String(payload.asOf) : ''
     };
@@ -1636,6 +1634,213 @@
     };
   }
 
+  function normalizeOverview(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const hero = payload.hero && typeof payload.hero === 'object' ? payload.hero : {};
+    const stats = payload.stats && typeof payload.stats === 'object' ? payload.stats : {};
+    const getStarted = payload.getStarted && typeof payload.getStarted === 'object' ? payload.getStarted : {};
+    const walletIntelligence = payload.walletIntelligence && typeof payload.walletIntelligence === 'object'
+      ? payload.walletIntelligence
+      : {};
+    const upcoming = Array.isArray(payload.upcomingPaymentsPreview) ? payload.upcomingPaymentsPreview : [];
+    const wallets = Array.isArray(payload.walletsPreview) ? payload.walletsPreview : [];
+    const transactions = Array.isArray(payload.transactionsPreview) ? payload.transactionsPreview : [];
+    return {
+      asOf: payload.asOf ? String(payload.asOf) : '',
+      dataFreshness: String(payload.dataFreshness || 'ESTIMATED').toUpperCase(),
+      hero: {
+        netWorth: toNumber(hero.netWorth),
+        baseCurrency: normalizeCurrency(hero.baseCurrency || baseCurrency) || 'USD',
+        delta7dPct: toNumber(hero.delta7dPct),
+        updatedAt: hero.updatedAt ? String(hero.updatedAt) : '',
+        hasMeaningfulData: Boolean(hero.hasMeaningfulData)
+      },
+      stats: {
+        income30d: toNumber(stats.income30d),
+        spend30d: toNumber(stats.spend30d),
+        cashflow30d: toNumber(stats.cashflow30d),
+        debt: toNumber(stats.debt),
+        hasMeaningfulData: Boolean(stats.hasMeaningfulData)
+      },
+      getStarted: {
+        visible: Boolean(getStarted.visible),
+        connectAccount: Boolean(getStarted.connectAccount),
+        addTransaction: Boolean(getStarted.addTransaction),
+        importHistory: Boolean(getStarted.importHistory)
+      },
+      transactionsPreview: transactions,
+      walletsPreview: wallets,
+      upcomingPaymentsPreview: upcoming.map((item) => ({
+        id: String(item && item.id ? item.id : ''),
+        title: String(item && item.title ? item.title : ''),
+        amount: toNumber(item && item.amount),
+        currency: normalizeCurrency(item && item.currency ? item.currency : baseCurrency) || 'USD',
+        dueAt: item && item.dueAt ? String(item.dueAt) : '',
+        confidence: toNumber(item && item.confidence),
+        source: String(item && item.source ? item.source : '')
+      })),
+      walletIntelligence: {
+        activeWalletId: toNumber(walletIntelligence.activeWalletId),
+        status: String(walletIntelligence.status || ''),
+        progressPct: toNumber(walletIntelligence.progressPct),
+        partialReady: Boolean(walletIntelligence.partialReady),
+        updatedAt: walletIntelligence.updatedAt ? String(walletIntelligence.updatedAt) : '',
+        source: String(walletIntelligence.source || ''),
+        etaSeconds: toNumber(walletIntelligence.etaSeconds),
+        lastSuccessfulStage: String(walletIntelligence.lastSuccessfulStage || '')
+      }
+    };
+  }
+
+  function hasMeaningfulNumber(value) {
+    const numeric = toNumber(value);
+    if (!Number.isFinite(numeric)) return false;
+    return Math.abs(numeric) > 0.000001;
+  }
+
+  function isEstimatedSource(source) {
+    const normalized = String(source || '').toUpperCase();
+    return normalized === 'ESTIMATED' || normalized === 'DEMO' || normalized === 'SYNTHETIC';
+  }
+
+  function isReliableMetricsSource(source) {
+    const normalized = String(source || '').toUpperCase();
+    return normalized === 'LIVE' || normalized === 'PARTIAL';
+  }
+
+  function formatEtaHint(seconds) {
+    const safe = toNumber(seconds);
+    if (!Number.isFinite(safe) || safe <= 0) return '';
+    const rounded = Math.round(safe);
+    if (rounded < 60) {
+      return currentLang === 'ru' ? `ETA ~${rounded}с` : `ETA ~${rounded}s`;
+    }
+    const mins = Math.max(1, Math.round(rounded / 60));
+    return currentLang === 'ru' ? `ETA ~${mins}м` : `ETA ~${mins}m`;
+  }
+
+  function applyOverviewToHeroAndStats(overview) {
+    if (!overview) return;
+    const hero = overview.hero || {};
+    const stats = overview.stats || {};
+    if (hero.baseCurrency) {
+      baseCurrency = hero.baseCurrency;
+      updateCurrencyLabels();
+    }
+    const totalBalanceEl = q(selectors.totalBalance);
+    if (totalBalanceEl) {
+      const showNetWorth = hasMeaningfulNumber(hero.netWorth) || Boolean(hero.hasMeaningfulData);
+      totalBalanceEl.textContent = showNetWorth ? formatMoney(hero.netWorth, baseCurrency) : '—';
+    }
+    setHeroChangeValue(hasMeaningfulNumber(hero.delta7dPct) ? hero.delta7dPct : NaN);
+    const updated = formatFxUpdated(hero.updatedAt || overview.asOf);
+    setText(selectors.analysisUpdatedAt, updated ? t('updated_at', { value: updated }) : t('source_pending'));
+
+    reportSummaryLoaded = true;
+    reportSummaryConfirmed = overview.dataFreshness === 'LIVE' || overview.dataFreshness === 'PARTIAL';
+    lastReportSummary = {
+      baseCurrency,
+      income: stats.income30d,
+      expense: stats.spend30d,
+      net: stats.cashflow30d,
+      synthetic: !reportSummaryConfirmed
+    };
+    renderIncomeExpenseSummary(lastReportSummary);
+  }
+
+  function renderUpcomingPayments(items) {
+    const section = q(selectors.upcomingSection);
+    const list = q(selectors.upcomingPaymentsList);
+    if (!section || !list) return;
+    const safeItems = Array.isArray(items)
+      ? items.filter((item) => {
+        if (!item || !hasMeaningfulNumber(item.amount)) return false;
+        return !isEstimatedSource(item.source);
+      })
+      : [];
+    if (!safeItems.length) {
+      section.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    section.hidden = false;
+    setUiState(list, 'ready');
+    list.innerHTML = safeItems.slice(0, 5).map((item) => {
+      const dueAt = formatShortDay(item.dueAt);
+      const title = escapeHtml(item.title || t('payment_name'));
+      const amount = formatMoney(item.amount, normalizeCurrency(item.currency) || baseCurrency);
+      const isOverdue = Boolean(item.dueAt && new Date(item.dueAt).getTime() < Date.now());
+      const isNegative = toNumber(item.amount) < 0;
+      return `
+        <div class="list-item payment-row">
+          <div class="payment-name">${title}</div>
+          <small class="payment-due">${dueAt ? `${t('payment_due_prefix')}: ${escapeHtml(dueAt)}` : '—'}</small>
+          <div class="payment-amount ${isOverdue || isNegative ? 'amount-negative' : ''}">${escapeHtml(amount)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function loadUpcomingPayments() {
+    const list = q(selectors.upcomingPaymentsList);
+    if (list) {
+      setUiState(list, 'loading');
+      list.innerHTML = renderSkeletonList(3);
+    }
+    const res = await Api.call('/api/dashboard/upcoming-payments?limit=5', 'GET', null, true);
+    if (!res.ok || !Array.isArray(res.data)) {
+      renderUpcomingPayments(lastDashboardUpcoming);
+      return;
+    }
+    const items = res.data.map((item) => ({
+      id: String(item && item.id ? item.id : ''),
+      title: String(item && item.title ? item.title : ''),
+      amount: toNumber(item && item.amount),
+      currency: normalizeCurrency(item && item.currency ? item.currency : baseCurrency) || 'USD',
+      dueAt: item && item.dueAt ? String(item.dueAt) : '',
+      confidence: toNumber(item && item.confidence),
+      source: String(item && item.source ? item.source : '')
+    }));
+    lastDashboardUpcoming = items;
+    renderUpcomingPayments(items);
+  }
+
+  async function loadDashboardOverview() {
+    const res = await Api.call('/api/dashboard/overview', 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      return null;
+    }
+    const parsed = normalizeOverview(res.data);
+    if (!parsed) return null;
+    dashboardOverview = parsed;
+    applyOverviewToHeroAndStats(parsed);
+    lastDashboardUpcoming = parsed.upcomingPaymentsPreview.slice();
+    renderUpcomingPayments(lastDashboardUpcoming);
+
+    dashboardDataState.accountsLoaded = true;
+    dashboardDataState.walletsLoaded = true;
+    dashboardDataState.transactionsLoaded = true;
+    dashboardDataState.hasAccounts = !parsed.getStarted.connectAccount;
+    dashboardDataState.hasWallets = parsed.walletsPreview.length > 0;
+    dashboardDataState.hasTransactions = !parsed.getStarted.addTransaction;
+
+    if (Number.isFinite(parsed.walletIntelligence.activeWalletId) && parsed.walletIntelligence.activeWalletId > 0) {
+      analysisState.activeWalletId = parsed.walletIntelligence.activeWalletId;
+      analysisState.status = normalizeAnalysisStatus({
+        status: parsed.walletIntelligence.status || 'QUEUED',
+        progressPct: parsed.walletIntelligence.progressPct,
+        stage: parsed.walletIntelligence.lastSuccessfulStage || 'FETCH_TX',
+        partialReady: parsed.walletIntelligence.partialReady,
+        updatedAt: parsed.walletIntelligence.updatedAt,
+        etaSeconds: parsed.walletIntelligence.etaSeconds,
+        lastSuccessfulStage: parsed.walletIntelligence.lastSuccessfulStage
+      });
+    }
+    updateGetStartedSection();
+    refreshAnalysisPanel();
+    return parsed;
+  }
+
   function findAnalysisInsight(type) {
     if (!analysisState.apiInsights || !Array.isArray(analysisState.apiInsights.insights)) {
       return null;
@@ -1654,9 +1859,7 @@
   }
 
   function apiSeriesWindow(windowValue) {
-    const normalized = normalizeSeriesWindow(windowValue);
-    if (normalized === '1y') return '90d';
-    return normalized;
+    return normalizeSeriesWindow(windowValue);
   }
 
   async function fetchAnalysisData(walletId) {
@@ -1700,7 +1903,7 @@
       await fetchAnalysisData(analysisState.activeWalletId);
       refreshAnalysisPanel();
     } catch (_) {
-      // keep synthetic fallback
+      refreshAnalysisPanel();
     }
   }
 
@@ -1936,6 +2139,12 @@
     document.body.classList.toggle('analysis-drawer-open', next);
     card.setAttribute('aria-expanded', next ? 'true' : 'false');
     card.classList.toggle('is-open', next);
+    if (next) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, 220);
+    });
   }
 
   function formatInsightValue(item, base) {
@@ -2005,10 +2214,11 @@
       chart.innerHTML = `<div class="muted">${t('no_data')}</div>`;
       return;
     }
-    const width = Math.max(620, chart.clientWidth || 860);
-    const height = 296;
-    const padX = 12;
-    const padY = 34;
+    const width = Math.max(300, Math.round(chart.clientWidth || 860));
+    const chartHostHeight = Math.max(260, Math.round(chart.clientHeight || 340));
+    const height = Math.max(220, chartHostHeight - 24);
+    const padX = 10;
+    const padY = 20;
     const max = Math.max(...values);
     const min = Math.min(...values);
     const span = max - min || Math.max(Math.abs(max), 1);
@@ -2069,6 +2279,10 @@
   }
 
   function buildAnalysisDetailSeries(metric) {
+    const seriesPayload = analysisState.apiSeries;
+    if (!seriesPayload || seriesPayload.synthetic === true) {
+      return [];
+    }
     const points = analysisState.apiSeries && Array.isArray(analysisState.apiSeries.points)
       ? analysisState.apiSeries.points
       : [];
@@ -2096,6 +2310,7 @@
     const data = model || buildAnalysisInsightsModel();
     const hasWallet = Boolean(analysisState.activeWalletId);
     const wallet = analysisState.activeWallet || null;
+    const summaryApi = analysisState.apiSummary || null;
     const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
     const detailUpdated = q(selectors.analysisDetailUpdated);
 
@@ -2116,14 +2331,20 @@
     setDataSourceBadge(selectors.analysisDetailSource, detailSource);
 
     if (detailUpdated) {
+      const etaHint = formatEtaHint(analysisState.status && analysisState.status.etaSeconds);
+      const lastStage = analysisState.status && analysisState.status.lastSuccessfulStage
+        ? analysisStageLabel(analysisState.status.lastSuccessfulStage)
+        : '';
       if (analysisState.detailBusy) {
         detailUpdated.textContent = t('analysis_quick_refreshing');
       } else if (!hasWallet) {
         detailUpdated.textContent = t('analysis_detail_wallet_missing');
       } else if (updated) {
-        detailUpdated.textContent = t('analysis_detail_updated', { value: updated });
+        const parts = [t('analysis_detail_updated', { value: updated }), etaHint, lastStage].filter(Boolean);
+        detailUpdated.textContent = parts.join(' · ');
       } else {
-        detailUpdated.textContent = t('source_pending');
+        const parts = [t('source_pending'), etaHint, lastStage].filter(Boolean);
+        detailUpdated.textContent = parts.join(' · ');
       }
     }
 
@@ -2143,11 +2364,16 @@
     const walletValueBase = normalizeCurrency(wallet && wallet.baseCurrency ? wallet.baseCurrency : base) || base;
     const walletBalance = toNumber(wallet && wallet.balance);
     const walletAsset = walletNativeAsset(wallet && wallet.network ? wallet.network : '');
-    const reportConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
-    const inflowValueRaw = toNumber(lastReportSummary && lastReportSummary.income);
-    const outflowValueRaw = toNumber(lastReportSummary && lastReportSummary.expense);
-    const inflowValue = reportConfirmed ? inflowValueRaw : NaN;
-    const outflowValue = reportConfirmed ? outflowValueRaw : NaN;
+    const summarySource = summaryApi && summaryApi.metricsSource ? String(summaryApi.metricsSource).toUpperCase() : '';
+    const summaryReliable = isReliableMetricsSource(summarySource);
+    const inflowValueRaw = summaryReliable ? toNumber(summaryApi && summaryApi.inflow30d) : NaN;
+    const outflowValueRaw = summaryReliable ? toNumber(summaryApi && summaryApi.outflow30d) : NaN;
+    const inflowValue = Number.isFinite(inflowValueRaw) && Math.abs(inflowValueRaw) > 0.000001 ? inflowValueRaw : NaN;
+    const outflowValue = Number.isFinite(outflowValueRaw) && Math.abs(outflowValueRaw) > 0.000001 ? outflowValueRaw : NaN;
+    const inflowCard = q(selectors.analysisDetailMetricInflow);
+    const outflowCard = q(selectors.analysisDetailMetricOutflow);
+    if (inflowCard) inflowCard.hidden = !Number.isFinite(inflowValue);
+    if (outflowCard) outflowCard.hidden = !Number.isFinite(outflowValue);
 
     setText(selectors.analysisDetailWalletValue, Number.isFinite(walletValue) ? formatMoney(walletValue, walletValueBase) : '—');
     setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
@@ -2220,7 +2446,7 @@
       const insights = analysisState.apiInsights && Array.isArray(analysisState.apiInsights.insights)
         ? analysisState.apiInsights.insights
         : [];
-      const filteredInsights = insights.filter((item) => isMeaningfulInsight(item));
+      const filteredInsights = insights.filter((item) => item && item.synthetic !== true && isMeaningfulInsight(item));
       if (!filteredInsights.length) {
         insightsEl.innerHTML = `
           <div class="analysis-empty-guide compact-empty-state">
@@ -2472,6 +2698,8 @@
     const summaryApi = analysisState.apiSummary;
     const insightsApi = analysisState.apiInsights;
     const seriesApi = analysisState.apiSeries;
+    const summaryReliable = Boolean(summaryApi && isReliableMetricsSource(summaryApi.metricsSource) && summaryApi.synthetic !== true);
+    const seriesReliable = Boolean(seriesApi && seriesApi.synthetic !== true);
     const portfolioApi = summaryApi ? toNumber(summaryApi.totalValueInBase) : NaN;
     const portfolio = Number.isFinite(portfolioApi)
       ? Math.max(0, portfolioApi)
@@ -2482,107 +2710,60 @@
       || analysisState.summaryBase
       || baseCurrency
     ) || 'USD';
-    const walletSeed = hashString(`${analysisState.activeWalletId || 0}:${Math.round((Number.isFinite(portfolio) ? portfolio : 0) * 100)}`);
-    const random = seededRandom(walletSeed || 1);
-    const ready = Boolean(analysisState.status && (analysisState.status.partialReady || analysisState.status.status === 'DONE' || analysisState.status.status === 'PARTIAL'));
 
     const growthInsight = findAnalysisInsight('PORTFOLIO_30D_CHANGE');
-    const growthFromApi = growthInsight && String(growthInsight.unit || '').toUpperCase() === 'PERCENT'
+    const growthFromApi = growthInsight
+      && growthInsight.synthetic !== true
+      && String(growthInsight.unit || '').toUpperCase() === 'PERCENT'
       ? toNumber(growthInsight.value)
       : NaN;
-    const seriesValues = seriesApi && Array.isArray(seriesApi.points)
+    const seriesValues = seriesReliable && Array.isArray(seriesApi.points)
       ? seriesApi.points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value))
       : [];
     const growthFromSeries = seriesValues.length >= 2
       ? ((seriesValues[seriesValues.length - 1] - seriesValues[0]) / Math.max(Math.abs(seriesValues[0]), 1)) * 100
       : NaN;
-    const growthBase = (random() * 9.2) - 1.8;
-    const growthFallback = Number.isFinite(portfolio) ? growthBase + (ready ? 0.6 : -0.25) : NaN;
     const growth = Number.isFinite(growthFromSeries)
       ? growthFromSeries
       : (Number.isFinite(growthFromApi)
         ? growthFromApi
-        : (summaryApi && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : growthFallback));
-
-    const expenses = recentTransactionsCache
-      .map((tx) => {
-        const type = String(tx && tx.type ? tx.type : '').toUpperCase();
-        const amount = toNumber(tx && tx.amount);
-        if (type !== 'EXPENSE' || !Number.isFinite(amount) || amount <= 0) return null;
-        const description = tx && tx.description ? String(tx.description) : '';
-        const category = tx && tx.categoryId != null ? txCategoriesById.get(Number(tx.categoryId)) : null;
-        const categoryName = category && category.name ? String(category.name) : '';
-        const key = firstNonEmpty([description, categoryName, `cat:${tx && tx.categoryId != null ? tx.categoryId : ''}`]).toLowerCase();
-        return {
-          amount,
-          label: firstNonEmpty([description, categoryName, t('expense_label')]),
-          key
-        };
-      })
-      .filter(Boolean);
-
-    let topOutflow = null;
-    expenses.forEach((item) => {
-      if (!topOutflow || item.amount > topOutflow.amount) {
-        topOutflow = item;
-      }
-    });
-    const syntheticOutflow = Number.isFinite(portfolio) ? portfolio * (0.006 + random() * 0.017) : NaN;
-
-    const recurringGroups = expenses.reduce((acc, item) => {
-      if (!item.key) return acc;
-      if (!acc.has(item.key)) acc.set(item.key, []);
-      acc.get(item.key).push(item.amount);
-      return acc;
-    }, new Map());
-    let recurringLive = 0;
-    let recurringFound = false;
-    recurringGroups.forEach((amounts) => {
-      if (!Array.isArray(amounts) || amounts.length < 2) return;
-      const avg = amounts.reduce((sum, value) => sum + value, 0) / amounts.length;
-      recurringLive += avg;
-      recurringFound = true;
-    });
-    if (recurringFound) {
-      recurringLive *= 4.2;
-    }
-    const recurringSynthetic = Number.isFinite(portfolio) ? portfolio * (0.004 + random() * 0.012) : NaN;
+        : (summaryReliable && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : NaN));
 
     const outflowInsight = findAnalysisInsight('TOP_OUTFLOW');
     const outflowValueApi = outflowInsight && String(outflowInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
       ? toNumber(outflowInsight.value)
       : NaN;
     const outflowLabelApi = outflowInsight && outflowInsight.label ? String(outflowInsight.label) : '';
-    const outflowLiveApi = Boolean(outflowInsight && !outflowInsight.synthetic);
+    const outflowLiveApi = Boolean(outflowInsight && !outflowInsight.synthetic && Number.isFinite(outflowValueApi));
 
     const recurringInsight = findAnalysisInsight('RECURRING_SPEND');
     const recurringValueApi = recurringInsight && String(recurringInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
       ? toNumber(recurringInsight.value)
       : NaN;
-    const recurringLiveApi = Boolean(recurringInsight && !recurringInsight.synthetic);
+    const recurringLiveApi = Boolean(recurringInsight && !recurringInsight.synthetic && Number.isFinite(recurringValueApi));
     const recurringConfidenceApi = toNumber(recurringInsight && recurringInsight.confidence);
     const recurringNextChargeApi = recurringInsight && recurringInsight.nextEstimatedChargeAt
       ? String(recurringInsight.nextEstimatedChargeAt)
       : '';
 
-    const portfolioLive = Boolean(summaryApi && !summaryApi.synthetic && Number.isFinite(portfolioApi));
+    const portfolioLive = Boolean(summaryReliable && Number.isFinite(portfolioApi));
 
     return {
       base,
       portfolio,
       growth,
       growthSeries: seriesValues,
-      growthSeriesSynthetic: Boolean(seriesApi && seriesApi.synthetic),
+      growthSeriesSynthetic: !seriesReliable,
       portfolioLive,
-      growthLive: Number.isFinite(growthFromSeries) || Number.isFinite(growthFromApi),
-      outflowValue: Number.isFinite(outflowValueApi) ? outflowValueApi : (topOutflow ? topOutflow.amount : syntheticOutflow),
-      outflowLabel: outflowLabelApi || (topOutflow ? topOutflow.label : ''),
-      outflowLive: Number.isFinite(outflowValueApi) ? outflowLiveApi : Boolean(topOutflow),
-      recurringValue: Number.isFinite(recurringValueApi) ? recurringValueApi : (recurringFound ? recurringLive : recurringSynthetic),
-      recurringLive: Number.isFinite(recurringValueApi) ? recurringLiveApi : recurringFound,
+      growthLive: Number.isFinite(growthFromSeries) || Number.isFinite(growthFromApi) || (summaryReliable && Number.isFinite(toNumber(summaryApi && summaryApi.delta7dPct))),
+      outflowValue: Number.isFinite(outflowValueApi) ? outflowValueApi : NaN,
+      outflowLabel: outflowLabelApi || '',
+      outflowLive: outflowLiveApi,
+      recurringValue: Number.isFinite(recurringValueApi) ? recurringValueApi : NaN,
+      recurringLive: recurringLiveApi,
       recurringConfidence: Number.isFinite(recurringConfidenceApi)
         ? recurringConfidenceApi
-        : (Number.isFinite(recurringValueApi) ? 0.82 : 0.34),
+        : (Number.isFinite(recurringValueApi) ? 0.82 : NaN),
       recurringNextChargeAt: recurringNextChargeApi
     };
   }
@@ -2657,7 +2838,7 @@
     );
     setDataSourceBadge(
       selectors.analysisGrowthSource,
-      model.growthLive ? (model.growthSeriesSynthetic ? DATA_SOURCE.synthetic : DATA_SOURCE.live) : DATA_SOURCE.synthetic
+      model.growthLive ? (model.growthSeriesSynthetic ? DATA_SOURCE.hybrid : DATA_SOURCE.live) : DATA_SOURCE.pending
     );
     setDataSourceBadge(selectors.analysisOutflowSource, Number.isFinite(monthlyCashflow) ? DATA_SOURCE.live : DATA_SOURCE.pending);
     setDataSourceBadge(selectors.analysisRecurringSource, hasDebt ? DATA_SOURCE.live : DATA_SOURCE.pending);
@@ -2709,6 +2890,8 @@
     const progressPct = Math.max(0, Math.min(100, Number(status.progressPct) || 0));
     const safeWalletName = analysisState.activeWalletName || `#${analysisState.activeWalletId}`;
     const updatedValue = formatFxUpdated(status.finishedAt || status.updatedAt || status.startedAt);
+    const etaHint = formatEtaHint(status.etaSeconds);
+    const lastSuccessfulStage = status.lastSuccessfulStage ? analysisStageLabel(status.lastSuccessfulStage) : '';
 
     setUiState(panel, 'ready');
     if (banner) banner.dataset.uiState = statusName.toLowerCase();
@@ -2721,16 +2904,17 @@
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.hybrid);
     } else if (statusName === 'FAILED') {
       subtitle.textContent = t('analysis_banner_subtitle_failed');
-      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.demo);
+      setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
     } else {
       subtitle.textContent = t('analysis_banner_title_running', { name: safeWalletName });
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
     }
 
     const stageLabel = `${analysisStageLabel(status.stage)} · ${analysisStatusLabel(statusName)}`;
+    const statusMeta = [etaHint, lastSuccessfulStage].filter(Boolean).join(' · ');
     stageEl.textContent = analysisState.pollError
-      ? `${stageLabel} · ${t('analysis_polling_error')}`
-      : stageLabel;
+      ? `${stageLabel}${statusMeta ? ` · ${statusMeta}` : ''} · ${t('analysis_polling_error')}`
+      : `${stageLabel}${statusMeta ? ` · ${statusMeta}` : ''}`;
     progressTextEl.textContent = `${progressPct}%`;
     progressFill.style.width = `${progressPct}%`;
     if (progressWrap) {
@@ -2739,7 +2923,9 @@
     }
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(progressPct));
     if (updatedEl) {
-      updatedEl.textContent = updatedValue ? t('updated_at', { value: updatedValue }) : t('source_pending');
+      const updatedText = updatedValue ? t('updated_at', { value: updatedValue }) : t('source_pending');
+      const parts = [updatedText, etaHint, lastSuccessfulStage].filter(Boolean);
+      updatedEl.textContent = parts.join(' · ');
     }
   }
 
@@ -3107,17 +3293,78 @@
     return payload;
   }
 
+  function emptyTrendState(target, message) {
+    if (!target) return;
+    setUiState(target, 'empty');
+    target.classList.add('is-compact-chart');
+    target.innerHTML = `
+      <div class="compact-chart-state">
+        <div class="muted compact-chart-note">${escapeHtml(message || t('no_meaningful_change_window', { value: localizedWindowLabel(balanceTrendWindow) }))}</div>
+      </div>
+    `;
+  }
+
+  function trendWindowDays(windowValue) {
+    const normalized = normalizeSeriesWindow(windowValue);
+    if (normalized === '7d') return 7;
+    if (normalized === '90d') return 90;
+    if (normalized === '1y') return 365;
+    return 30;
+  }
+
+  function applyBalanceTrendControls() {
+    document.querySelectorAll(selectors.balancePeriodButtons).forEach((btn) => {
+      const tabWindow = normalizeSeriesWindow(btn.dataset.window || '');
+      btn.classList.toggle('active', tabWindow === normalizeSeriesWindow(balanceTrendWindow));
+      btn.setAttribute('aria-selected', tabWindow === normalizeSeriesWindow(balanceTrendWindow) ? 'true' : 'false');
+    });
+    const metricSelect = q(selectors.balanceMetricSelect);
+    if (metricSelect) metricSelect.value = String(balanceTrendMetric || 'net').toLowerCase();
+  }
+
+  function bindBalanceTrendControls() {
+    const periodButtons = Array.from(document.querySelectorAll(selectors.balancePeriodButtons));
+    const metricSelect = q(selectors.balanceMetricSelect);
+    if (!periodButtons.length && !metricSelect) return;
+    if (periodButtons.length && periodButtons[0].dataset.bound === '1') {
+      applyBalanceTrendControls();
+      return;
+    }
+    periodButtons.forEach((btn) => {
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', async () => {
+        const nextWindow = normalizeSeriesWindow(btn.dataset.window || '30d');
+        if (nextWindow === normalizeSeriesWindow(balanceTrendWindow)) {
+          applyBalanceTrendControls();
+          return;
+        }
+        balanceTrendWindow = nextWindow;
+        applyBalanceTrendControls();
+        await loadBalanceTrend();
+      });
+    });
+    if (metricSelect && metricSelect.dataset.bound !== '1') {
+      metricSelect.dataset.bound = '1';
+      metricSelect.addEventListener('change', async () => {
+        balanceTrendMetric = String(metricSelect.value || 'net').toLowerCase();
+        applyBalanceTrendControls();
+        await loadBalanceTrend();
+      });
+    }
+    applyBalanceTrendControls();
+  }
+
   async function loadBalanceTrend() {
     const target = document.querySelector(selectors.balanceChart);
+    applyBalanceTrendControls();
     if (target) {
       setUiState(target, 'loading');
       target.innerHTML = renderSkeletonList(2);
     }
 
     const now = new Date();
-    const start = new Date(now);
-    start.setMonth(now.getMonth() - 5);
-    start.setDate(1);
+    const days = trendWindowDays(balanceTrendWindow);
+    const start = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
     start.setHours(0, 0, 0, 0);
 
     const params = new URLSearchParams();
@@ -3125,50 +3372,89 @@
     params.set('to', now.toISOString());
     const res = await Api.call(`/api/reports/cash-flow?${params}`, 'GET', null, true);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      if (target) setUiState(target, 'ready');
-      renderLineChart(selectors.balanceChart, demoData.balance, baseCurrency);
+      emptyTrendState(target, t('no_meaningful_change_window', { value: localizedWindowLabel(balanceTrendWindow) }));
       return null;
     }
     const payload = res.data;
     const points = Array.isArray(payload.points) ? payload.points : [];
-
-    const byMonth = {};
-    points.forEach((point) => {
-      const rawDate = point && point.date ? String(point.date) : '';
-      if (rawDate.length < 7) return;
-      const key = rawDate.slice(0, 7);
-      const net = toNumber(point && point.net);
-      if (!Number.isFinite(net)) return;
-      byMonth[key] = (byMonth[key] || 0) + net;
-    });
-
-    const monthKeys = [];
-    const cursor = new Date(now);
-    cursor.setDate(1);
-    cursor.setHours(0, 0, 0, 0);
-    cursor.setMonth(cursor.getMonth() - 5);
-    for (let i = 0; i < 6; i += 1) {
-      monthKeys.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
-      cursor.setMonth(cursor.getMonth() + 1);
+    if (!points.length) {
+      emptyTrendState(target, t('no_meaningful_change_window', { value: localizedWindowLabel(balanceTrendWindow) }));
+      return payload;
     }
 
-    const monthNet = monthKeys.map((key) => toNumber(byMonth[key]) || 0);
-    const currentTotal = computeCurrentTotalInBase();
-    const netSum = monthNet.reduce((acc, v) => acc + v, 0);
-
-    let running = Number.isFinite(currentTotal) ? (currentTotal - netSum) : 0;
-    const series = monthNet.map((v) => {
-      running += v;
-      return running;
+    const byDay = new Map();
+    points.forEach((point) => {
+      const rawDate = point && point.date ? String(point.date) : '';
+      if (!rawDate) return;
+      const dayKey = rawDate.slice(0, 10);
+      const income = toNumber(point && point.income);
+      const expense = toNumber(point && point.expense);
+      const net = toNumber(point && point.net);
+      byDay.set(dayKey, {
+        income: Number.isFinite(income) ? income : 0,
+        expense: Number.isFinite(expense) ? expense : 0,
+        net: Number.isFinite(net) ? net : 0
+      });
     });
 
+    const dayKeys = [];
+    const cursor = new Date(start);
+    while (cursor <= now) {
+      dayKeys.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const inflowSeries = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? Math.max(item.income, 0) : 0;
+    });
+    const outflowSeries = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? Math.max(item.expense, 0) : 0;
+    });
+    const netSeries = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? item.net : 0;
+    });
+
+    let seriesToRender = netSeries.slice();
+    if (balanceTrendMetric === 'inflow') {
+      seriesToRender = inflowSeries;
+    } else if (balanceTrendMetric === 'outflow') {
+      seriesToRender = outflowSeries;
+    } else {
+      const currentTotal = computeCurrentTotalInBase();
+      if (Number.isFinite(currentTotal)) {
+        const totalNet = netSeries.reduce((sum, value) => sum + value, 0);
+        let running = currentTotal - totalNet;
+        seriesToRender = netSeries.map((delta) => {
+          running += delta;
+          return running;
+        });
+      }
+    }
+
+    const hasMeaningful = seriesToRender.some((value) => Number.isFinite(value) && Math.abs(value) > 0.000001);
+    if (!hasMeaningful) {
+      emptyTrendState(target, t('no_meaningful_change_window', { value: localizedWindowLabel(balanceTrendWindow) }));
+      return payload;
+    }
+
     if (target) setUiState(target, 'ready');
-    renderLineChart(selectors.balanceChart, series, baseCurrency);
+    balanceTrendCache = {
+      at: Date.now(),
+      window: normalizeSeriesWindow(balanceTrendWindow),
+      metric: String(balanceTrendMetric || 'net').toLowerCase(),
+      series: seriesToRender.slice()
+    };
+    renderLineChart(selectors.balanceChart, seriesToRender, baseCurrency, balanceTrendWindow);
     return payload;
   }
 
   async function loadReports() {
-    await loadReportSummary();
+    if (!dashboardOverview) {
+      await loadReportSummary();
+    }
     await loadBalanceTrend();
   }
 
@@ -3235,8 +3521,13 @@
           return;
         }
         setPanelFeedback(selectors.accountsFeedback, '');
-        await loadBalance();
-        await loadReports();
+        await loadDashboardOverview();
+        await Promise.all([
+          loadBalance(),
+          loadReports(),
+          loadRecentTransactions(),
+          loadUpcomingPayments()
+        ]);
       });
     });
     updateGetStartedSection();
@@ -3662,9 +3953,13 @@
           return;
         }
         close();
-        await loadBalance();
-        await loadReports();
-        await loadRecentTransactions();
+        await loadDashboardOverview();
+        await Promise.all([
+          loadBalance(),
+          loadReports(),
+          loadRecentTransactions(),
+          loadUpcomingPayments()
+        ]);
       } finally {
         submitting = false;
         createBtn.disabled = false;
@@ -4037,7 +4332,7 @@
       renderFxDetail(null);
       renderFxList([]);
       if (statusEl) statusEl.textContent = t('no_data');
-      dataSourceState.fx = DATA_SOURCE.demo;
+      dataSourceState.fx = DATA_SOURCE.pending;
       setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
       syncMarketDataSource();
       return;
@@ -4066,7 +4361,7 @@
       const updated = formatFxUpdated(payload.asOf);
       statusEl.textContent = updated ? t('updated_at', { value: updated }) : t('updated');
     }
-    dataSourceState.fx = DATA_SOURCE.hybrid;
+    dataSourceState.fx = DATA_SOURCE.live;
     setDataSourceBadge(selectors.fxDataSource, dataSourceState.fx);
     syncMarketDataSource();
     pulseElement(selectors.fxStatus);
@@ -4092,11 +4387,17 @@
     renderSparkline(asset.sparkSelector, normalized, asset.color);
   }
 
-  function renderCryptoFallback(base) {
+  function clearCryptoCards() {
     cryptoAssets.forEach((asset) => {
-      const fallbackSeries = Array.isArray(asset.fallbackSeries) ? asset.fallbackSeries : [];
-      const last = fallbackSeries[fallbackSeries.length - 1];
-      updateCryptoCard(asset, typeof last === 'number' ? last : NaN, 0, fallbackSeries, base);
+      const priceEl = document.querySelector(asset.priceSelector);
+      if (priceEl) {
+        priceEl.textContent = '—';
+        priceEl.classList.remove('amount-positive', 'amount-negative');
+      }
+      const sparkEl = document.querySelector(asset.sparkSelector);
+      if (sparkEl) {
+        sparkEl.innerHTML = '';
+      }
     });
   }
 
@@ -4114,9 +4415,9 @@
     params.set('base', base);
     const res = await Api.call(`/api/crypto/rates?${params}`, 'GET', null, false);
     if (!res.ok || !res.data || typeof res.data !== 'object') {
-      renderCryptoFallback(base);
-      if (statusEl) statusEl.textContent = t('demo_data');
-      dataSourceState.crypto = DATA_SOURCE.demo;
+      clearCryptoCards();
+      if (statusEl) statusEl.textContent = t('no_data');
+      dataSourceState.crypto = DATA_SOURCE.pending;
       setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
       syncMarketDataSource();
       return;
@@ -4124,9 +4425,9 @@
     const payload = res.data;
     const rates = Array.isArray(payload.rates) ? payload.rates : [];
     if (!rates.length) {
-      renderCryptoFallback(base);
+      clearCryptoCards();
       if (statusEl) statusEl.textContent = t('no_data');
-      dataSourceState.crypto = DATA_SOURCE.demo;
+      dataSourceState.crypto = DATA_SOURCE.pending;
       setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
       syncMarketDataSource();
       return;
@@ -4149,11 +4450,16 @@
         ? item.sparkline.map(Number).filter(Number.isFinite)
         : [];
       if (Number.isFinite(priceValue)) {
-        updateCryptoCard(asset, priceValue, changeValue, sparklineRaw.length ? sparklineRaw : asset.fallbackSeries, baseCode);
+        updateCryptoCard(asset, priceValue, changeValue, sparklineRaw, baseCode);
         hasAny = true;
       } else {
-        const fallbackSeries = asset.fallbackSeries || [];
-        updateCryptoCard(asset, fallbackSeries[fallbackSeries.length - 1], 0, fallbackSeries, baseCode);
+        const priceEl = document.querySelector(asset.priceSelector);
+        if (priceEl) {
+          priceEl.textContent = '—';
+          priceEl.classList.remove('amount-positive', 'amount-negative');
+        }
+        const sparkEl = document.querySelector(asset.sparkSelector);
+        if (sparkEl) sparkEl.innerHTML = '';
       }
     });
 
@@ -4161,13 +4467,13 @@
       const updated = formatFxUpdated(payload.asOf);
       statusEl.textContent = updated ? t('updated_at', { value: updated }) : (hasAny ? t('updated') : t('no_data'));
     }
-    dataSourceState.crypto = hasAny ? DATA_SOURCE.live : DATA_SOURCE.demo;
+    dataSourceState.crypto = hasAny ? DATA_SOURCE.live : DATA_SOURCE.pending;
     setDataSourceBadge(selectors.cryptoDataSource, dataSourceState.crypto);
     syncMarketDataSource();
     pulseElement(selectors.cryptoStatus);
   }
 
-  function renderLineChart(target, data, currency) {
+  function renderLineChart(target, data, currency, windowValue) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el || !Array.isArray(data) || data.length === 0) return;
     const values = data.map((value) => toNumber(value)).filter((value) => Number.isFinite(value));
@@ -4182,7 +4488,7 @@
     const deltaCompact = values[values.length - 1] - values[0];
     if (!hasMeaningfulMovement) {
       el.classList.add('is-compact-chart');
-      const note = t('no_meaningful_change_window', { value: localizedWindowLabel('30d') });
+      const note = t('no_meaningful_change_window', { value: localizedWindowLabel(windowValue || balanceTrendWindow || '30d') });
       const spark = buildCompactSparkline(values, 220, 48, deltaCompact >= 0 ? '#4f86ff' : '#f17f85');
       el.innerHTML = `
         <div class="compact-chart-state">
@@ -4196,7 +4502,10 @@
 
     const labels = Array.from({ length: values.length }, (_, idx) => {
       const d = new Date();
-      d.setMonth(d.getMonth() - (values.length - 1 - idx));
+      d.setDate(d.getDate() - (values.length - 1 - idx));
+      if (values.length <= 14) {
+        return formatDateTimeIntl(d, { day: '2-digit', month: 'short' });
+      }
       return formatDateTimeIntl(d, { month: 'short' });
     });
 
@@ -4521,7 +4830,11 @@
           return;
         }
         setPanelFeedback(selectors.walletsFeedback, '');
-        await loadWallets();
+        await loadDashboardOverview();
+        await Promise.all([
+          loadWallets(),
+          loadUpcomingPayments()
+        ]);
       });
     });
     const expandBtn = list.querySelector('.wallets-expand-toggle');
@@ -4670,7 +4983,11 @@
           return;
         }
         close();
-        await loadWallets();
+        await loadDashboardOverview();
+        await Promise.all([
+          loadWallets(),
+          loadUpcomingPayments()
+        ]);
       } finally {
         submitting = false;
         createBtn.disabled = false;
@@ -4735,23 +5052,6 @@
     } else if (supportedCurrencies.length) {
       select.value = supportedCurrencies[0].code;
     }
-  }
-
-  async function updateDemoAmounts() {
-    const base = normalizeCurrency(baseCurrency) || 'USD';
-    const entries = [
-      { selector: selectors.paymentRentAmount, amount: -700, currency: 'USD' },
-      { selector: selectors.paymentSpotifyAmount, amount: -4.99, currency: 'USD' },
-      { selector: selectors.paymentMobileAmount, amount: -15, currency: 'USD' }
-    ];
-
-    const conversion = await buildConversionContext(base, entries.map((item) => item.currency));
-    entries.forEach((item) => {
-      const el = document.querySelector(item.selector);
-      if (!el) return;
-      const value = convertToBaseAmount(item.amount, item.currency, conversion);
-      el.textContent = Number.isFinite(value) ? formatMoney(value, base) : formatMoney(item.amount, item.currency);
-    });
   }
 
   function bindBaseCurrencyMenu() {
@@ -4832,12 +5132,15 @@
         fxBase = '';
         updateCurrencyLabels();
         close();
+        await loadDashboardOverview();
         await Promise.all([
           loadBalance(),
-          loadWallets(),
-          updateDemoAmounts()
+          loadWallets()
         ]);
-        await loadReports();
+        await Promise.all([
+          loadReports(),
+          loadUpcomingPayments()
+        ]);
       } finally {
         submitting = false;
         saveBtn.disabled = false;
@@ -4964,7 +5267,12 @@
           return;
         }
         close();
-        await loadBalance();
+        await loadDashboardOverview();
+        await Promise.all([
+          loadBalance(),
+          loadReports(),
+          loadUpcomingPayments()
+        ]);
       } finally {
         submitting = false;
         createBtn.disabled = false;
@@ -5041,6 +5349,7 @@
       updateActionPriority();
       bindAnalysisQuickCard();
       bindTxPeriodButtons();
+      bindBalanceTrendControls();
       bindAddAccountMenu();
       bindAddWalletMenu();
       bindAddTransactionMenu();
@@ -5055,18 +5364,19 @@
       bindLogout();
       bindRefresh();
       bindBaseCurrencyMenu();
+      await loadDashboardOverview();
 
       await loadBalance();
       await loadFxCurrencies();
       bindFxControls();
       await Promise.all([
         loadTransactionCategories(),
-        loadWallets(),
-        updateDemoAmounts()
+        loadWallets()
       ]);
       await Promise.all([
         loadReports(),
-        loadRecentTransactions()
+        loadRecentTransactions(),
+        loadUpcomingPayments()
       ]);
       if (dashboardRoot) dashboardRoot.dataset.uiState = 'ready';
     } catch (e) {

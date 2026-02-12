@@ -67,7 +67,9 @@ public record DashboardOverviewResponse(
             Integer progressPct,
             boolean partialReady,
             Instant updatedAt,
-            String source
+            String source,
+            Integer etaSeconds,
+            String lastSuccessfulStage
     ) {
     }
 }

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/app/styles.css">
   <link rel="stylesheet" href="/app/dashboard.css">
 </head>
-<body class="dashboard" data-ui-state="booting" data-motion-level="high">
+<body class="dashboard" data-ui-state="booting" data-motion-level="high" data-ui-version="v6">
   <div class="dash-atmosphere" aria-hidden="true">
     <span class="orb orb-a"></span>
     <span class="orb orb-b"></span>
@@ -38,7 +38,7 @@
             <button type="button" class="ghost nav-link nav-locale-btn" id="btn-base-currency" data-i18n-title="base_currency_title" data-i18n-aria="base_currency_aria">USD</button>
             <button type="button" class="ghost nav-link nav-locale-btn" id="btn-lang">EN</button>
           </div>
-          <a class="ghost nav-link markets-link" href="#" aria-disabled="true" data-i18n="markets_badge">Markets</a>
+          <a class="ghost nav-link markets-link" href="#" aria-disabled="true" hidden data-i18n="markets_badge">Markets</a>
           <button
             type="button"
             class="ghost nav-icon nav-icon-refresh"
@@ -188,16 +188,16 @@
             <div class="muted"><span data-i18n="last_6_months">Последние 6 месяцев,</span> <span id="balanceCurrency">USD</span></div>
           </div>
           <div class="chart-toolbar">
-            <div class="text-tabs" role="tablist" aria-label="Portfolio period">
-              <button type="button" class="text-tab active">7d</button>
-              <button type="button" class="text-tab">30d</button>
-              <button type="button" class="text-tab">90d</button>
-              <button type="button" class="text-tab">1y</button>
+            <div class="text-tabs balance-period-tabs" id="balancePeriodTabs" role="tablist" aria-label="Portfolio period">
+              <button type="button" class="text-tab balance-period-btn" data-window="7d">7d</button>
+              <button type="button" class="text-tab balance-period-btn active" data-window="30d">30d</button>
+              <button type="button" class="text-tab balance-period-btn" data-window="90d">90d</button>
+              <button type="button" class="text-tab balance-period-btn" data-window="1y">1y</button>
             </div>
-            <select class="metric-select" aria-label="Metric">
-              <option selected data-i18n="net_worth_title">Net worth</option>
-              <option data-i18n="income_label">Доход</option>
-              <option data-i18n="expense_label">Расход</option>
+            <select class="metric-select" id="balanceMetricSelect" aria-label="Metric">
+              <option value="net" selected data-i18n="net_worth_title">Net worth</option>
+              <option value="inflow" data-i18n="income_label">Доход</option>
+              <option value="outflow" data-i18n="expense_label">Расход</option>
             </select>
           </div>
         </div>
@@ -237,28 +237,12 @@
         </article>
       </section>
 
-      <section class="card section upcoming-section glass" data-motion="reveal">
+      <section class="card section upcoming-section glass" id="upcomingSection" data-motion="reveal" hidden>
         <div class="section-head">
           <h2 class="section-title" data-i18n="upcoming_payments">Ближайшие платежи</h2>
           <button type="button" class="ghost section-action" id="btn-upcoming-add" data-i18n="add">Добавить</button>
         </div>
-        <div class="list upcoming-list">
-          <div class="list-item payment-row">
-            <div class="payment-name" data-i18n="payment_rent">Аренда</div>
-            <small class="payment-due" data-i18n="payment_due_jan15">Срок: 15 янв</small>
-            <div class="amount-negative payment-amount" id="paymentRentAmount">—</div>
-          </div>
-          <div class="list-item payment-row">
-            <div class="payment-name" data-i18n="payment_streaming">Стриминг</div>
-            <small class="payment-due" data-i18n="payment_due_jan19">Срок: 19 янв</small>
-            <div class="amount-negative payment-amount" id="paymentSpotifyAmount">—</div>
-          </div>
-          <div class="list-item payment-row">
-            <div class="payment-name" data-i18n="payment_mobile">Мобильная связь</div>
-            <small class="payment-due" data-i18n="payment_due_jan22">Срок: 22 янв</small>
-            <div class="amount-negative payment-amount" id="paymentMobileAmount">—</div>
-          </div>
-        </div>
+        <div class="list upcoming-list" id="upcomingPaymentsList" data-ui-state="loading"></div>
       </section>
     </main>
   </div>
@@ -318,23 +302,23 @@
 
       <div class="analysis-detail-body" data-testid="wallet-intelligence-body">
         <section class="analysis-detail-section analysis-detail-stats-row glass">
-          <article class="analysis-detail-metric">
+          <article class="analysis-detail-metric" id="analysisDetailMetricPortfolio">
             <div class="analysis-detail-metric-label" data-i18n="analysis_card_portfolio">Стоимость портфеля</div>
             <div class="analysis-detail-metric-value" id="analysisDetailPortfolio">—</div>
           </article>
-          <article class="analysis-detail-metric">
+          <article class="analysis-detail-metric" id="analysisDetailMetricBalance">
             <div class="analysis-detail-metric-label" data-i18n="analysis_detail_wallet_balance">Баланс</div>
             <div class="analysis-detail-metric-value" id="analysisDetailWalletBalance">—</div>
           </article>
-          <article class="analysis-detail-metric">
+          <article class="analysis-detail-metric" id="analysisDetailMetricGrowth">
             <div class="analysis-detail-metric-label" data-i18n="analysis_card_growth">Изм. за 7д</div>
             <div class="analysis-detail-metric-value" id="analysisDetailGrowth">—</div>
           </article>
-          <article class="analysis-detail-metric">
+          <article class="analysis-detail-metric" id="analysisDetailMetricInflow">
             <div class="analysis-detail-metric-label" data-i18n="analysis_detail_inflow_30d">Приток (30д)</div>
             <div class="analysis-detail-metric-value" id="analysisDetailRecurring">—</div>
           </article>
-          <article class="analysis-detail-metric">
+          <article class="analysis-detail-metric" id="analysisDetailMetricOutflow">
             <div class="analysis-detail-metric-label" data-i18n="analysis_detail_outflow_30d">Отток (30д)</div>
             <div class="analysis-detail-metric-value" id="analysisDetailOutflow">—</div>
           </article>
