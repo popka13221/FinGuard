@@ -8281,9 +8281,11 @@ body.dashboard[data-ui-version="v6"] .analysis-detail-menu {
 body.dashboard[data-ui-version="v6"] .analysis-detail-body {
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  overflow: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   padding-bottom: 12px !important;
+  scrollbar-gutter: stable both-edges;
 }
 
 body.dashboard[data-ui-version="v6"] .analysis-detail-head {
@@ -8373,6 +8375,26 @@ body.dashboard[data-ui-version="v6"] .analysis-empty-title {
 
 body.dashboard[data-ui-version="v6"] .analysis-empty-guide .empty-state-actions {
   margin-top: 2px !important;
+}
+
+body.dashboard[data-ui-version="v6"] #analysisDetailAllocationList,
+body.dashboard[data-ui-version="v6"] #analysisDetailInsightsList {
+  max-height: none !important;
+  overflow: visible !important;
+  padding-right: 0 !important;
+}
+
+body.dashboard[data-ui-version="v6"] #analysisDetailAllocationList .analysis-detail-table {
+  min-width: 100% !important;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-detail-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.dashboard[data-ui-version="v6"] .analysis-detail-body::-webkit-scrollbar-thumb {
+  background: rgba(142, 172, 220, 0.38);
+  border-radius: 999px;
 }
 
 body.dashboard[data-ui-version="v6"] .wallet-item .wallet-actions {

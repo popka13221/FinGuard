@@ -69,8 +69,10 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   }
   await page.locator('#analysisDetailWindowTabs button[data-window="1y"]').click();
   await expect.poll(() => requested1y, { timeout: 15000 }).toBeTruthy();
-  await expect(page.locator('#analysisDetailInsightsList')).toBeVisible();
-  await expect.poll(async () => ((await page.locator('#analysisDetailInsightsList').textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);
+  await detailBody.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  const insightsList = page.locator('#analysisDetailInsightsList');
+  await expect(insightsList).toHaveCount(1);
+  await expect.poll(async () => ((await insightsList.textContent()) || '').trim().length, { timeout: 15_000 }).toBeGreaterThan(0);
 
   const overlay = page.getByTestId('wallet-intelligence-overlay');
   const menu = page.getByTestId('wallet-intelligence-page');
