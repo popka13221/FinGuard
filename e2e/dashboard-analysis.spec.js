@@ -7,14 +7,14 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('wallet analysis strip shows progress and compact wallet intelligence card', async ({ page }, testInfo) => {
+test('account analysis strip shows progress and compact intelligence card', async ({ page }, testInfo) => {
   const email = uniqueEmail('e2e-dashboard-analysis');
   await registerAndLogin(page, { email, baseCurrency: 'USD' });
   const startUrl = page.url();
-  let requested1y = false;
+  let cashFlowHits = 0;
   page.on('request', (request) => {
-    if (request.url().includes('/analysis/series') && request.url().includes('window=1y')) {
-      requested1y = true;
+    if (request.url().includes('/api/reports/cash-flow')) {
+      cashFlowHits += 1;
     }
   });
 
@@ -44,7 +44,7 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   await expect(page.getByTestId('wallet-intelligence-page')).toBeVisible();
   await expect(page.locator('body.dashboard.analysis-drawer-open')).toBeVisible();
   await expect(page.locator('body.dashboard')).toHaveCSS('overflow', 'hidden');
-  await expect(page.locator('#analysisDetailWalletName')).toContainText('MetaMask');
+  await expect(page.locator('#analysisDetailWalletName')).toContainText(/(Full account|Весь аккаунт)/);
   await expect(page.locator('#analysisDetailPortfolio')).toContainText('USD');
   await expect(page.locator('#analysisDetailSeriesChart')).not.toContainText(/synthetic|demo/i);
   await expect(page.url()).toBe(startUrl);
@@ -69,8 +69,9 @@ test('wallet analysis strip shows progress and compact wallet intelligence card'
   } else {
     expect(hasLargeSeries + hasCompactSeries).toBeGreaterThan(0);
   }
+  const cashFlowBefore1y = cashFlowHits;
   await page.locator('#analysisDetailWindowTabs button[data-window="1y"]').click();
-  await expect.poll(() => requested1y, { timeout: 15000 }).toBeTruthy();
+  await expect.poll(() => cashFlowHits > cashFlowBefore1y, { timeout: 15000 }).toBeTruthy();
   await detailPanel.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const insightsList = page.locator('#analysisDetailInsightsList');
   await expect(insightsList).toHaveCount(1);

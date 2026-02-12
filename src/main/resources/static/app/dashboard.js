@@ -347,16 +347,16 @@
       expense_transport: 'Транспорт',
       expense_subscriptions: 'Подписки',
       expense_other: 'Прочее',
-      analysis_banner_badge: 'Аналитика кошелька',
-      analysis_open_link: 'Аналитика кошелька →',
-      analysis_banner_title_idle: 'Подключите кошелёк',
-      analysis_banner_subtitle_idle: 'После подключения аналитика появится автоматически.',
-      analysis_banner_title_running: 'Синхронизация {name}',
-      analysis_banner_subtitle_running: 'Собираем данные кошелька.',
-      analysis_banner_title_partial: 'Часть данных готова',
-      analysis_banner_subtitle_partial: 'Откройте аналитику кошелька для деталей.',
-      analysis_banner_title_done: 'Аналитика кошелька обновлена',
-      analysis_banner_subtitle_done: 'Все метрики синхронизированы.',
+      analysis_banner_badge: 'Аналитика аккаунта',
+      analysis_open_link: 'Аналитика аккаунта →',
+      analysis_banner_title_idle: 'Подключите счёт или кошелёк',
+      analysis_banner_subtitle_idle: 'После подключения появится аналитика профиля.',
+      analysis_banner_title_running: 'Формируем аналитику аккаунта',
+      analysis_banner_subtitle_running: 'Собираем операции по профилю.',
+      analysis_banner_title_partial: 'Часть данных профиля готова',
+      analysis_banner_subtitle_partial: 'Откройте аналитику аккаунта для деталей.',
+      analysis_banner_title_done: 'Аналитика аккаунта обновлена',
+      analysis_banner_subtitle_done: 'Метрики профиля синхронизированы.',
       analysis_banner_title_failed: 'Анализ временно недоступен',
       analysis_banner_subtitle_failed: 'Попробуем обновить анализ автоматически.',
       analysis_stage_fetch_tx: 'Сканируем транзакции',
@@ -377,7 +377,7 @@
       analysis_card_waiting: 'Ожидаем метрики…',
       analysis_card_updated_live: 'Live: обновлено {value}',
       analysis_card_estimated: 'Оценка на основе истории',
-      analysis_no_wallet_stage: 'Добавьте кошелёк для старта',
+      analysis_no_wallet_stage: 'Добавьте счёт или кошелёк для старта',
       analysis_polling_error: 'Не удалось обновить статус анализа',
       analysis_top_outflow_label: 'Крупнейший отток: {name}',
       analysis_top_outflow_estimated: 'Оценка оттока пока нет новых операций',
@@ -387,33 +387,40 @@
       analysis_recurring_meta_estimated: 'Оценка · {confidence}%',
       analysis_quick_open_hint: 'Открыть полный отчёт',
       analysis_quick_title: 'Все данные сейчас',
-      analysis_quick_not_ready: 'Данные появятся после подключения кошелька.',
+      analysis_quick_not_ready: 'Данные появятся после подключения счёта или кошелька.',
       analysis_quick_refreshing: 'Обновляем данные…',
       analysis_quick_updated: 'Обновлено {value}',
       analysis_quick_wallets: 'Кошельки',
       analysis_quick_transactions: 'Транзакции',
       analysis_mini_portfolio_label: 'Портфель',
       analysis_mini_growth_label: '7д',
-      analysis_detail_menu_aria: 'Детальная аналитика кошелька',
-      analysis_detail_title: 'Аналитика кошелька',
-      analysis_detail_subtitle: 'Полная детализация активного кошелька, структуры и инсайтов.',
-      analysis_detail_wallet_title: 'Активный кошелёк',
+      analysis_detail_menu_aria: 'Детальная аналитика аккаунта',
+      analysis_detail_title: 'Аналитика аккаунта',
+      analysis_detail_subtitle: 'Сводная аналитика профиля, всех кошельков и трат.',
+      analysis_detail_wallet_title: 'Профиль',
       analysis_detail_wallet_balance: 'Баланс',
       analysis_detail_inflow_30d: 'Приток (30д)',
       analysis_detail_outflow_30d: 'Отток (30д)',
-      analysis_detail_wallet_missing: 'Подключите кошелёк, чтобы открыть полный анализ.',
+      analysis_detail_wallet_missing: 'Подключите счёт или кошелёк, чтобы открыть аналитику аккаунта.',
       analysis_detail_metrics_title: 'Ключевые метрики',
-      analysis_detail_series_title: 'Аналитика портфеля',
+      analysis_detail_series_title: 'Аналитика профиля',
       analysis_detail_series_live: 'Ряд данных ({value})',
       analysis_detail_series_estimated: 'Оценочный ряд ({value})',
-      analysis_detail_allocation_title: 'Структура портфеля',
-      analysis_detail_allocation_empty: 'Пока нет структуры по активам.',
+      analysis_detail_allocation_title: 'Кошельки профиля',
+      analysis_detail_allocation_empty: 'Добавьте кошельки, чтобы увидеть структуру.',
       analysis_detail_insights_title: 'Инсайты',
-      analysis_detail_insights_empty: 'Инсайты появятся после сбора операций.',
+      analysis_detail_insights_empty: 'Инсайты появятся после обработки операций профиля.',
       analysis_insights_need_data: 'Нужно минимум 10 транзакций для построения инсайтов.',
-      analysis_insights_step_connect: 'Подключите кошелёк',
+      analysis_insights_step_connect: 'Подключите счёт',
       analysis_insights_step_import: 'Импортируйте историю',
       analysis_insights_step_wait: 'Дождитесь синхронизации',
+      analysis_detail_profile_name: 'Весь аккаунт',
+      analysis_detail_profile_scope: 'Кошельков: {wallets} · Транзакций: {transactions}',
+      analysis_detail_profile_channels: 'Счета + кошельки + траты',
+      analysis_insight_income_30d: 'Доход за 30д',
+      analysis_insight_spend_30d: 'Расход за 30д',
+      analysis_insight_cashflow_30d: 'Кэшфлоу за 30д',
+      analysis_insight_top_category: 'Топ категория расхода',
       analysis_col_asset: 'Актив',
       analysis_col_amount: 'Кол-во',
       analysis_col_value: 'Стоимость',
@@ -616,16 +623,16 @@
       expense_transport: 'Transport',
       expense_subscriptions: 'Subscriptions',
       expense_other: 'Other',
-      analysis_banner_badge: 'Wallet intelligence',
-      analysis_open_link: 'Wallet intelligence →',
-      analysis_banner_title_idle: 'Connect wallet',
-      analysis_banner_subtitle_idle: 'Analysis appears automatically after connection.',
-      analysis_banner_title_running: 'Syncing {name}',
-      analysis_banner_subtitle_running: 'Collecting wallet activity.',
-      analysis_banner_title_partial: 'Partial data ready',
-      analysis_banner_subtitle_partial: 'Open Wallet intelligence for full details.',
-      analysis_banner_title_done: 'Wallet intelligence updated',
-      analysis_banner_subtitle_done: 'All metrics are synced.',
+      analysis_banner_badge: 'Account intelligence',
+      analysis_open_link: 'Account intelligence →',
+      analysis_banner_title_idle: 'Connect account or wallet',
+      analysis_banner_subtitle_idle: 'Profile analytics appears after connection.',
+      analysis_banner_title_running: 'Building account intelligence',
+      analysis_banner_subtitle_running: 'Collecting profile activity.',
+      analysis_banner_title_partial: 'Partial profile data ready',
+      analysis_banner_subtitle_partial: 'Open Account intelligence for details.',
+      analysis_banner_title_done: 'Account intelligence updated',
+      analysis_banner_subtitle_done: 'Profile metrics are synced.',
       analysis_banner_title_failed: 'Analysis temporarily unavailable',
       analysis_banner_subtitle_failed: 'We will retry analysis automatically.',
       analysis_stage_fetch_tx: 'Fetching transactions',
@@ -646,7 +653,7 @@
       analysis_card_waiting: 'Waiting for metrics…',
       analysis_card_updated_live: 'Live: updated {value}',
       analysis_card_estimated: 'Estimated from current activity',
-      analysis_no_wallet_stage: 'Add a wallet to start analysis',
+      analysis_no_wallet_stage: 'Add an account or wallet to start analysis',
       analysis_polling_error: 'Failed to refresh analysis status',
       analysis_top_outflow_label: 'Top outflow: {name}',
       analysis_top_outflow_estimated: 'Estimated outflow while activity is building',
@@ -656,33 +663,40 @@
       analysis_recurring_meta_estimated: 'Estimate · {confidence}%',
       analysis_quick_open_hint: 'Open full report',
       analysis_quick_title: 'All data now',
-      analysis_quick_not_ready: 'Connect a wallet to see all data.',
+      analysis_quick_not_ready: 'Connect an account or wallet to see all data.',
       analysis_quick_refreshing: 'Refreshing data…',
       analysis_quick_updated: 'Updated {value}',
       analysis_quick_wallets: 'Wallets',
       analysis_quick_transactions: 'Transactions',
       analysis_mini_portfolio_label: 'Portfolio',
       analysis_mini_growth_label: '7d',
-      analysis_detail_menu_aria: 'Wallet analysis details',
-      analysis_detail_title: 'Wallet intelligence',
-      analysis_detail_subtitle: 'Deep breakdown of active wallet metrics, allocation, and insights.',
-      analysis_detail_wallet_title: 'Active wallet',
+      analysis_detail_menu_aria: 'Account analysis details',
+      analysis_detail_title: 'Account intelligence',
+      analysis_detail_subtitle: 'Unified analytics for profile, all wallets, and spending.',
+      analysis_detail_wallet_title: 'Profile',
       analysis_detail_wallet_balance: 'Balance',
       analysis_detail_inflow_30d: 'Inflow (30d)',
       analysis_detail_outflow_30d: 'Outflow (30d)',
-      analysis_detail_wallet_missing: 'Connect a wallet to open full analysis.',
+      analysis_detail_wallet_missing: 'Connect an account or wallet to open account analytics.',
       analysis_detail_metrics_title: 'Key metrics',
-      analysis_detail_series_title: 'Portfolio analytics',
+      analysis_detail_series_title: 'Profile analytics',
       analysis_detail_series_live: 'Live series ({value})',
       analysis_detail_series_estimated: 'Estimated series ({value})',
-      analysis_detail_allocation_title: 'Portfolio allocation',
-      analysis_detail_allocation_empty: 'No allocation data yet.',
+      analysis_detail_allocation_title: 'Profile wallets',
+      analysis_detail_allocation_empty: 'Add wallets to see allocation.',
       analysis_detail_insights_title: 'Insights',
-      analysis_detail_insights_empty: 'Insights appear after activity is processed.',
+      analysis_detail_insights_empty: 'Insights appear after profile activity is processed.',
       analysis_insights_need_data: 'We need at least 10 transactions to generate insights.',
       analysis_insights_step_connect: 'Connect account',
       analysis_insights_step_import: 'Import history',
       analysis_insights_step_wait: 'Wait for sync',
+      analysis_detail_profile_name: 'Full account',
+      analysis_detail_profile_scope: 'Wallets: {wallets} · Transactions: {transactions}',
+      analysis_detail_profile_channels: 'Accounts + wallets + spending',
+      analysis_insight_income_30d: 'Income (30d)',
+      analysis_insight_spend_30d: 'Spend (30d)',
+      analysis_insight_cashflow_30d: 'Cashflow (30d)',
+      analysis_insight_top_category: 'Top spend category',
       analysis_col_asset: 'Asset',
       analysis_col_amount: 'Amount',
       analysis_col_value: 'Value',
@@ -876,6 +890,7 @@
     activeWalletId: null,
     activeWalletName: '',
     activeWallet: null,
+    wallets: [],
     status: null,
     pollTimer: 0,
     inFlight: false,
@@ -891,7 +906,8 @@
     walletsCount: 0,
     detailOpen: false,
     detailBusy: false,
-    lastDataFetchAt: 0
+    lastDataFetchAt: 0,
+    profileSeriesCache: {}
   };
   let recentTransactionsCache = [];
   const dashboardDataState = {
@@ -2463,27 +2479,9 @@
   }
 
   function buildAnalysisDetailSeries(metric) {
-    const seriesPayload = analysisState.apiSeries;
-    if (!seriesPayload || seriesPayload.synthetic === true) {
-      return [];
-    }
-    const points = analysisState.apiSeries && Array.isArray(analysisState.apiSeries.points)
-      ? analysisState.apiSeries.points
-      : [];
-    if (String(metric || '').toLowerCase() === 'net') {
-      return points;
-    }
-    const normalized = String(metric || '').toLowerCase();
-    const values = points.map((item) => toNumber(item && item.valueInBase));
-    return points.map((point, idx) => {
-      const current = Number.isFinite(values[idx]) ? values[idx] : NaN;
-      const prev = idx > 0 && Number.isFinite(values[idx - 1]) ? values[idx - 1] : current;
-      const delta = Number.isFinite(current) && Number.isFinite(prev) ? current - prev : NaN;
-      if (normalized === 'inflow') {
-        return { at: point.at, valueInBase: Number.isFinite(delta) ? Math.max(delta, 0) : NaN };
-      }
-      return { at: point.at, valueInBase: Number.isFinite(delta) ? Math.max(-delta, 0) : NaN };
-    }).filter((item) => item.at && Number.isFinite(item.valueInBase));
+    const normalizedWindow = normalizeSeriesWindow(analysisState.detailWindow || analysisState.seriesWindow || '30d');
+    const bundle = analysisState.profileSeriesCache[normalizedWindow];
+    return profileSeriesPointsFromMetric(bundle, metric);
   }
 
   function renderAnalysisDetail(model) {
@@ -2492,9 +2490,13 @@
     syncAnalysisDetailTabState();
 
     const data = model || buildAnalysisInsightsModel();
-    const hasWallet = Boolean(analysisState.activeWalletId);
-    const wallet = analysisState.activeWallet || null;
-    const summaryApi = analysisState.apiSummary || null;
+    const wallets = Array.isArray(analysisState.wallets) ? analysisState.wallets : [];
+    const hasProfileData = Boolean(
+      dashboardDataState.hasAccounts
+      || dashboardDataState.hasWallets
+      || dashboardDataState.hasTransactions
+      || hasMeaningfulNumber(data && data.portfolio)
+    );
     const base = normalizeCurrency(data && data.base ? data.base : baseCurrency) || 'USD';
     const detailUpdated = q(selectors.analysisDetailUpdated);
 
@@ -2503,15 +2505,15 @@
       || analysisState.status.updatedAt
       || analysisState.status.startedAt
     );
-    const fallbackUpdated = (analysisState.apiSummary && analysisState.apiSummary.asOf)
-      || (analysisState.apiInsights && analysisState.apiInsights.asOf)
-      || (analysisState.apiSeries && analysisState.apiSeries.asOf)
+    const fallbackUpdated = (dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.updatedAt)
+      || (dashboardOverview && dashboardOverview.asOf)
       || '';
     const updated = formatFxUpdated(statusUpdatedAt || fallbackUpdated);
 
-    const detailSource = !hasWallet
+    const freshness = String((dashboardOverview && dashboardOverview.dataFreshness) || '').toUpperCase();
+    const detailSource = !hasProfileData
       ? DATA_SOURCE.pending
-      : (data && data.portfolioLive ? DATA_SOURCE.live : DATA_SOURCE.hybrid);
+      : (freshness === 'LIVE' ? DATA_SOURCE.live : DATA_SOURCE.hybrid);
     setDataSourceBadge(selectors.analysisDetailSource, detailSource);
 
     if (detailUpdated) {
@@ -2521,7 +2523,7 @@
         : '';
       if (analysisState.detailBusy) {
         detailUpdated.textContent = t('analysis_quick_refreshing');
-      } else if (!hasWallet) {
+      } else if (!hasProfileData) {
         detailUpdated.textContent = t('analysis_detail_wallet_missing');
       } else if (updated) {
         const parts = [t('analysis_detail_updated', { value: updated }), etaHint, lastStage].filter(Boolean);
@@ -2532,26 +2534,34 @@
       }
     }
 
-    const walletName = hasWallet ? (analysisState.activeWalletName || `#${analysisState.activeWalletId}`) : '—';
-    setText(selectors.analysisDetailWalletName, walletName);
-    setText(selectors.analysisDetailWalletNetwork, hasWallet ? walletNetworkLabel(wallet && wallet.network ? wallet.network : '') : '—');
-    setText(selectors.analysisDetailWalletAddress, hasWallet ? (wallet && wallet.address ? String(wallet.address) : '—') : '—');
+    const txCount = Array.isArray(recentTransactionsCache) ? recentTransactionsCache.length : 0;
+    setText(selectors.analysisDetailWalletName, t('analysis_detail_profile_name'));
+    setText(selectors.analysisDetailWalletNetwork, t('analysis_detail_profile_scope', {
+      wallets: wallets.length.toLocaleString(getLocale()),
+      transactions: txCount.toLocaleString(getLocale())
+    }));
+    setText(selectors.analysisDetailWalletAddress, t('analysis_detail_profile_channels'));
 
+    const copyBtn = q(selectors.analysisDetailCopyBtn);
     const explorer = q(selectors.analysisDetailExplorerLink);
+    if (copyBtn) copyBtn.hidden = true;
     if (explorer) {
-      const href = hasWallet ? walletExplorerUrl(wallet && wallet.network, wallet && wallet.address) : '';
-      explorer.href = href || '#';
-      explorer.hidden = !href;
+      explorer.href = '#';
+      explorer.hidden = true;
     }
 
-    const walletValue = toNumber(wallet && wallet.valueInBase);
-    const walletValueBase = normalizeCurrency(wallet && wallet.baseCurrency ? wallet.baseCurrency : base) || base;
-    const walletBalance = toNumber(wallet && wallet.balance);
-    const walletAsset = walletNativeAsset(wallet && wallet.network ? wallet.network : '');
-    const summarySource = summaryApi && summaryApi.metricsSource ? String(summaryApi.metricsSource).toUpperCase() : '';
-    const summaryReliable = isReliableMetricsSource(summarySource);
-    const inflowValueRaw = summaryReliable ? toNumber(summaryApi && summaryApi.inflow30d) : NaN;
-    const outflowValueRaw = summaryReliable ? toNumber(summaryApi && summaryApi.outflow30d) : NaN;
+    const profileNetWorth = Number.isFinite(toNumber(data && data.portfolio))
+      ? toNumber(data && data.portfolio)
+      : computeCurrentTotalInBase();
+    const walletsTotal = Number.isFinite(toNumber(analysisState.summaryTotal))
+      ? toNumber(analysisState.summaryTotal)
+      : NaN;
+    const profileGrowth = Number.isFinite(toNumber(data && data.growth))
+      ? toNumber(data && data.growth)
+      : NaN;
+    const summaryConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
+    const inflowValueRaw = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.income) : NaN;
+    const outflowValueRaw = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.expense) : NaN;
     const inflowValue = Number.isFinite(inflowValueRaw) && Math.abs(inflowValueRaw) > 0.000001 ? inflowValueRaw : NaN;
     const outflowValue = Number.isFinite(outflowValueRaw) && Math.abs(outflowValueRaw) > 0.000001 ? outflowValueRaw : NaN;
     const inflowCard = q(selectors.analysisDetailMetricInflow);
@@ -2559,10 +2569,10 @@
     if (inflowCard) inflowCard.hidden = !Number.isFinite(inflowValue);
     if (outflowCard) outflowCard.hidden = !Number.isFinite(outflowValue);
 
-    setText(selectors.analysisDetailWalletValue, Number.isFinite(walletValue) ? formatMoney(walletValue, walletValueBase) : '—');
-    setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
-    setText(selectors.analysisDetailPortfolio, Number.isFinite(data && data.portfolio) ? formatMoney(data.portfolio, base) : '—');
-    setText(selectors.analysisDetailGrowth, Number.isFinite(data && data.growth) ? formatSignedPct(data.growth) : '—');
+    setText(selectors.analysisDetailWalletValue, Number.isFinite(walletsTotal) ? formatMoney(walletsTotal, base) : '—');
+    setText(selectors.analysisDetailWalletBalance, Number.isFinite(walletsTotal) ? formatMoney(walletsTotal, base) : '—');
+    setText(selectors.analysisDetailPortfolio, Number.isFinite(profileNetWorth) ? formatMoney(profileNetWorth, base) : '—');
+    setText(selectors.analysisDetailGrowth, Number.isFinite(profileGrowth) ? formatSignedPct(profileGrowth) : '—');
     setText(selectors.analysisDetailRecurring, Number.isFinite(inflowValue) ? formatMoney(inflowValue, base) : '—');
     setText(selectors.analysisDetailOutflow, Number.isFinite(outflowValue) ? formatMoney(-Math.abs(outflowValue), base) : '—');
 
@@ -2583,10 +2593,19 @@
 
     const allocationEl = q(selectors.analysisDetailAllocationList);
     if (allocationEl) {
-      const allocation = analysisState.apiSummary && Array.isArray(analysisState.apiSummary.allocation)
-        ? analysisState.apiSummary.allocation
-        : [];
-      if (!allocation.length) {
+      const rows = wallets
+        .map((wallet) => ({
+          label: String(wallet && wallet.label ? wallet.label : walletNetworkLabel(wallet && wallet.network ? wallet.network : '')),
+          network: String(wallet && wallet.network ? wallet.network : ''),
+          balance: toNumber(wallet && wallet.balance),
+          valueInBase: toNumber(wallet && wallet.valueInBase),
+          address: String(wallet && wallet.address ? wallet.address : '')
+        }))
+        .filter((item) => item.label || item.address || Number.isFinite(item.valueInBase));
+      const totalValue = rows.reduce((sum, item) => (
+        Number.isFinite(item.valueInBase) ? sum + item.valueInBase : sum
+      ), 0);
+      if (!rows.length) {
         allocationEl.innerHTML = `<div class="muted">${t('analysis_detail_allocation_empty')}</div>`;
       } else {
         allocationEl.innerHTML = `
@@ -2600,19 +2619,19 @@
               </tr>
             </thead>
             <tbody>
-              ${allocation.map((item, idx) => {
-                const code = String(item && item.code ? item.code : '—');
-                const value = toNumber(item && item.valueInBase);
-                const share = toNumber(item && item.sharePct);
-                const valueText = Number.isFinite(value) ? formatMoney(value, base) : '—';
+              ${rows.map((item) => {
+                const valueText = Number.isFinite(item.valueInBase) ? formatMoney(item.valueInBase, base) : '—';
+                const share = Number.isFinite(item.valueInBase) && totalValue > 0
+                  ? (item.valueInBase / totalValue) * 100
+                  : NaN;
                 const shareText = Number.isFinite(share) ? `${share.toFixed(2)}%` : '—';
-                const amountRaw = toNumber(item && item.amount);
-                const amountText = Number.isFinite(amountRaw)
-                  ? formatAssetAmount(amountRaw, code)
-                  : (idx === 0 && Number.isFinite(walletBalance) ? formatAssetAmount(walletBalance, walletAsset) : '—');
+                const amountText = Number.isFinite(item.balance)
+                  ? formatAssetAmount(item.balance, walletNativeAsset(item.network))
+                  : (item.address ? shortAddress(item.address) : '—');
+                const assetLabel = item.label || 'Wallet';
                 return `
                   <tr>
-                    <td>${escapeHtml(code)}</td>
+                    <td>${escapeHtml(assetLabel)}</td>
                     <td>${escapeHtml(amountText)}</td>
                     <td>${escapeHtml(valueText)}</td>
                     <td>${escapeHtml(shareText)}</td>
@@ -2627,39 +2646,78 @@
 
     const insightsEl = q(selectors.analysisDetailInsightsList);
     if (insightsEl) {
-      const insights = analysisState.apiInsights && Array.isArray(analysisState.apiInsights.insights)
-        ? analysisState.apiInsights.insights
-        : [];
-      const filteredInsights = insights.filter((item) => item && item.synthetic !== true && isMeaningfulInsight(item));
-      if (!filteredInsights.length) {
+      const summary = hasConfirmedTransactionMetrics(lastReportSummary) ? lastReportSummary : null;
+      const accountInsights = [];
+      const income30d = summary ? toNumber(summary.income) : NaN;
+      const spend30d = summary ? toNumber(summary.expense) : NaN;
+      const cashflow30d = summary ? toNumber(summary.net) : NaN;
+      if (Number.isFinite(income30d) && Math.abs(income30d) > 0.000001) {
+        accountInsights.push({
+          title: t('analysis_insight_income_30d'),
+          value: formatMoney(income30d, base),
+          meta: t('period_30d_short')
+        });
+      }
+      if (Number.isFinite(spend30d) && Math.abs(spend30d) > 0.000001) {
+        accountInsights.push({
+          title: t('analysis_insight_spend_30d'),
+          value: formatMoney(-Math.abs(spend30d), base),
+          meta: t('period_30d_short')
+        });
+      }
+      if (Number.isFinite(cashflow30d) && Math.abs(cashflow30d) > 0.000001) {
+        accountInsights.push({
+          title: t('analysis_insight_cashflow_30d'),
+          value: formatMoney(cashflow30d, base),
+          meta: t('period_30d_short')
+        });
+      }
+
+      const categorySpend = new Map();
+      recentTransactionsCache.forEach((tx) => {
+        const type = String(tx && tx.type ? tx.type : '').toUpperCase();
+        if (type !== 'EXPENSE') return;
+        const amount = toNumber(tx && tx.amount);
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const categoryId = tx && tx.categoryId != null ? Number(tx.categoryId) : NaN;
+        const category = txCategoriesById.get(categoryId);
+        const key = category && category.name ? String(category.name) : t('transaction_category_label');
+        categorySpend.set(key, (categorySpend.get(key) || 0) + amount);
+      });
+      let topCategory = '';
+      let topCategoryValue = NaN;
+      categorySpend.forEach((value, key) => {
+        if (!Number.isFinite(value)) return;
+        if (!Number.isFinite(topCategoryValue) || value > topCategoryValue) {
+          topCategoryValue = value;
+          topCategory = key;
+        }
+      });
+      if (topCategory && Number.isFinite(topCategoryValue)) {
+        accountInsights.push({
+          title: t('analysis_insight_top_category'),
+          value: formatMoney(-Math.abs(topCategoryValue), base),
+          meta: topCategory
+        });
+      }
+
+      if (!accountInsights.length) {
         insightsEl.innerHTML = `
           <div class="analysis-empty-guide compact-empty-state">
             <div class="analysis-empty-title">${t('analysis_detail_insights_empty')}</div>
             <div class="empty-state-actions">
               <button type="button" class="ghost inline-cta inline-cta-primary" data-action="open-import-history">${t('analysis_insights_step_import')}</button>
-              <button type="button" class="ghost inline-cta inline-cta-secondary" data-action="open-add-wallet">${t('cta_add_wallet')}</button>
+              <button type="button" class="ghost inline-cta inline-cta-secondary" data-action="open-add-transaction">${t('cta_add_transaction')}</button>
             </div>
           </div>
         `;
       } else {
-        insightsEl.innerHTML = filteredInsights.map((item) => {
-          const title = firstNonEmpty([item && item.title, item && item.type, t('analysis_insight_fallback')]);
-          const label = firstNonEmpty([item && item.label]);
-          const avgAmount = toNumber(item && item.avgAmount);
-          const nextCharge = formatShortDay(item && item.nextEstimatedChargeAt);
-          const confidence = toNumber(item && item.confidence);
-          const confidenceText = Number.isFinite(confidence) ? `${Math.max(0, Math.min(99, Math.round(confidence * 100)))}%` : '—';
-          const metaParts = [
-            label,
-            Number.isFinite(avgAmount) ? `${t('average')}: ${formatMoney(avgAmount, base)}` : '',
-            nextCharge ? `${t('analysis_next_label')}: ${nextCharge}` : '',
-            `${t('analysis_confidence_label')}: ${confidenceText}`
-          ].filter(Boolean);
+        insightsEl.innerHTML = accountInsights.slice(0, 4).map((item) => {
           return `
             <article class="analysis-detail-list-item">
-              <div class="analysis-detail-list-title">${escapeHtml(title)}</div>
-              <div class="analysis-detail-list-value">${escapeHtml(formatInsightValue(item, base))}</div>
-              <div class="muted">${escapeHtml(metaParts.join(' · '))}</div>
+              <div class="analysis-detail-list-title">${escapeHtml(item.title)}</div>
+              <div class="analysis-detail-list-value">${escapeHtml(item.value)}</div>
+              <div class="muted">${escapeHtml(item.meta || '')}</div>
             </article>
           `;
         }).join('');
@@ -2701,11 +2759,13 @@
 
     try {
       await Promise.allSettled([
+        loadDashboardOverview(),
         loadBalance(),
         loadReports(),
         loadRecentTransactions(),
         loadWallets(),
-        maybeRefreshAnalysisData(true)
+        loadUpcomingPayments(),
+        fetchProfileSeries(analysisState.detailWindow || '30d', true)
       ]);
     } finally {
       analysisState.detailBusy = false;
@@ -2827,7 +2887,7 @@
           analysisState.lastDataFetchAt = 0;
           syncAnalysisDetailTabState();
           renderAnalysisDetail(null);
-          await maybeRefreshAnalysisData(true);
+          await fetchProfileSeries(nextWindow, true);
           renderAnalysisDetail(null);
         });
       });
@@ -2879,100 +2939,78 @@
   }
 
   function buildAnalysisInsightsModel() {
-    const summaryApi = analysisState.apiSummary;
-    const insightsApi = analysisState.apiInsights;
-    const seriesApi = analysisState.apiSeries;
-    const summaryReliable = Boolean(summaryApi && isReliableMetricsSource(summaryApi.metricsSource) && summaryApi.synthetic !== true);
-    const seriesReliable = Boolean(seriesApi && seriesApi.synthetic !== true);
-    const portfolioApi = summaryApi ? toNumber(summaryApi.totalValueInBase) : NaN;
-    const portfolio = Number.isFinite(portfolioApi)
-      ? Math.max(0, portfolioApi)
-      : (Number.isFinite(analysisState.summaryTotal) ? Math.max(0, analysisState.summaryTotal) : NaN);
+    const overviewHero = dashboardOverview && dashboardOverview.hero ? dashboardOverview.hero : {};
+    const overviewGrowth = toNumber(overviewHero.delta7dPct);
+    const overviewNetWorth = toNumber(overviewHero.netWorth);
+    const profileTotal = Number.isFinite(overviewNetWorth)
+      ? overviewNetWorth
+      : computeCurrentTotalInBase();
     const base = normalizeCurrency(
-      (summaryApi && summaryApi.baseCurrency)
-      || (insightsApi && insightsApi.baseCurrency)
+      (overviewHero && overviewHero.baseCurrency)
       || analysisState.summaryBase
+      || (lastReportSummary && lastReportSummary.baseCurrency)
       || baseCurrency
     ) || 'USD';
-
-    const growthInsight = findAnalysisInsight('PORTFOLIO_30D_CHANGE');
-    const growthFromApi = growthInsight
-      && growthInsight.synthetic !== true
-      && String(growthInsight.unit || '').toUpperCase() === 'PERCENT'
-      ? toNumber(growthInsight.value)
+    const growthSeriesBundle = analysisState.profileSeriesCache[normalizeSeriesWindow('30d')];
+    const growthSeries = profileSeriesPointsFromMetric(growthSeriesBundle, 'net')
+      .map((point) => toNumber(point && point.valueInBase))
+      .filter((value) => Number.isFinite(value));
+    const growthFromSeries = growthSeries.length >= 2
+      ? ((growthSeries[growthSeries.length - 1] - growthSeries[0]) / Math.max(Math.abs(growthSeries[0]), 1)) * 100
       : NaN;
-    const seriesValues = seriesReliable && Array.isArray(seriesApi.points)
-      ? seriesApi.points.map((point) => toNumber(point && point.valueInBase)).filter((value) => Number.isFinite(value))
-      : [];
-    const growthFromSeries = seriesValues.length >= 2
-      ? ((seriesValues[seriesValues.length - 1] - seriesValues[0]) / Math.max(Math.abs(seriesValues[0]), 1)) * 100
-      : NaN;
-    const growth = Number.isFinite(growthFromSeries)
-      ? growthFromSeries
-      : (Number.isFinite(growthFromApi)
-        ? growthFromApi
-        : (summaryReliable && Number.isFinite(toNumber(summaryApi.delta7dPct)) ? toNumber(summaryApi.delta7dPct) : NaN));
-
-    const outflowInsight = findAnalysisInsight('TOP_OUTFLOW');
-    const outflowValueApi = outflowInsight && String(outflowInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
-      ? toNumber(outflowInsight.value)
-      : NaN;
-    const outflowLabelApi = outflowInsight && outflowInsight.label ? String(outflowInsight.label) : '';
-    const outflowLiveApi = Boolean(outflowInsight && !outflowInsight.synthetic && Number.isFinite(outflowValueApi));
-
-    const recurringInsight = findAnalysisInsight('RECURRING_SPEND');
-    const recurringValueApi = recurringInsight && String(recurringInsight.unit || '').toUpperCase() === 'BASE_CURRENCY'
-      ? toNumber(recurringInsight.value)
-      : NaN;
-    const recurringLiveApi = Boolean(recurringInsight && !recurringInsight.synthetic && Number.isFinite(recurringValueApi));
-    const recurringConfidenceApi = toNumber(recurringInsight && recurringInsight.confidence);
-    const recurringNextChargeApi = recurringInsight && recurringInsight.nextEstimatedChargeAt
-      ? String(recurringInsight.nextEstimatedChargeAt)
-      : '';
-
-    const portfolioLive = Boolean(summaryReliable && Number.isFinite(portfolioApi));
+    const growth = Number.isFinite(overviewGrowth)
+      ? overviewGrowth
+      : (Number.isFinite(growthFromSeries) ? growthFromSeries : NaN);
+    const summaryConfirmed = hasConfirmedTransactionMetrics(lastReportSummary);
+    const outflowValue = summaryConfirmed ? toNumber(lastReportSummary && lastReportSummary.net) : NaN;
+    const debtValue = computeDebtInBase();
 
     return {
       base,
-      portfolio,
+      portfolio: Number.isFinite(profileTotal) ? profileTotal : NaN,
       growth,
-      growthSeries: seriesValues,
-      growthSeriesSynthetic: !seriesReliable,
-      portfolioLive,
-      growthLive: Number.isFinite(growthFromSeries) || Number.isFinite(growthFromApi) || (summaryReliable && Number.isFinite(toNumber(summaryApi && summaryApi.delta7dPct))),
-      outflowValue: Number.isFinite(outflowValueApi) ? outflowValueApi : NaN,
-      outflowLabel: outflowLabelApi || '',
-      outflowLive: outflowLiveApi,
-      recurringValue: Number.isFinite(recurringValueApi) ? recurringValueApi : NaN,
-      recurringLive: recurringLiveApi,
-      recurringConfidence: Number.isFinite(recurringConfidenceApi)
-        ? recurringConfidenceApi
-        : (Number.isFinite(recurringValueApi) ? 0.82 : NaN),
-      recurringNextChargeAt: recurringNextChargeApi
+      growthSeries,
+      growthSeriesSynthetic: false,
+      portfolioLive: Boolean(hasMeaningfulNumber(profileTotal) || (overviewHero && overviewHero.hasMeaningfulData)),
+      growthLive: Number.isFinite(growth),
+      outflowValue: Number.isFinite(outflowValue) ? outflowValue : NaN,
+      outflowLabel: '',
+      outflowLive: Number.isFinite(outflowValue),
+      recurringValue: Number.isFinite(debtValue) ? debtValue : NaN,
+      recurringLive: Number.isFinite(debtValue),
+      recurringConfidence: NaN,
+      recurringNextChargeAt: ''
     };
   }
 
   function renderAnalysisCards() {
     const model = buildAnalysisInsightsModel();
-    const hasWallet = Boolean(analysisState.activeWalletId);
+    const hasProfileData = Boolean(dashboardDataState.hasAccounts || dashboardDataState.hasWallets || dashboardDataState.hasTransactions);
     const updatedValue = formatFxUpdated(
-      analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt)
+      (dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.updatedAt)
+      || (analysisState.status && (analysisState.status.finishedAt || analysisState.status.updatedAt || analysisState.status.startedAt))
     );
+    const monthlyIncomeRaw = toNumber(lastReportSummary && lastReportSummary.income);
+    const monthlyExpenseRaw = toNumber(lastReportSummary && lastReportSummary.expense);
     const monthlyCashflowRaw = toNumber(lastReportSummary && lastReportSummary.net);
+    const monthlyIncome = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyIncomeRaw : NaN;
+    const monthlyExpense = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyExpenseRaw : NaN;
     const monthlyCashflow = hasConfirmedTransactionMetrics(lastReportSummary) ? monthlyCashflowRaw : NaN;
     const debtValue = computeDebtInBase();
     const hasDebt = Number.isFinite(debtValue) && debtValue > 0.000001;
     const debtCard = q(selectors.analysisCardRecurring);
 
-    if (!hasWallet) {
+    if (!hasProfileData) {
       setAnalysisCardState(selectors.analysisCardPortfolio, 'loading');
       setAnalysisCardState(selectors.analysisCardGrowth, 'loading');
-      setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(monthlyCashflow) ? 'ready' : 'loading');
+      setAnalysisCardState(selectors.analysisCardOutflow, 'loading');
       setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
       setHeroChangeValue(NaN);
       setText(selectors.analysisPortfolioValue, '—');
       setText(selectors.analysisGrowthValue, '—');
-      setText(selectors.analysisOutflowValue, Number.isFinite(monthlyCashflow) ? formatMoney(monthlyCashflow, model.base) : '—');
+      setText(selectors.analysisIncomeValue, '—');
+      setText(selectors.analysisExpenseValue, '—');
+      setText(selectors.analysisOutflowValue, '—');
       setText(selectors.analysisRecurringValue, hasDebt ? formatMoney(debtValue, model.base) : '—');
       setText(selectors.analysisPortfolioMeta, '');
       setText(selectors.analysisGrowthMeta, '');
@@ -2988,14 +3026,14 @@
       return model;
     }
 
-    setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(model.portfolio) ? 'ready' : 'loading');
-    setAnalysisCardState(selectors.analysisCardGrowth, Number.isFinite(model.growth) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardPortfolio, Number.isFinite(monthlyIncome) ? 'ready' : 'loading');
+    setAnalysisCardState(selectors.analysisCardGrowth, Number.isFinite(monthlyExpense) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardOutflow, Number.isFinite(monthlyCashflow) ? 'ready' : 'loading');
     setAnalysisCardState(selectors.analysisCardRecurring, hasDebt ? 'ready' : 'loading');
     setHeroChangeValue(model.growth);
 
-    animateMetricValue(selectors.analysisPortfolioValue, model.portfolio, (value) => formatMoney(value, model.base));
-    animateMetricValue(selectors.analysisGrowthValue, model.growth, formatSignedPct);
+    animateMetricValue(selectors.analysisIncomeValue, monthlyIncome, (value) => formatMoney(value, model.base));
+    animateMetricValue(selectors.analysisExpenseValue, Number.isFinite(monthlyExpense) ? -Math.abs(monthlyExpense) : NaN, (value) => formatMoney(value, model.base));
     animateMetricValue(selectors.analysisOutflowValue, monthlyCashflow, (value) => formatMoney(value, model.base));
     if (hasDebt) {
       animateMetricValue(selectors.analysisRecurringValue, debtValue, (value) => formatMoney(value, model.base));
@@ -3003,13 +3041,13 @@
       setText(selectors.analysisRecurringValue, '—');
     }
 
-    setAnalysisValueState(selectors.analysisPortfolioValue, model.portfolio);
-    setAnalysisValueState(selectors.analysisGrowthValue, model.growth);
+    setAnalysisValueState(selectors.analysisIncomeValue, monthlyIncome);
+    setAnalysisValueState(selectors.analysisExpenseValue, Number.isFinite(monthlyExpense) ? -Math.abs(monthlyExpense) : NaN);
     setAnalysisValueState(selectors.analysisOutflowValue, monthlyCashflow);
     setAnalysisValueState(selectors.analysisRecurringValue, hasDebt ? -Math.abs(debtValue) : NaN);
     if (debtCard) debtCard.hidden = !hasDebt;
 
-    setText(selectors.analysisPortfolioMeta, updatedValue ? t('analysis_card_updated_live', { value: updatedValue }) : '');
+    setText(selectors.analysisPortfolioMeta, '');
     setText(selectors.analysisGrowthMeta, '');
     setText(selectors.analysisOutflowMeta, '');
     setText(selectors.analysisRecurringMeta, '');
@@ -3018,14 +3056,17 @@
 
     setDataSourceBadge(
       selectors.analysisPortfolioSource,
-      model.portfolioLive ? DATA_SOURCE.live : (Number.isFinite(model.portfolio) ? DATA_SOURCE.hybrid : DATA_SOURCE.pending)
+      Number.isFinite(monthlyIncome) ? DATA_SOURCE.live : DATA_SOURCE.pending
     );
     setDataSourceBadge(
       selectors.analysisGrowthSource,
-      model.growthLive ? (model.growthSeriesSynthetic ? DATA_SOURCE.hybrid : DATA_SOURCE.live) : DATA_SOURCE.pending
+      Number.isFinite(monthlyExpense) ? DATA_SOURCE.live : DATA_SOURCE.pending
     );
     setDataSourceBadge(selectors.analysisOutflowSource, Number.isFinite(monthlyCashflow) ? DATA_SOURCE.live : DATA_SOURCE.pending);
     setDataSourceBadge(selectors.analysisRecurringSource, hasDebt ? DATA_SOURCE.live : DATA_SOURCE.pending);
+    if (updatedValue) {
+      setText(selectors.analysisUpdatedAt, t('updated_at', { value: updatedValue }));
+    }
     updateAnalysisCardsVisibility();
     return model;
   }
@@ -3044,7 +3085,8 @@
     const cta = q(selectors.analysisEmptyCta);
     if (!panel || !title || !subtitle || !stageEl || !progressTextEl || !progressFill) return;
 
-    if (!analysisState.activeWalletId) {
+    const hasProfileData = Boolean(dashboardDataState.hasAccounts || dashboardDataState.hasWallets || dashboardDataState.hasTransactions);
+    if (!hasProfileData) {
       setUiState(panel, 'empty');
       if (banner) banner.dataset.uiState = 'idle';
       title.textContent = t('analysis_banner_title_idle');
@@ -3062,9 +3104,9 @@
 
     if (cta) cta.hidden = true;
     const status = analysisState.status || {
-      status: 'QUEUED',
-      progressPct: 0,
-      stage: 'FETCH_TX',
+      status: 'DONE',
+      progressPct: 100,
+      stage: 'DONE',
       startedAt: '',
       updatedAt: '',
       finishedAt: '',
@@ -3072,8 +3114,12 @@
     };
     const statusName = String(status.status || 'QUEUED').toUpperCase();
     const progressPct = Math.max(0, Math.min(100, Number(status.progressPct) || 0));
-    const safeWalletName = analysisState.activeWalletName || `#${analysisState.activeWalletId}`;
-    const updatedValue = formatFxUpdated(status.finishedAt || status.updatedAt || status.startedAt);
+    const updatedValue = formatFxUpdated(
+      (dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.updatedAt)
+      || status.finishedAt
+      || status.updatedAt
+      || status.startedAt
+    );
     const etaHint = formatEtaHint(status.etaSeconds);
     const lastSuccessfulStage = status.lastSuccessfulStage ? analysisStageLabel(status.lastSuccessfulStage) : '';
 
@@ -3090,7 +3136,7 @@
       subtitle.textContent = t('analysis_banner_subtitle_failed');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
     } else {
-      subtitle.textContent = t('analysis_banner_title_running', { name: safeWalletName });
+      subtitle.textContent = t('analysis_banner_title_running');
       setDataSourceBadge(selectors.analysisDataSource, DATA_SOURCE.pending);
     }
 
@@ -3126,52 +3172,25 @@
     const summary = payload && typeof payload === 'object' ? payload : {};
     analysisState.summaryTotal = toNumber(summary.totalValueInBase);
     analysisState.summaryBase = normalizeCurrency(summary.baseCurrency || baseCurrency) || 'USD';
-    analysisState.walletsCount = Array.isArray(wallets) ? wallets.length : 0;
-
-    const latestWallet = pickLatestWallet(wallets);
-    if (!latestWallet || latestWallet.id == null) {
-      analysisState.activeWalletId = null;
-      analysisState.activeWalletName = '';
-      analysisState.activeWallet = null;
-      analysisState.status = null;
-      analysisState.pollError = false;
-      analysisState.apiSummary = null;
-      analysisState.apiInsights = null;
-      analysisState.apiSeries = null;
-      analysisState.seriesWindow = '30d';
-      analysisState.detailWindow = '30d';
-      analysisState.detailMetric = 'net';
-      analysisState.lastDataFetchAt = 0;
-      stopAnalysisPolling();
-      refreshAnalysisPanel();
-      return;
-    }
-
-    const nextWalletId = Number(latestWallet.id);
-    const changed = analysisState.activeWalletId !== nextWalletId;
-    analysisState.activeWalletId = nextWalletId;
-    analysisState.activeWalletName = String(latestWallet.label || walletNetworkLabel(latestWallet.network || ''));
-    analysisState.activeWallet = latestWallet;
-
+    analysisState.wallets = Array.isArray(wallets) ? wallets.slice() : [];
+    analysisState.walletsCount = analysisState.wallets.length;
+    analysisState.activeWalletId = null;
+    analysisState.activeWalletName = '';
+    analysisState.activeWallet = null;
+    analysisState.pollError = false;
+    analysisState.apiSummary = null;
+    analysisState.apiInsights = null;
+    analysisState.apiSeries = null;
+    analysisState.lastDataFetchAt = 0;
+    stopAnalysisPolling();
     refreshAnalysisPanel();
-    if (changed) {
-      analysisState.status = null;
-      analysisState.pollError = false;
-      analysisState.apiSummary = null;
-      analysisState.apiInsights = null;
-      analysisState.apiSeries = null;
-      analysisState.seriesWindow = '30d';
-      analysisState.detailWindow = '30d';
-      analysisState.detailMetric = 'net';
-      analysisState.lastDataFetchAt = 0;
-      stopAnalysisPolling();
-      pollWalletAnalysisStatus();
-      maybeRefreshAnalysisData(true);
-      return;
-    }
-    if (!analysisState.status || !isTerminalAnalysisStatus(analysisState.status.status)) {
-      scheduleAnalysisPolling(analysisPollIntervalMs);
-    }
+    fetchProfileSeries(analysisState.detailWindow || '30d', false)
+      .then(() => {
+        if (analysisState.detailOpen) renderAnalysisDetail(null);
+      })
+      .catch(() => {
+        if (analysisState.detailOpen) renderAnalysisDetail(null);
+      });
   }
 
   function showBalanceError(message) {
@@ -3504,6 +3523,111 @@
     if (normalized === '90d') return 90;
     if (normalized === '1y') return 365;
     return 30;
+  }
+
+  function buildDailyCashFlowSeries(points, start, end) {
+    const byDay = new Map();
+    (Array.isArray(points) ? points : []).forEach((point) => {
+      const rawDate = point && point.date ? String(point.date) : '';
+      if (!rawDate) return;
+      const dayKey = rawDate.slice(0, 10);
+      const income = toNumber(point && point.income);
+      const expense = toNumber(point && point.expense);
+      const net = toNumber(point && point.net);
+      byDay.set(dayKey, {
+        income: Number.isFinite(income) ? income : 0,
+        expense: Number.isFinite(expense) ? expense : 0,
+        net: Number.isFinite(net) ? net : 0
+      });
+    });
+
+    const dayKeys = [];
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      dayKeys.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    const inflow = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? Math.max(item.income, 0) : 0;
+    });
+    const outflow = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? Math.max(item.expense, 0) : 0;
+    });
+    const net = dayKeys.map((key) => {
+      const item = byDay.get(key);
+      return item ? item.net : 0;
+    });
+    return { dayKeys, inflow, outflow, net };
+  }
+
+  function profileSeriesPointsFromMetric(seriesBundle, metric) {
+    if (!seriesBundle) return [];
+    const mode = String(metric || 'net').toLowerCase();
+    if (mode === 'inflow') return Array.isArray(seriesBundle.inflowPoints) ? seriesBundle.inflowPoints : [];
+    if (mode === 'outflow') return Array.isArray(seriesBundle.outflowPoints) ? seriesBundle.outflowPoints : [];
+    return Array.isArray(seriesBundle.netPoints) ? seriesBundle.netPoints : [];
+  }
+
+  async function fetchProfileSeries(windowValue, force) {
+    const normalizedWindow = normalizeSeriesWindow(windowValue || '30d');
+    const cached = analysisState.profileSeriesCache[normalizedWindow];
+    if (!force && cached && (Date.now() - Number(cached.fetchedAt || 0)) < 15000) {
+      return cached;
+    }
+
+    const now = new Date();
+    const days = trendWindowDays(normalizedWindow);
+    const start = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    start.setHours(0, 0, 0, 0);
+    const params = new URLSearchParams();
+    params.set('from', start.toISOString());
+    params.set('to', now.toISOString());
+    const res = await Api.call(`/api/reports/cash-flow?${params}`, 'GET', null, true);
+    if (!res.ok || !res.data || typeof res.data !== 'object') {
+      const empty = {
+        window: normalizedWindow,
+        netPoints: [],
+        inflowPoints: [],
+        outflowPoints: [],
+        fetchedAt: Date.now(),
+        asOf: ''
+      };
+      analysisState.profileSeriesCache[normalizedWindow] = empty;
+      return empty;
+    }
+
+    const { dayKeys, inflow, outflow, net } = buildDailyCashFlowSeries(res.data.points, start, now);
+    const totalNet = net.reduce((sum, value) => sum + value, 0);
+    const overviewNetWorth = toNumber(dashboardOverview && dashboardOverview.hero && dashboardOverview.hero.netWorth);
+    const currentTotal = Number.isFinite(overviewNetWorth)
+      ? overviewNetWorth
+      : computeCurrentTotalInBase();
+    let cumulative = net.slice();
+    if (Number.isFinite(currentTotal)) {
+      let running = currentTotal - totalNet;
+      cumulative = net.map((delta) => {
+        running += delta;
+        return running;
+      });
+    }
+
+    const toPoints = (values) => dayKeys.map((dayKey, idx) => ({
+      at: `${dayKey}T00:00:00Z`,
+      valueInBase: toNumber(values[idx])
+    })).filter((point) => point.at && Number.isFinite(point.valueInBase));
+
+    const bundle = {
+      window: normalizedWindow,
+      netPoints: toPoints(cumulative),
+      inflowPoints: toPoints(inflow),
+      outflowPoints: toPoints(outflow),
+      fetchedAt: Date.now(),
+      asOf: now.toISOString()
+    };
+    analysisState.profileSeriesCache[normalizedWindow] = bundle;
+    return bundle;
   }
 
   function applyBalanceTrendControls() {
@@ -4987,34 +5111,14 @@
     list.innerHTML = `${walletRows}${expandRow}`;
 
     list.querySelectorAll('.wallet-open[data-wallet-id]').forEach((row) => {
-      const activateWalletFromRow = () => {
-        const walletId = Number(row.dataset.walletId);
-        if (!Number.isFinite(walletId)) return;
-        const selected = wallets.find((item) => Number(item && item.id) === walletId);
-        if (!selected) return;
-        const changed = analysisState.activeWalletId !== walletId;
-        analysisState.activeWalletId = walletId;
-        analysisState.activeWalletName = String(selected.label || walletNetworkLabel(selected.network || ''));
-        analysisState.activeWallet = selected;
-        if (changed) {
-          analysisState.status = null;
-          analysisState.apiSummary = null;
-          analysisState.apiInsights = null;
-          analysisState.apiSeries = null;
-          analysisState.lastDataFetchAt = 0;
-        }
-      };
-
       row.addEventListener('click', (event) => {
         if (event.target instanceof Element && event.target.closest('.wallet-remove')) return;
-        activateWalletFromRow();
         q(selectors.analysisQuickCard)?.click();
       });
       row.addEventListener('keydown', (event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         if (event.target instanceof Element && event.target.closest('.wallet-remove')) return;
         event.preventDefault();
-        activateWalletFromRow();
         q(selectors.analysisQuickCard)?.click();
       });
     });
