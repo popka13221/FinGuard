@@ -88,6 +88,11 @@
     baseCurrencySaveBtn: '#btn-base-currency-save',
     baseCurrencyCloseBtn: '#btn-base-currency-close',
     baseCurrencyError: '#baseCurrencyError',
+    importHistoryOverlay: '#import-history-overlay',
+    importHistoryMenu: '#import-history-menu',
+    importHistoryCloseBtn: '#btn-import-history-close',
+    importHistoryConnectBtn: '#btn-import-history-connect',
+    importHistoryManualBtn: '#btn-import-history-manual',
     incomeExpenseNet: '#incomeExpenseNet',
     incomeExpenseDetails: '#incomeExpenseDetails',
     analysisIncomeValue: '#analysisIncomeValue',
@@ -438,7 +443,13 @@
       get_started_subtitle: 'Сделайте один шаг, чтобы открыть аналитику.',
       get_started_connect: 'Подключить счёт',
       get_started_add_tx: 'Добавить транзакцию',
-      get_started_import: 'Импортировать историю'
+      get_started_import: 'Импортировать историю',
+      import_history_menu_aria: 'Импорт истории',
+      import_history_title: 'Импорт истории',
+      import_history_subtitle: 'Выберите, как добавить данные в аналитику аккаунта.',
+      import_history_connect: 'Подключить счёт',
+      import_history_manual: 'Добавить транзакцию',
+      import_history_note: 'Данные появятся в дашборде сразу после добавления.'
     },
     en: {
       dashboard_page_title: 'FinGuard | Dashboard',
@@ -716,7 +727,13 @@
       get_started_subtitle: 'Complete one step to unlock analytics.',
       get_started_connect: 'Connect account',
       get_started_add_tx: 'Add transaction',
-      get_started_import: 'Import history'
+      get_started_import: 'Import history',
+      import_history_menu_aria: 'Import history',
+      import_history_title: 'Import history',
+      import_history_subtitle: 'Choose how you want to add data into account analytics.',
+      import_history_connect: 'Connect account',
+      import_history_manual: 'Add transaction',
+      import_history_note: 'Dashboard updates right after the first data is added.'
     }
   };
 
@@ -864,8 +881,6 @@
   let lastBalanceSnapshot = null;
   let lastBalanceConversion = null;
   let lastReportSummary = null;
-  let reportSummaryLoaded = false;
-  let reportSummaryConfirmed = false;
   const txListLimit = 20;
   let dashboardOverview = null;
   const heroStatsState = {
@@ -935,6 +950,10 @@
   const walletActionsState = {
     wallet: null,
     trigger: null
+  };
+  const importHistoryState = {
+    open: false,
+    opener: null
   };
 
   function q(selector) {
@@ -1127,6 +1146,26 @@
     if (openerEl) openerEl.focus();
   }
 
+  function closeImportHistoryModal() {
+    const menu = q(selectors.importHistoryMenu);
+    const overlay = q(selectors.importHistoryOverlay);
+    if (!menu || !overlay) return;
+    importHistoryState.open = false;
+    closeOverlay(overlay, menu, importHistoryState.opener);
+    importHistoryState.opener = null;
+  }
+
+  function openImportHistoryModal(opener) {
+    const menu = q(selectors.importHistoryMenu);
+    const overlay = q(selectors.importHistoryOverlay);
+    if (!menu || !overlay) return;
+    importHistoryState.open = true;
+    importHistoryState.opener = opener instanceof HTMLElement
+      ? opener
+      : (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    openOverlay(overlay, menu, importHistoryState.opener);
+  }
+
   function bindActionCtas() {
     const openActionMenu = (selector) => {
       const trigger = q(selector);
@@ -1154,11 +1193,15 @@
       } else if (action === 'open-add-transaction') {
         openActionMenu(selectors.addTransactionBtn);
       } else if (action === 'open-import-history') {
-        if (dashboardDataState.hasAccounts) {
-          openActionMenu(selectors.addTransactionBtn);
-        } else {
-          openActionMenu(selectors.addAccountBtn);
+        if (analysisState.detailOpen) {
+          const opener = q(selectors.analysisQuickCard);
+          Promise.resolve(setAnalysisDetailOpen(false, opener || target))
+            .then(() => {
+              openImportHistoryModal(target);
+            });
+          return;
         }
+        openImportHistoryModal(target);
       } else if (action === 'retry-balance') {
         loadBalance();
       } else if (action === 'retry-wallets') {
@@ -2023,8 +2066,6 @@
     setAnalysisCardState('#analysisCardOutflow', Number.isFinite(cashflow) ? 'ready' : 'loading');
     setAnalysisCardState('#analysisCardRecurring', hasDebt ? 'ready' : 'loading');
 
-    reportSummaryLoaded = true;
-    reportSummaryConfirmed = reliable;
     lastReportSummary = {
       baseCurrency: currency,
       income: Number.isFinite(income) ? income : null,
@@ -2056,8 +2097,6 @@
     setAnalysisCardState('#analysisCardRecurring', 'loading');
     const debtCard = q('#analysisCardRecurring');
     if (debtCard) debtCard.hidden = true;
-    reportSummaryLoaded = false;
-    reportSummaryConfirmed = false;
     lastReportSummary = null;
     renderIncomeExpenseSummary(null);
     updateAnalysisCardsVisibility();
@@ -2652,10 +2691,9 @@
 
   function hasConfirmedTransactionMetrics(summary) {
     if (!summary || typeof summary !== 'object') return false;
-    if (!reportSummaryLoaded || !reportSummaryConfirmed) return false;
-    if (!dashboardDataState.transactionsLoaded || !dashboardDataState.hasTransactions) return false;
     if (summary.synthetic === true) return false;
-    return true;
+    const snapshot = heroStatsState.snapshot || dashboardOverview;
+    return Boolean(snapshot && isOverviewSourceReliable(snapshot));
   }
 
   function localizedWindowLabel(rawValue) {
@@ -3220,35 +3258,29 @@
     const summaryNetWorth = toNumber(accountSummary && accountSummary.netWorth);
     const profileTotal = Number.isFinite(overviewNetWorth)
       ? overviewNetWorth
-      : (Number.isFinite(summaryNetWorth) ? summaryNetWorth : computeCurrentTotalInBase());
+      : (accountReliable && Number.isFinite(summaryNetWorth) ? summaryNetWorth : NaN);
     const base = normalizeCurrency(
       (overviewHero && overviewHero.baseCurrency)
       || (accountSummary && accountSummary.baseCurrency)
       || analysisState.summaryBase
-      || (lastReportSummary && lastReportSummary.baseCurrency)
       || baseCurrency
     ) || 'USD';
-    const growthSeries = accountSnapshot && accountSnapshot.series && Array.isArray(accountSnapshot.series.points)
+    const growthSeries = accountReliable && accountSnapshot && accountSnapshot.series && Array.isArray(accountSnapshot.series.points)
       ? accountSnapshot.series.points
         .map((point) => toNumber(point && point.valueInBase))
         .filter((value) => Number.isFinite(value))
-      : profileSeriesPointsFromMetric(analysisState.profileSeriesCache[normalizeSeriesWindow('30d')], 'net')
-        .map((point) => toNumber(point && point.valueInBase))
-        .filter((value) => Number.isFinite(value));
-    const growthFromSeries = growthSeries.length >= 2
-      ? ((growthSeries[growthSeries.length - 1] - growthSeries[0]) / Math.max(Math.abs(growthSeries[0]), 1)) * 100
-      : NaN;
+      : [];
     const growth = Number.isFinite(overviewGrowth)
       ? overviewGrowth
-      : (Number.isFinite(toNumber(accountSummary && accountSummary.delta7dPct))
+      : (accountReliable && Number.isFinite(toNumber(accountSummary && accountSummary.delta7dPct))
           ? toNumber(accountSummary && accountSummary.delta7dPct)
-          : (Number.isFinite(growthFromSeries) ? growthFromSeries : NaN));
+          : NaN);
     const outflowValue = accountReliable
       ? toNumber(accountSummary && accountSummary.cashflow30d)
       : NaN;
     const debtValue = accountReliable
       ? toNumber(accountSummary && accountSummary.debt)
-      : computeDebtInBase();
+      : NaN;
 
     return {
       base,
@@ -3256,7 +3288,7 @@
       growth,
       growthSeries,
       growthSeriesSynthetic: false,
-      portfolioLive: Boolean(hasMeaningfulNumber(profileTotal) || (overviewHero && overviewHero.hasMeaningfulData)),
+      portfolioLive: Number.isFinite(profileTotal),
       growthLive: Number.isFinite(growth),
       outflowValue: Number.isFinite(outflowValue) ? outflowValue : NaN,
       outflowLabel: '',
@@ -3552,135 +3584,6 @@
     return (accountsOk ? accounts : 0) + (walletOk ? wallets : 0);
   }
 
-  function computeDebtInBase() {
-    const accounts = lastBalanceSnapshot && Array.isArray(lastBalanceSnapshot.accounts)
-      ? lastBalanceSnapshot.accounts
-      : [];
-    if (!accounts.length || !lastBalanceConversion) return NaN;
-    let hasAny = false;
-    let debt = 0;
-    accounts.forEach((account) => {
-      const balance = toNumber(account && account.balance);
-      if (!Number.isFinite(balance)) return;
-      hasAny = true;
-      if (balance >= 0) return;
-      const converted = convertToBaseAmount(Math.abs(balance), account && account.currency, lastBalanceConversion);
-      if (Number.isFinite(converted)) {
-        debt += converted;
-      }
-    });
-    if (!hasAny) return NaN;
-    return debt;
-  }
-
-  async function loadReportSummary() {
-    // Overview is the authoritative source for hero/stats. Keep secondary report call as fallback-only.
-    if (dashboardOverview) {
-      reportSummaryLoaded = true;
-      reportSummaryConfirmed = dashboardOverview.dataFreshness === 'LIVE' || dashboardOverview.dataFreshness === 'PARTIAL';
-      if (lastReportSummary) {
-        renderIncomeExpenseSummary(lastReportSummary);
-      }
-      return lastReportSummary;
-    }
-
-    const netEl = document.querySelector(selectors.incomeExpenseNet);
-    if (netEl) netEl.textContent = t('loading');
-    reportSummaryLoaded = false;
-    reportSummaryConfirmed = false;
-
-    const params = new URLSearchParams();
-    params.set('period', 'MONTH');
-    const res = await Api.call(`/api/reports/summary?${params}`, 'GET', null, true);
-    if (!res.ok || !res.data || typeof res.data !== 'object') {
-      if (netEl) netEl.textContent = '—';
-      lastReportSummary = null;
-      renderIncomeExpenseSummary(null);
-      return null;
-    }
-    const payload = res.data;
-    reportSummaryLoaded = true;
-    reportSummaryConfirmed = payload.synthetic !== true;
-    const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
-    if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
-      baseCurrency = serverBase;
-      updateCurrencyLabels();
-    }
-    renderIncomeExpenseSummary(payload);
-    lastReportSummary = payload;
-    return payload;
-  }
-
-  async function loadReportByCategory() {
-    const target = document.querySelector(selectors.expenseChart);
-    if (!target || target.classList.contains('analysis-compat-hidden')) {
-      return null;
-    }
-    if (target) {
-      setUiState(target, 'loading');
-      target.innerHTML = renderSkeletonList(2);
-    }
-
-    const params = new URLSearchParams();
-    params.set('period', 'MONTH');
-    params.set('limit', '5');
-    const res = await Api.call(`/api/reports/by-category?${params}`, 'GET', null, true);
-    if (!res.ok || !res.data || typeof res.data !== 'object') {
-      if (target) {
-        setUiState(target, 'empty');
-        target.innerHTML = `
-          <div class="compact-empty-state">
-            <div class="compact-empty-title">${escapeHtml(t('expense_empty_title'))}</div>
-            <div class="compact-empty-actions">
-              <button type="button" class="ghost inline-cta" data-action="open-add-transaction">${escapeHtml(t('cta_add_transaction'))}</button>
-              <button type="button" class="ghost inline-cta inline-link" data-action="open-add-account">${escapeHtml(t('cta_connect_account'))}</button>
-            </div>
-          </div>
-        `;
-      }
-      return null;
-    }
-    const payload = res.data;
-    const serverBase = normalizeCurrency(payload.baseCurrency || baseCurrency) || 'USD';
-    if (serverBase && serverBase !== normalizeCurrency(baseCurrency)) {
-      baseCurrency = serverBase;
-      updateCurrencyLabels();
-    }
-
-    const expenses = Array.isArray(payload.expenses) ? payload.expenses : [];
-    const palette = ['#4f8bff', '#10b981', '#f97316', '#3cc7c4', '#9aa0aa', '#8b5cf6'];
-    const items = expenses
-      .map((item, idx) => {
-        const value = toNumber(item && item.total);
-        return {
-          label: item && item.categoryName ? String(item.categoryName) : '',
-          value: Number.isFinite(value) ? Math.max(value, 0) : NaN,
-          color: palette[idx % palette.length]
-        };
-      })
-      .filter((item) => item.label && Number.isFinite(item.value) && item.value > 0);
-
-    if (!items.length) {
-      if (target) {
-        setUiState(target, 'empty');
-        target.innerHTML = `
-          <div class="compact-empty-state">
-            <div class="compact-empty-title">${escapeHtml(t('expense_empty_title'))}</div>
-            <div class="compact-empty-actions">
-              <button type="button" class="ghost inline-cta" data-action="open-add-transaction">${escapeHtml(t('cta_add_transaction'))}</button>
-              <button type="button" class="ghost inline-cta inline-link" data-action="open-add-account">${escapeHtml(t('cta_connect_account'))}</button>
-            </div>
-          </div>
-        `;
-      }
-      return payload;
-    }
-
-    if (target) setUiState(target, 'ready');
-    renderBarChart(selectors.expenseChart, items, baseCurrency);
-    return payload;
-  }
-
   function emptyTrendState(target, message) {
     if (!target) return;
     setUiState(target, 'empty');
@@ -3945,9 +3848,6 @@
   }
 
   async function loadReports() {
-    if (!dashboardOverview) {
-      await loadReportSummary();
-    }
     await loadBalanceTrend();
   }
 
@@ -4120,9 +4020,6 @@
           </div>
         </div>
       `;
-      if (lastReportSummary) {
-        renderIncomeExpenseSummary(lastReportSummary);
-      }
       updateGetStartedSection();
       return;
     }
@@ -4175,9 +4072,6 @@
         </div>
       `;
     }).join('');
-    if (lastReportSummary) {
-      renderIncomeExpenseSummary(lastReportSummary);
-    }
     updateGetStartedSection();
   }
 
@@ -5622,6 +5516,56 @@
     });
   }
 
+  function bindImportHistoryMenu() {
+    const menu = q(selectors.importHistoryMenu);
+    const overlay = q(selectors.importHistoryOverlay);
+    const closeBtn = q(selectors.importHistoryCloseBtn);
+    const connectBtn = q(selectors.importHistoryConnectBtn);
+    const manualBtn = q(selectors.importHistoryManualBtn);
+    if (!menu || !overlay || !closeBtn || !connectBtn || !manualBtn) return;
+    if (menu.dataset.bound === '1') return;
+    menu.dataset.bound = '1';
+
+    const openActionBySelector = (selector) => {
+      const trigger = q(selector);
+      if (!trigger) return;
+      window.setTimeout(() => {
+        trigger.click();
+      }, 0);
+    };
+
+    closeBtn.addEventListener('click', () => {
+      closeImportHistoryModal();
+    });
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        closeImportHistoryModal();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (importHistoryState.open && event.key === 'Escape') {
+        event.preventDefault();
+        closeImportHistoryModal();
+      }
+    });
+    menu.addEventListener('keydown', (event) => {
+      trapFocusKeydown(event, menu);
+    });
+
+    connectBtn.addEventListener('click', () => {
+      closeImportHistoryModal();
+      openActionBySelector(selectors.addAccountBtn);
+    });
+    manualBtn.addEventListener('click', () => {
+      closeImportHistoryModal();
+      if (dashboardDataState.hasAccounts) {
+        openActionBySelector(selectors.addTransactionBtn);
+      } else {
+        openActionBySelector(selectors.addAccountBtn);
+      }
+    });
+  }
+
   function bindAddAccountMenu() {
     const btn = document.querySelector(selectors.addAccountBtn);
     const menu = document.querySelector(selectors.addAccountMenu);
@@ -5797,6 +5741,7 @@
   bindAddWalletMenu();
   bindAddTransactionMenu();
   bindBaseCurrencyMenu();
+  bindImportHistoryMenu();
   bindWalletActionsMenu();
   bindTxPeriodButtons();
   window.addEventListener('beforeunload', stopAnalysisPolling);
@@ -5820,6 +5765,7 @@
       bindAddAccountMenu();
       bindAddWalletMenu();
       bindAddTransactionMenu();
+      bindImportHistoryMenu();
 
       const res = await Api.call('/api/auth/me', 'GET', null, true);
       if (!res.ok) {

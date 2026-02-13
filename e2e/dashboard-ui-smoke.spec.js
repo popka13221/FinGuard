@@ -88,6 +88,52 @@ test('dashboard empty states expose action CTAs', async ({ page }) => {
   expect(hasTruncation).toBeFalsy();
 });
 
+test('import history opens dedicated modal and routes to proper action', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-import-history');
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+
+  const getStarted = page.getByTestId('get-started');
+  await expect(getStarted).toBeVisible();
+  await getStarted.locator('[data-action="open-import-history"]').click();
+
+  const importModal = page.getByTestId('import-history-modal');
+  await expect(importModal).toBeVisible();
+  await expect(importModal).toContainText('Import history');
+
+  await page.click('#btn-import-history-connect');
+  await expect(page.locator('#import-history-overlay')).toBeHidden();
+  await expect(page.locator('#add-account-overlay')).toBeVisible();
+  await page.click('#btn-add-account-cancel');
+  await expect(page.locator('#add-account-overlay')).toBeHidden();
+
+  await getStarted.locator('[data-action="open-import-history"]').click();
+  await expect(importModal).toBeVisible();
+  await page.click('#btn-import-history-manual');
+  await expect(page.locator('#import-history-overlay')).toBeHidden();
+  await expect(page.locator('#add-account-overlay')).toBeVisible();
+});
+
+test('import history manual action opens transaction modal when account exists', async ({ page }) => {
+  const email = uniqueEmail('e2e-dashboard-import-history-manual');
+  await registerAndLogin(page, { email, baseCurrency: 'USD' });
+
+  await page.click('#btn-add-account');
+  await expect(page.locator('#add-account-overlay')).toBeVisible();
+  await page.fill('#newAccountName', 'Main card');
+  await page.fill('#newAccountBalance', '1200');
+  await page.click('#btn-add-account-create');
+  await expect(page.locator('#add-account-overlay')).toBeHidden();
+
+  const getStarted = page.getByTestId('get-started');
+  await expect(getStarted).toBeVisible();
+  await getStarted.locator('[data-action="open-import-history"]').click();
+  await expect(page.getByTestId('import-history-modal')).toBeVisible();
+  await page.click('#btn-import-history-manual');
+
+  await expect(page.locator('#import-history-overlay')).toBeHidden();
+  await expect(page.locator('#add-transaction-overlay')).toBeVisible();
+});
+
 test('overview endpoint is authoritative for hero/stats on initial load', async ({ page }) => {
   const email = uniqueEmail('e2e-dashboard-overview-authoritative');
   let overviewHits = 0;

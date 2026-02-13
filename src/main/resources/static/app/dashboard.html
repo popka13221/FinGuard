@@ -110,40 +110,6 @@
             <div class="analysis-card-value" id="analysisRecurringValue">—</div>
           </article>
         </div>
-        <div class="analysis-compat-hidden" aria-hidden="true">
-          <div id="incomeExpenseDetails">—</div>
-          <div id="analysisOutflowSource" data-data-source="pending"></div>
-          <div id="analysisRecurringSource" data-data-source="pending"></div>
-          <div id="analysisCardGrowth" data-ui-state="loading"></div>
-          <div id="analysisCardPortfolio" data-ui-state="loading"></div>
-          <span id="analysisPortfolioValue">—</span>
-          <span id="analysisGrowthValue">—</span>
-          <span id="analysisPortfolioMeta">—</span>
-          <span id="analysisGrowthMeta">—</span>
-          <span id="analysisGrowthSpark"></span>
-          <span id="analysisPortfolioSource" data-data-source="pending"></span>
-          <span id="analysisGrowthSource" data-data-source="pending"></span>
-          <span id="incomeExpenseNet">—</span>
-          <span id="analysisDataSource" data-data-source="pending">pending</span>
-          <span id="analysisBannerTitle">—</span>
-          <span id="analysisBannerSubtitle">—</span>
-          <span id="analysisMiniValue">—</span>
-          <span id="analysisMiniGrowth">—</span>
-          <span id="creditValue">—</span>
-          <span id="totalsByCurrency">—</span>
-          <span id="balanceError">—</span>
-          <span id="analysisStage">—</span>
-          <span id="analysisProgressText">0%</span>
-          <span id="analysisProgressBar" aria-valuenow="0">0</span>
-          <span id="analysisProgressFill">—</span>
-          <span id="analysisProgressWrap">—</span>
-          <span id="analysisEmptyCta">—</span>
-          <span id="cryptoStatus">—</span>
-          <span id="fxStatus">—</span>
-          <span id="marketsDataSource" data-data-source="pending"></span>
-          <span id="cryptoDataSource" data-data-source="pending"></span>
-          <span id="fxDataSource" data-data-source="pending"></span>
-        </div>
       </section>
 
       <section class="card section get-started-section glass" id="getStartedSection" hidden data-motion="reveal" data-testid="get-started">
@@ -202,8 +168,6 @@
           </div>
         </div>
         <div id="balanceChart" class="chart-shell" aria-label="График баланса" data-i18n-aria="balance_chart_aria" data-ui-state="loading"></div>
-        <div id="expenseChart" class="analysis-compat-hidden" aria-hidden="true" data-ui-state="hidden"></div>
-        <span id="expenseCurrency" class="analysis-compat-hidden" aria-hidden="true">USD</span>
       </section>
 
       <section class="dashboard-columns" data-motion="reveal">
@@ -421,6 +385,34 @@
           <button type="button" id="btn-base-currency-save" data-i18n="save">Сохранить</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="import-history-overlay" class="overlay" hidden data-ui-state="closed">
+    <div
+      class="dropdown-menu import-history-menu"
+      id="import-history-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      tabindex="-1"
+      aria-label="Импорт истории"
+      data-i18n-aria="import_history_menu_aria"
+      data-testid="import-history-modal"
+    >
+      <div class="card-row modal-head">
+        <div>
+          <h3 data-i18n="import_history_title">Импорт истории</h3>
+          <div class="muted" data-i18n="import_history_subtitle">Выберите, как добавить данные в аналитику аккаунта.</div>
+        </div>
+        <button type="button" class="ghost" id="btn-import-history-close" aria-label="Закрыть" data-i18n-aria="close_dialog">✕</button>
+      </div>
+
+      <div class="import-history-actions">
+        <button type="button" class="get-started-primary" id="btn-import-history-connect" data-i18n="import_history_connect">Подключить счёт</button>
+        <button type="button" class="ghost get-started-secondary" id="btn-import-history-manual" data-i18n="import_history_manual">Добавить транзакцию</button>
+      </div>
+      <div class="muted import-history-note" data-i18n="import_history_note">Данные появятся в дашборде сразу после добавления.</div>
     </div>
   </div>
 

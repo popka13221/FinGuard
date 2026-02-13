@@ -8518,6 +8518,28 @@ body.dashboard[data-ui-version="v6"] .markets-link[hidden] {
   display: none !important;
 }
 
+body.dashboard[data-ui-version="v6"] .import-history-menu {
+  width: min(520px, calc(100vw - 28px)) !important;
+  max-width: 520px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(136, 174, 236, 0.2) !important;
+  background: rgba(8, 18, 34, 0.92) !important;
+  box-shadow: 0 18px 40px rgba(4, 10, 22, 0.42) !important;
+}
+
+body.dashboard[data-ui-version="v6"] .import-history-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 8px !important;
+}
+
+body.dashboard[data-ui-version="v6"] .import-history-note {
+  margin-top: 10px !important;
+  font-size: 0.82rem !important;
+  color: rgba(183, 204, 236, 0.72) !important;
+}
+
 @media (max-width: 900px) {
   body.dashboard[data-ui-version="v6"] .nav {
     top: 8px !important;
@@ -8552,5 +8574,10 @@ body.dashboard[data-ui-version="v6"] .markets-link[hidden] {
   body.dashboard[data-ui-version="v6"] .analysis-detail-series-section .analysis-detail-series-chart {
     min-height: 180px !important;
     height: auto !important;
+  }
+
+  body.dashboard[data-ui-version="v6"] .import-history-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
 }
